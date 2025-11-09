@@ -1,11 +1,10 @@
 package moodlev2.infrastructure.security;
 
 import io.jsonwebtoken.*;
-import lombok.Value;
 import moodlev2.domain.auth.ports.TokenServicePort;
 import moodlev2.domain.user.Role;
 import moodlev2.domain.user.User;
-import org.springframework.security.core.token.TokenService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import io.jsonwebtoken.security.Keys;
 
@@ -13,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -52,8 +52,8 @@ public class JwtServiceAdapter implements TokenServicePort {
         JwtBuilder builder = Jwts.builder()
                 .setSubject(String.valueOf(user.getId()))
                 .setIssuer(issuer)
-                .setIssuedAt(java.util.Date.from(now))
-                .setExpiration(java.util.Date.from(expiresAt))
+                .setIssuedAt(Date.from(now))
+                .setExpiration(Date.from(expiresAt))
                 .claim("uid", user.getId())
                 .claim("email", user.getEmail())
                 .claim("roles", roleName);
