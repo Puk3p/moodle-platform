@@ -1,5 +1,6 @@
 package moodlev2.domain.auth.ports;
 
+import moodlev2.domain.user.Role;
 import moodlev2.domain.user.User;
 
 import java.time.Duration;
@@ -19,7 +20,7 @@ public interface TokenServicePort {
     record TokenPayload(
             Long userId,
             String email,
-            Set<String> roles,
+            Set<Role> roles,
             Instant expiresAt
     ) {}
 }

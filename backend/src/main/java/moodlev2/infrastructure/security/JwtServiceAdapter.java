@@ -1,10 +1,9 @@
 package moodlev2.infrastructure.security;
 
-import io.jsonwebtoken.JwtBuilder;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import lombok.Value;
 import moodlev2.domain.auth.ports.TokenServicePort;
+import moodlev2.domain.user.Role;
 import moodlev2.domain.user.User;
 import org.springframework.security.core.token.TokenService;
 import org.springframework.stereotype.Component;
@@ -16,6 +15,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 
 @Component
@@ -65,5 +65,48 @@ public class JwtServiceAdapter implements TokenServicePort {
         return builder
                 .signWith(signingKey, SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    @Override
+    public TokenPayload parse(String token) {
+        try {
+            Jws<Claims> jws = Jwts.parser()
+                    .setSigningKey(signingKey)
+                    .build()
+                    .parseClaimsJws(token);
+
+            Claims claims = jws.getBody();
+
+            Long userId = claims.get("uid", Long.class);
+            if (!(userId instanceof Long)) {
+                throw new JwtException("Invalid user ID in token");
+            }
+
+            String email = claims.get("email", String.class);
+
+            List<String> roleNames = claims.get("roles", List.class);
+
+            Set<Role> roles = roleNames == null
+                    ? Set.of()
+                    : roleNames.stream()
+                    .map(Role::valueOf)
+                    .collect(Collectors.toSet());
+
+            Instant expiresAt = claims.getExpiration().toInstant();
+
+            return new TokenPayload(userId, email, roles, expiresAt);
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid token", e);
+        }
+    }
+
+    @Override
+    public boolean isValid(String token) {
+        try {
+            TokenPayload payload = parse(token);
+            return payload.expiresAt().isAfter(Instant.now());
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 }
