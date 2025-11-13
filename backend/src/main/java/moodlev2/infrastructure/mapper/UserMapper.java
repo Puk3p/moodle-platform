@@ -13,6 +13,7 @@ public class UserMapper {
         }
 
         User user = new User();
+
         user.setId(entity.getId());
         user.setEmail(entity.getEmail());
         user.setPasswordHash(entity.getPasswordHash());
@@ -22,6 +23,7 @@ public class UserMapper {
         user.setEnabled(entity.isActive());
         user.setCreatedAt(entity.getCreatedAt());
         user.setUpdatedAt(entity.getUpdatedAt());
+
         return user;
     }
 
@@ -29,7 +31,9 @@ public class UserMapper {
         if (user == null) {
             return null;
         }
+
         UserEntity entity = new UserEntity();
+
         entity.setId(user.getId());
         entity.setEmail(user.getEmail());
         entity.setPasswordHash(user.getPasswordHash());
@@ -39,6 +43,7 @@ public class UserMapper {
         entity.setActive(user.isEnabled());
         entity.setCreatedAt(user.getCreatedAt());
         entity.setUpdatedAt(user.getUpdatedAt());
+
         return entity;
     }
 }

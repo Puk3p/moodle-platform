@@ -22,7 +22,6 @@ public class RegisterServiceImpl implements RegisterService {
     private static final Duration ACCES_TOKEN_VALIDITY = Duration.ofHours(1);
 
     private final UserRepositoryPort userRepository;
-    private final PasswordHasherPort passwordHasher;
     private final TokenServicePort tokenService;
 
 
