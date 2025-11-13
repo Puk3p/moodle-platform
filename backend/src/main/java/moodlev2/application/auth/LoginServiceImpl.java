@@ -1,10 +1,13 @@
 package moodlev2.application.auth;
 
 import lombok.RequiredArgsConstructor;
+import moodlev2.application.auth.interfaces.LoginService;
 import moodlev2.domain.auth.ports.TokenServicePort;
 import moodlev2.domain.user.User;
 import moodlev2.domain.user.ports.PasswordHasherPort;
 import moodlev2.domain.user.ports.UserRepositoryPort;
+import moodlev2.web.auth.dto.AuthResponse;
+import moodlev2.web.auth.dto.LoginRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -13,15 +16,16 @@ import java.util.Set;
 
 @RequiredArgsConstructor
 @Service
-public class LoginUseCase {
+public class LoginServiceImpl implements LoginService {
     private static final Duration ACCES_TOKEN_VALIDITY = Duration.ofHours(1);
 
     private final UserRepositoryPort userRepository;
     private final PasswordHasherPort passwordHasher;
     private final TokenServicePort tokenService;
 
-    public Result login(String email, String rawPassword) {
-        String normalizedEmail = email == null ? null : email.trim().toLowerCase();
+    @Override
+    public AuthResponse login(LoginRequest request) {
+        String normalizedEmail = request.email == null ? null : request.email.trim().toLowerCase();
 
         if (normalizedEmail == null || normalizedEmail.isEmpty()) {
             throw new IllegalArgumentException("Email cannot be empty");
@@ -38,7 +42,7 @@ public class LoginUseCase {
             throw new IllegalArgumentException("User account is disabled");
         }
 
-        if (!passwordHasher.matches(rawPassword, user.getPasswordHash())) {
+        if (!passwordHasher.matches(request.password, user.getPasswordHash())) {
             throw new IllegalArgumentException("Invalid password");
         }
 
@@ -48,12 +52,14 @@ public class LoginUseCase {
                 Set.of("access:api")
         );
 
-        return new Result(user, accessToken);
+        return new AuthResponse(
+                accessToken,
+                user.getId() != null ? user.getId().toString() : null,
+                user.getEmail(),
+                user.getFirstName(),
+                user.getLastName()
+        );
     }
 
 
-
-
-
-    public record Result(User user, String accesToken) {}
 }
