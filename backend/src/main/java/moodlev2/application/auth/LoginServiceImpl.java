@@ -23,6 +23,7 @@ public class LoginServiceImpl implements LoginService {
     private final PasswordHasherPort passwordHasher;
     private final TokenServicePort tokenService;
 
+
     @Override
     public AuthResponse login(LoginRequest request) {
         String normalizedEmail = request.email == null ? null : request.email.trim().toLowerCase();
