@@ -43,7 +43,7 @@ public class LoginServiceImpl implements LoginService {
         }
 
         if (!passwordHasher.matches(request.password, user.getPasswordHash())) {
-            throw new IllegalArgumentException("Invalid password");
+            throw new IllegalArgumentException("Invalid passwordddddd");
         }
 
         String accessToken = tokenService.generateToken(
