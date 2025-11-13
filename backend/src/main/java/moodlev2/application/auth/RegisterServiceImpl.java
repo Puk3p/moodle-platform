@@ -1,49 +1,55 @@
 package moodlev2.application.auth;
 
 import lombok.RequiredArgsConstructor;
+import moodlev2.application.auth.interfaces.RegisterService;
 import moodlev2.domain.auth.ports.TokenServicePort;
 import moodlev2.domain.user.Role;
 import moodlev2.domain.user.User;
 import moodlev2.domain.user.ports.PasswordHasherPort;
 import moodlev2.domain.user.ports.UserRepositoryPort;
+import moodlev2.web.auth.dto.AuthResponse;
+import moodlev2.web.auth.dto.RegisterRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.util.EnumSet;
 import java.util.Set;
 
-@Service
 @RequiredArgsConstructor
-public class RegisterUserUseCase {
+@Service
+public class RegisterServiceImpl implements RegisterService {
+
     private static final Duration ACCES_TOKEN_VALIDITY = Duration.ofHours(1);
 
     private final UserRepositoryPort userRepository;
     private final PasswordHasherPort passwordHasher;
     private final TokenServicePort tokenService;
 
-    public Result register(String email,
-                           String rawPassword,
-                           String firstName,
-                           String lastName) {
+
+    @Override
+    public AuthResponse register(RegisterRequest request) {
+        String email = request.email;
         String normalizedEmail;
+
         if (email == null) {
             throw new IllegalArgumentException("Email cannot be null");
         } else {
             normalizedEmail = email.trim().toLowerCase();
         }
-        if (normalizedEmail == null || normalizedEmail.isEmpty()) {
-            throw new IllegalArgumentException("Email cannot be empty");
+
+        if (normalizedEmail.isEmpty()) {
+            throw new IllegalArgumentException("Emails cannot be empty");
         }
 
         if (userRepository.existsByEmail(normalizedEmail)) {
-            throw new IllegalArgumentException("Email is already in use");
+            throw new IllegalArgumentException("Email exists already in use.");
         }
 
         User user = new User();
         user.setEmail(normalizedEmail);
-        user.setPasswordHash(passwordHasher.hash(rawPassword));
-        user.setFirstName(firstName);
-        user.setLastName(lastName);
+        user.setPasswordHash(request.password);
+        user.setFirstName(request.firstName);
+        user.setLastName(request.lastName);
         user.setRoles(EnumSet.of(Role.STUDENT));
         user.setEnabled(true);
 
@@ -52,13 +58,15 @@ public class RegisterUserUseCase {
         String accesToken = tokenService.generateToken(
                 saved,
                 ACCES_TOKEN_VALIDITY,
-                Set.of("acces:api")
+                Set.of("access:api")
         );
 
-        return new Result(saved, accesToken);
-
+        return new AuthResponse(
+                accesToken,
+                saved.getId() != null ? saved.getId().toString() : null,
+                saved.getEmail(),
+                saved.getFirstName(),
+                saved.getLastName()
+        );
     }
-
-
-    public record Result(User user, String accessToken) {}
 }
