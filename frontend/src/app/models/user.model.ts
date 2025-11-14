@@ -1,7 +1,8 @@
 import {Role} from './role.enum';
 export interface User {
-    userId: number;
-    username: string;
+    userId: string;
     email?: string;
-    role: Role;
+    firstName: string;
+    lastName: string;
+    roles: Role[]; //TODO: implement in backend Set<Role> roles in AuthResponse.java
 }

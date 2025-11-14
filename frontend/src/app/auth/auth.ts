@@ -29,14 +29,18 @@ export class Auth {
         
         const user: User = {
           userId: response.userId,
-          username: credentials.username, 
-          role: response.role as Role
+          email: response.email,
+          firstName: response.firstName,
+          lastName: response.lastName,
+          roles: response.roles 
         };
 
         this.currentUserSubject.next(user);
       })
     );
   }
+
+
 
   
   logout() {
@@ -57,6 +61,11 @@ export class Auth {
   }
 
   public hasRole(role: Role): boolean {
-    return this.currentUserValue?.role === role;
+   const user = this.currentUserValue;
+    if (!user || !user.roles) {
+      return false;
+    }
+    return user.roles.includes(role);
   }
+  
 }
