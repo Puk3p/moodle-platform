@@ -1,0 +1,36 @@
+
+<div class="login-container">
+  <h2>Autentificare EvalPro</h2>
+
+  <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+    
+    <div class="form-group">
+      <label for="username">Utilizator:</label>
+      <input 
+        id="username" 
+        type="text" 
+        formControlName="username"
+        placeholder="Introduceți utilizatorul"
+      >
+      </div>
+
+    <div class="form-group">
+      <label for="password">Parolă:</label>
+      <input 
+        id="password" 
+        type="password" 
+        formControlName="password"
+        placeholder="Introduceți parola"
+      >
+    </div>
+
+    <button type="submit" [disabled]="loginForm.invalid">
+      Intră în cont
+    </button>
+
+    <div *ngIf="errorMessage" class="error-message">
+      {{ errorMessage }}
+    </div>
+
+  </form>
+</div>
