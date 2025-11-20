@@ -1,4 +1,4 @@
-package moodlev2.application.auth;
+package moodlev2.application.auth.implementations;
 
 import lombok.RequiredArgsConstructor;
 import moodlev2.application.auth.interfaces.LoginService;
