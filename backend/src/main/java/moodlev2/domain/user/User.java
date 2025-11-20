@@ -22,6 +22,7 @@ public class User {
     private Instant createdAt; //data creare cont
     private Instant updatedAt; //data ultima actualizare cont
 
+    private Long classId;
     //metoda pentru verificare roluri gen
     public boolean hasRole(Role role) {
         return roles != null && roles.contains(role);

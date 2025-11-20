@@ -39,6 +39,10 @@ public class UserEntity {
     @Enumerated(EnumType.STRING)
     private Set<Role> roles = new HashSet<>();
 
+    @ManyToOne
+    @JoinColumn(name = "class_id")
+    private ClassEntity clazz;
+
     @Column(nullable = false)
     private boolean active = true;
 

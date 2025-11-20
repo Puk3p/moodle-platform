@@ -1,6 +1,7 @@
 package moodlev2.infrastructure.mapper;
 
 import moodlev2.domain.user.User;
+import moodlev2.infrastructure.persistence.jpa.entity.ClassEntity;
 import moodlev2.infrastructure.persistence.jpa.entity.UserEntity;
 import org.springframework.stereotype.Component;
 
@@ -24,6 +25,9 @@ public class UserMapper {
         user.setCreatedAt(entity.getCreatedAt());
         user.setUpdatedAt(entity.getUpdatedAt());
 
+        if (entity.getClazz() != null) {
+            user.setClassId(entity.getClazz().getId());
+        }
         return user;
     }
 
@@ -44,6 +48,13 @@ public class UserMapper {
         entity.setCreatedAt(user.getCreatedAt());
         entity.setUpdatedAt(user.getUpdatedAt());
 
+        if (user.getClassId() != null) {
+            ClassEntity classReference = new ClassEntity();
+            classReference.setId(user.getClassId());
+            entity.setClazz(classReference);
+        } else {
+            entity.setClazz(null);
+        }
         return entity;
     }
 }
