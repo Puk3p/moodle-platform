@@ -1,18 +1,16 @@
-import { CanActivateFn,Router } from '@angular/router';
+import { CanActivateFn, Router } from '@angular/router';
 import { inject } from '@angular/core';
-import { Auth } from './auth';
+import { AuthService } from '../services/auth.service';
 
-export const authGuard: CanActivateFn = (route, state) => {
-  const authService = inject(Auth);
+export const authGuard: CanActivateFn = () => {
+  const authService = inject(AuthService);
   const router = inject(Router);
-  
 
   if (authService.isAuthenticated()) {
     return true;
   } else {
     console.warn('Access denied - Users must be logged in to access this route.');
     router.navigate(['/login']);
-    return true;
-  } 
-  
+    return false;
+  }
 };
