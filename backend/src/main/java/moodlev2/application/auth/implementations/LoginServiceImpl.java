@@ -1,4 +1,4 @@
-package moodlev2.application.auth;
+package moodlev2.application.auth.implementations;
 
 import lombok.RequiredArgsConstructor;
 import moodlev2.application.auth.interfaces.LoginService;
@@ -17,7 +17,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 @Service
 public class LoginServiceImpl implements LoginService {
-    private static final Duration ACCES_TOKEN_VALIDITY = Duration.ofHours(1);
+    private static final Duration ACCESS_TOKEN_VALIDITY = Duration.ofHours(1);
 
     private final UserRepositoryPort userRepository;
     private final PasswordHasherPort passwordHasher;
@@ -48,7 +48,7 @@ public class LoginServiceImpl implements LoginService {
 
         String accessToken = tokenService.generateToken(
                 user,
-                ACCES_TOKEN_VALIDITY,
+                ACCESS_TOKEN_VALIDITY,
                 Set.of("access:api")
         );
 

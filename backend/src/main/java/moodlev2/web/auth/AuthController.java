@@ -2,8 +2,8 @@ package moodlev2.web.auth;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import moodlev2.application.auth.LoginServiceImpl;
-import moodlev2.application.auth.RegisterServiceImpl;
+import moodlev2.application.auth.implementations.LoginServiceImpl;
+import moodlev2.application.auth.implementations.RegisterServiceImpl;
 import moodlev2.web.auth.dto.AuthResponse;
 import moodlev2.web.auth.dto.LoginRequest;
 import moodlev2.web.auth.dto.RegisterRequest;
