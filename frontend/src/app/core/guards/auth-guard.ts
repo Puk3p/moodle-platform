@@ -6,7 +6,7 @@ export const authGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  if (authService.isAuthenticated()) {
+  if (authService.isLoggedIn()) {
     return true;
   } else {
     console.warn('Access denied - Users must be logged in to access this route.');

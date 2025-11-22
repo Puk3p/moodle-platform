@@ -1,4 +1,3 @@
-
 INSERT INTO users (email, password_hash, first_name, last_name, active, created_at, updated_at)
 VALUES
     ('admin@moodlev2.com',

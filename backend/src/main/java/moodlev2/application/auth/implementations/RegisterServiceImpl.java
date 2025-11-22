@@ -5,6 +5,7 @@ import moodlev2.application.auth.interfaces.RegisterService;
 import moodlev2.domain.auth.ports.TokenServicePort;
 import moodlev2.domain.user.Role;
 import moodlev2.domain.user.User;
+import moodlev2.domain.user.ports.PasswordHasherPort;
 import moodlev2.domain.user.ports.UserRepositoryPort;
 import moodlev2.web.auth.dto.AuthResponse;
 import moodlev2.web.auth.dto.RegisterRequest;
@@ -22,6 +23,7 @@ public class RegisterServiceImpl implements RegisterService {
 
     private final UserRepositoryPort userRepository;
     private final TokenServicePort tokenService;
+    private final PasswordHasherPort passwordHasher;
 
 
     @Override
@@ -45,7 +47,7 @@ public class RegisterServiceImpl implements RegisterService {
 
         User user = new User();
         user.setEmail(normalizedEmail);
-        user.setPasswordHash(request.password);
+        user.setPasswordHash(passwordHasher.hash(request.password));
         user.setFirstName(request.firstName);
         user.setLastName(request.lastName);
         user.setRoles(EnumSet.of(Role.STUDENT));
