@@ -1,24 +1,118 @@
-<!-- app/features/auth/login/login.html -->
-<div class="login-container">
-  <h1>Login</h1>
+<main class="main-container">
+  <div class="login-form">
+    <h3 class="welcome-text">Welcome !</h3>
+    <h1 class="sign-in-title">Sign in</h1>
 
-  <form [formGroup]="form" (ngSubmit)="onSubmit()">
-    <div class="form-field">
-      <label for="email">Email</label>
-      <input id="email" type="email" formControlName="email" />
-    </div>
-
-    <div class="form-field">
-      <label for="password">Password</label>
-      <input id="password" type="password" formControlName="password" />
-    </div>
-
-    <div class="error" *ngIf="errorMessage">
+    <div *ngIf="errorMessage" class="error-message">
       {{ errorMessage }}
     </div>
 
-    <button type="submit" [disabled]="isSubmitting || form.invalid">
-      {{ isSubmitting ? 'Logging in...' : 'Login' }}
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="!isLoggedIn">
+      <mat-form-field appearance="fill" class="full-width">
+        <mat-label>Email</mat-label>
+        <input matInput formControlName="email" />
+        <mat-error *ngIf="emailCtrl.invalid && (emailCtrl.dirty || emailCtrl.touched)">
+          Email is required and must be valid
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="fill" class="full-width">
+        <mat-label>Password</mat-label>
+        <input
+          matInput
+          [type]="hidePassword ? 'password' : 'text'"
+          formControlName="password"
+        />
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          (click)="hidePassword = !hidePassword"
+          aria-label="Toggle password visibility"
+        >
+        
+          <svg
+            *ngIf="!hidePassword"
+            xmlns="http://www.w3.org/2000/svg"
+            height="24"
+            width="24"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path
+              d="M12 5c-7 0-11 7-11 7s4 7 11 7 11-7 11-7-4-7-11-7zm0 12c-2.8 0-5-2.2-5-5 0-.7.1-1.4.4-2l7.6 7.6c-.6.2-1.3.4-2 .4zm7.6 1.4L3.6 2.4 2.2 3.8l3.3 3.3C3.4 8.5 2 12 2 12s4 7 10 7c2.1 0 4-.6 5.6-1.6l3.3 3.3 1.4-1.4z"
+            />
+          </svg>
+          <svg
+            *ngIf="hidePassword"
+            xmlns="http://www.w3.org/2000/svg"
+            height="24"
+            width="24"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path
+              d="M12 5c-7 0-11 7-11 7s4 7 11 7 11-7 11-7-4-7-11-7zm0 12c-2.8 0-5-2.2-5-5s2.2-5 5-5 5 2.2 5 5-2.2 5-5 5zm0-8c-1.6 0-3 1.4-3 3s1.4 3 3 3 3-1.4 3-3-1.4-3-3-3z"
+            />
+          </svg>
+        </button>
+        <mat-error
+          *ngIf="passwordCtrl.invalid && (passwordCtrl.dirty || passwordCtrl.touched)"
+        >
+          Password must be at least 6 characters long
+        </mat-error>
+      </mat-form-field>
+
+      <div class="options">
+        <mat-checkbox>Remember me</mat-checkbox>
+        <a routerLink="/forgot-password" class="forgot-link">Forgot Password?</a>
+      </div>
+
+      <button
+        mat-raised-button
+        color="primary"
+        class="login-btn"
+        type="submit"
+        [disabled]="form.invalid || isSubmitting"
+      >
+        Login
+      </button>
+    </form>
+
+    <div *ngIf="isLoggedIn" class="redirecting-message">
+      Autentificare reușită! Redirecting...
+    </div>
+
+    <div class="or-separator" style="margin: 18px 0">
+      <span>or</span>
+    </div>
+
+    <button
+      mat-stroked-button
+      color="accent"
+      (click)="loginWithGoogle()"
+      class="login-btn google-btn"
+      style="margin-bottom: 10px"
+    >
+      <fa-icon [icon]="faGoogle" style="margin-right: 12px; color: #DB4437"></fa-icon>
+      Continue with Google
     </button>
-  </form>
-</div>
+
+    <button
+      mat-stroked-button
+      color="primary"
+      (click)="loginWithFacebook()"
+      class="login-btn facebook-btn"
+    >
+      <fa-icon [icon]="faFacebook" style="margin-right: 12px; color: #1877f3"></fa-icon>
+      Continue with Facebook
+    </button>
+
+    <p>Don’t have an Account ? <a routerLink="/register">Register</a></p>
+  </div>
+
+  <div class="illustration">
+    <img src="/auth/login_page.svg" alt="Workout illustration" />
+
+  </div>
+</main>
