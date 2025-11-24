@@ -1,1 +1,17 @@
-/* You can add global styles to this file, and also import other style files */
+@import "@angular/material/prebuilt-themes/indigo-pink.css";
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+body{
+    margin: 0px;
+}
+
+html, body { height: 100%;
+cursor: url("/public/mouse/Cursor_mic.png"), auto; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+a, button, .btn, [role="button"] {
+  cursor: url("/public/mouse/Pointer_mic.png"), pointer !important;
+}

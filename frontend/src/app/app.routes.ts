@@ -1,7 +1,13 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth-guard';
+import { PublicHomeComponent } from './features/home/public-home/public-home';
+import { DashboardHomeComponent } from './features/home/dashboard-home/dashboard-home';
 
 export const routes: Routes = [
+  {
+    path: '',
+    component : PublicHomeComponent
+  },
   {
     path: 'login',
     loadComponent: () =>
@@ -14,9 +20,8 @@ export const routes: Routes = [
   },
   {
     path: 'dashboard',
-    loadComponent: () =>
-      import('./features/dashboard/dashboard').then(m => m.Dashboard),
-    canActivate: [authGuard],
+    component: DashboardHomeComponent,
+    canActivate: [authGuard]
   },
   {
     path: '',
