@@ -1,6 +1,7 @@
 package moodlev2.infrastructure.config;
 
 import lombok.RequiredArgsConstructor;
+import moodlev2.infrastructure.security.GoogleOAuthSuccessHandler;
 import moodlev2.infrastructure.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,35 +23,30 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final GoogleOAuthSuccessHandler googleOAuthSuccessHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // ia CorsConfigurationSource din CorsConfig (bean-ul tău)
                 .cors(Customizer.withDefaults())
-                // dezactivăm CSRF, că avem API stateless cu JWT
                 .csrf(AbstractHttpConfigurer::disable)
+
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/oauth2/**").permitAll()
+                        .requestMatchers("/login/oauth2/**").permitAll()
+                        .anyRequest().authenticated()
+                )
+
+                .oauth2Login(oauth -> oauth
+                        .successHandler(googleOAuthSuccessHandler)
+                )
+
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-                .authorizeHttpRequests(auth -> auth
-                        // LOGIN + REGISTER libere
-                        .requestMatchers("/api/auth/**").permitAll()
 
-                        // swagger / actuator, dacă vrei libere
-                        .requestMatchers(
-                                "/v3/api-docs",
-                                "/v3/api-docs/**",
-                                "/swagger-ui.html",
-                                "/swagger-ui/**",
-                                "/actuator/health"
-                        ).permitAll()
-
-                        // restul cer autentificare
-                        .anyRequest().authenticated()
-                )
-                // JWT filter înainte de UsernamePasswordAuthenticationFilter
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterAfter(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
