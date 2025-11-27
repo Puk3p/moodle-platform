@@ -1,7 +1,7 @@
 package moodlev2.infrastructure.config;
 
 import lombok.RequiredArgsConstructor;
-import moodlev2.infrastructure.security.GoogleOAuthSuccessHandler;
+import moodlev2.infrastructure.security.OAuth2LoginSuccessHandler;
 import moodlev2.infrastructure.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,7 +23,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final GoogleOAuthSuccessHandler googleOAuthSuccessHandler;
+    private final OAuth2LoginSuccessHandler googleOAuthSuccessHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
