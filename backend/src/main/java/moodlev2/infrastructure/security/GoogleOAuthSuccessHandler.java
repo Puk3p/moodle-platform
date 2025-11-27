@@ -9,7 +9,9 @@ import moodlev2.domain.user.Role;
 import moodlev2.domain.user.User;
 import moodlev2.domain.user.ports.PasswordHasherPort;
 import moodlev2.domain.user.ports.UserRepositoryPort;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
@@ -25,6 +27,7 @@ public class GoogleOAuthSuccessHandler implements AuthenticationSuccessHandler {
 
     private final TokenServicePort tokenService;
     private final UserRepositoryPort userRepository;
+    private final PasswordHasherPort passwordHasher;
 
     @Override
     public void onAuthenticationSuccess(
@@ -48,7 +51,7 @@ public class GoogleOAuthSuccessHandler implements AuthenticationSuccessHandler {
                     u.setLastName(oauth2User.getAttribute("family_name"));
                     u.setRoles(Set.of(Role.STUDENT));
 
-                    u.setPasswordHash("GOOGLE_OAUTH_USER");
+                    u.setPasswordHash(passwordHasher.hash(UUID.randomUUID().toString()));
 
                     return userRepository.save(u);
                 });

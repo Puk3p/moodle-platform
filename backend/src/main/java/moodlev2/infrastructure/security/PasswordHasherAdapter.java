@@ -2,12 +2,14 @@ package moodlev2.infrastructure.security;
 
 import lombok.RequiredArgsConstructor;
 import moodlev2.domain.user.ports.PasswordHasherPort;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-@RequiredArgsConstructor
 @Component
+@RequiredArgsConstructor
 public class PasswordHasherAdapter implements PasswordHasherPort {
+
     private final PasswordEncoder passwordEncoder;
 
     @Override
