@@ -114,4 +114,27 @@ export class AuthService {
 
     this.currentUserSubject.next(user);
   }
+
+handleOAuthCallback(): void {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token');
+
+  if (token) {
+    this.saveToken(token);
+
+    const decoded: any = this.decodeToken(token);
+
+    this.currentUserSubject.next({
+      userId: decoded.sub ?? '',
+      email: decoded.email ?? '',
+      firstName: decoded.firstName ?? '',
+      lastName: decoded.lastName ?? '',
+      roles: decoded.roles ?? []
+    });
+  }
+}
+
+
+
+
 }

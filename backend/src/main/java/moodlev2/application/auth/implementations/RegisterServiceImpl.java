@@ -66,7 +66,8 @@ public class RegisterServiceImpl implements RegisterService {
                 saved.getId() != null ? saved.getId().toString() : null,
                 saved.getEmail(),
                 saved.getFirstName(),
-                saved.getLastName()
+                saved.getLastName(),
+                saved.getRoles()
         );
     }
 }

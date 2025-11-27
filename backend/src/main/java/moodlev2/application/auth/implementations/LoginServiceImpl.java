@@ -42,6 +42,14 @@ public class LoginServiceImpl implements LoginService {
             throw new IllegalArgumentException("User account is disabled");
         }
 
+        System.out.println("RAW PASSWORD = '" + request.password + "'");
+        System.out.println("HASH = '" + user.getPasswordHash() + "'");
+        if (true) {
+            boolean ok = passwordHasher.matches("admin123", user.getPasswordHash());
+            System.out.println("TEST HARDCODE = " + ok);
+        }
+
+
         if (!passwordHasher.matches(request.password, user.getPasswordHash())) {
             throw new IllegalArgumentException("Invalid password");
         }
@@ -57,7 +65,8 @@ public class LoginServiceImpl implements LoginService {
                 user.getId() != null ? user.getId().toString() : null,
                 user.getEmail(),
                 user.getFirstName(),
-                user.getLastName()
+                user.getLastName(),
+                user.getRoles()
         );
     }
 
