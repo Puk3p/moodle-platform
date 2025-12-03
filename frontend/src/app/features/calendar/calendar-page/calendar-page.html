@@ -1,0 +1,101 @@
+<div class="calendar-page">
+  <div class="calendar-layout">
+
+    <section class="calendar-main">
+      <header class="calendar-header">
+        <h1>Calendar</h1>
+
+        <div class="view-toggle">
+          <button class="toggle-btn active">Month</button>
+          <button class="toggle-btn">Week</button>
+        </div>
+      </header>
+      <div class="calendar-card">
+        <div class="calendar-card-header">
+          <div class="month-nav">
+            <button class="nav-btn">
+              <fa-icon [icon]="faChevronLeft"></fa-icon>
+            </button>
+
+            <h2>{{ monthLabel }}</h2>
+
+            <button class="nav-btn">
+              <fa-icon [icon]="faChevronRight"></fa-icon>
+            </button>
+          </div>
+
+          <button class="today-btn">
+            Today
+          </button>
+        </div>
+
+        <div class="weekdays">
+          <div class="weekday" *ngFor="let w of weekdays">
+            {{ w }}
+          </div>
+        </div>
+
+        <div class="days-grid">
+          <div
+            class="day-cell"
+            *ngFor="let day of days"
+            [class.muted]="!day.inCurrentMonth"
+          >
+            <span class="day-number">{{ day.dayNumber }}</span>
+
+            <span
+              class="today-dot"
+              *ngIf="day.isToday && day.inCurrentMonth"
+            ></span>
+
+            <div
+              class="events"
+              *ngIf="getEventsForDay(day).length > 0"
+            >
+              <a
+                class="event-pill"
+                *ngFor="let event of getEventsForDay(day)"
+                href="javascript:void(0)"
+              >
+                {{ event.title }}
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="calendar-right">
+      <section class="widget">
+        <h2>Upcoming Deadlines</h2>
+
+        <div class="widget-card">
+          <div
+            class="deadline-item"
+            *ngFor="let d of deadlines"
+          >
+            <div class="icon-box">
+              <fa-icon
+                [icon]="d.title.startsWith('Lab') ? faLab :
+                        d.title.startsWith('Assignment') ? faAssignment :
+                        d.title.includes('Project') ? faProject :
+                        faCode">
+              </fa-icon>
+            </div>
+
+            <div class="deadline-info">
+              <p class="title">{{ d.title }}</p>
+              <p class="date">
+                Due: {{ d.date }} · 11:59 PM
+              </p>
+              <p class="course">
+                {{ d.courseCode }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </aside>
+
+  </div>
+</div>

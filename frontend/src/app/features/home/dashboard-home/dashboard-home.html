@@ -1,11 +1,146 @@
-<main class="dashboard-home" *ngIf="user$ | async as user">
-  <h1>Welcome, {{ user.firstName }} {{ user.lastName }} 👋</h1>
+<div class="dashboard">
 
-  <p>Your email: {{ user.email }}</p>
+  <header class="dashboard-header">
+    <div class="greeting">
+      <p class="greeting-title">
+        Welcome back, {{ userName }}!
+      </p>
+      <p class="greeting-subtitle">
+        Here's your overview for today.
+      </p>
+    </div>
+  </header>
 
-  <div class="actions">
-    <button mat-stroked-button color="primary" (click)="logout()">
-      Logout
-    </button>
-  </div>
-</main>
+  <section class="dashboard-grid">
+
+    <div class="dashboard-main">
+
+      <section class="section-card">
+        <div class="section-header">
+          <h2>My Courses</h2>
+        </div>
+
+        <div class="courses-grid">
+          <article
+            class="course-card"
+            *ngFor="let course of activeCourses"
+          >
+            <div
+              class="course-thumb"
+              [style.backgroundColor]="course.accent"
+            ></div>
+
+            <div class="course-meta">
+              <p class="course-title">
+                {{ course.code }}: {{ course.title }}
+              </p>
+              <p class="course-teacher">
+                {{ course.teacher }}
+              </p>
+            </div>
+
+            <div class="course-progress">
+              <div class="progress-labels">
+                <span>Progress</span>
+                <span>{{ course.progress }}%</span>
+              </div>
+              <div class="progress-bar">
+                <div
+                  class="progress-bar-fill"
+                  [style.width.%]="course.progress"
+                ></div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-card">
+        <div class="section-header">
+          <h2>Completed Courses</h2>
+        </div>
+
+        <div class="completed-list">
+          <div
+            class="completed-item"
+            *ngFor="let c of completedCourses"
+          >
+            <div class="completed-icon">
+              <fa-icon [icon]="faCheckCircle" size="lg"></fa-icon>
+            </div>
+
+            <div class="completed-info">
+              <p class="completed-title">
+                {{ c.code }}: {{ c.title }}
+              </p>
+              <p class="completed-date">
+                Completed: {{ c.completedAt }}
+              </p>
+            </div>
+
+            <button class="chip chip-primary">
+              <fa-icon [icon]="faCertificate" style="margin-right: 6px;"></fa-icon>
+              <span>Certificate</span>
+            </button>
+
+            <button class="icon-button">
+              <fa-icon [icon]="faBoxArchive"></fa-icon>
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+    <aside class="dashboard-side">
+
+      <section class="section-card">
+        <div class="section-header">
+          <h2>Upcoming Deadlines</h2>
+        </div>
+
+        <div class="side-card">
+          <div
+            class="deadline-item"
+            *ngFor="let d of deadlines"
+          >
+            <div class="deadline-icon">
+              <fa-icon [icon]="d.icon" size="lg"></fa-icon>
+            </div>
+            <div class="deadline-info">
+              <p class="deadline-title">{{ d.title }}</p>
+              <p class="deadline-course">{{ d.course }}</p>
+              <p class="deadline-due">{{ d.dueIn }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-card">
+        <div class="section-header">
+          <h2>Recent Activity</h2>
+        </div>
+
+        <div class="side-card">
+          <div
+            class="activity-item"
+            *ngFor="let a of activities"
+          >
+            <div class="activity-icon">
+              <fa-icon [icon]="a.icon"></fa-icon>
+            </div>
+            <div class="activity-info">
+              <p class="activity-text">
+                {{ a.text }}
+              </p>
+              <p class="activity-time">
+                {{ a.timeAgo }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </aside>
+
+  </section>
+
+</div>
