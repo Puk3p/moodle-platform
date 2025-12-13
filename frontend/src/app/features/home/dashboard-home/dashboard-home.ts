@@ -64,7 +64,6 @@ export class DashboardHomeComponent implements OnInit {
         this.activeCourses = res.activeCourses;
         this.completedCourses = res.completedCourses;
 
-        // atașăm icon-urile doar în front-end
         const deadlineIcons = [faClipboardList, faClipboardQuestion, faCode];
         this.deadlines = res.deadlines.map((d, index) => ({
           ...d,

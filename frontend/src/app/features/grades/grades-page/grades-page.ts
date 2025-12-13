@@ -44,7 +44,6 @@ interface CourseGrade {
   styleUrls: ['./grades-page.scss'],
 })
 export class GradesPageComponent {
-  // icons
   faChevronDown = faChevronDown;
   faQuiz = faQuestionCircle;
   faLab = faFlask;
@@ -54,14 +53,11 @@ export class GradesPageComponent {
   faAttention = faExclamationTriangle;
   faCalendar = faCalendarAlt;
 
-  // filters
   selectedTerm = 'Fall 2024';
   courseFilter: 'all' | 'current' = 'current';
 
-  // row expansion
   expandedCourseCode: string | null = 'CS350';
 
-  // main table data
   courses: CourseGrade[] = [
     {
       code: 'CS201',
@@ -121,7 +117,6 @@ export class GradesPageComponent {
     },
   ];
 
-  // sidebar cards
   overallGpa = 3.85;
   gpaDelta = +0.12;
 

@@ -22,7 +22,6 @@ export class ResourcesPageComponent {
   loading = signal<boolean>(true);
 
   constructor() {
-    // mock load
     this.resourcesService
       .getResourcesForCurrentUser(this.selectedTerm(), this.courseScope())
       .subscribe(data => {
@@ -30,7 +29,7 @@ export class ResourcesPageComponent {
         this.loading.set(false);
       });
 
-    // just for debug
+    
     effect(() => {
       console.log('search:', this.searchText());
     });
@@ -58,12 +57,10 @@ export class ResourcesPageComponent {
 
   onTermChange(term: string) {
     this.selectedTerm.set(term);
-    // aici ulterior vei reface request-ul la backend
   }
 
   setScope(scope: 'current' | 'all') {
     this.courseScope.set(scope);
-    // aici ulterior vei reface request-ul la backend
   }
 
   onSearch(value: string) {
@@ -71,7 +68,6 @@ export class ResourcesPageComponent {
   }
 
   onOpenFile(fileId: string) {
-    // deocamdată doar log – când ai backend poți folosi url-ul de pe file
     console.log('open/download file', fileId);
   }
 

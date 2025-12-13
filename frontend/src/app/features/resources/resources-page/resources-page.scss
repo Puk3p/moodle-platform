@@ -14,11 +14,10 @@ $border: rgba(229, 231, 235, 0.9);
 .resources-page {
   padding: 32px 40px;
   background: $bg-light;
-  min-height: calc(100vh - 56px); // în funcție de header-ul global
+  min-height: calc(100vh - 56px); 
   box-sizing: border-box;
 }
 
-/* Header */
 
 .resources-header {
   display: flex;
@@ -50,7 +49,6 @@ $border: rgba(229, 231, 235, 0.9);
   }
 }
 
-/* Term select */
 
 .term-select {
   position: relative;
@@ -78,7 +76,6 @@ $border: rgba(229, 231, 235, 0.9);
   }
 }
 
-/* Scope toggle */
 
 .scope-toggle {
   display: inline-flex;
@@ -105,7 +102,6 @@ $border: rgba(229, 231, 235, 0.9);
   }
 }
 
-/* Search */
 
 .search-wrapper {
   display: flex;
@@ -143,8 +139,6 @@ $border: rgba(229, 231, 235, 0.9);
   font-size: 0.9rem;
   color: $text-gray;
 }
-
-/* Cursuri + fișiere */
 
 .courses-list {
   margin-top: 32px;
@@ -242,7 +236,6 @@ $border: rgba(229, 231, 235, 0.9);
   }
 }
 
-/* Responsive */
 
 @media (max-width: 900px) {
   .resources-page {

@@ -1,5 +1,4 @@
 <div class="resources-page">
-  <!-- Header + filtre -->
   <section class="resources-header">
     <div class="title-block">
       <h1>Resources</h1>
@@ -50,12 +49,10 @@
     </div>
   </section>
 
-  <!-- Loading -->
   <div class="loading" *ngIf="loading()">
     Loading resources…
   </div>
 
-  <!-- Lista pe cursuri -->
   <section class="courses-list" *ngIf="!loading()">
     <section
       class="course-section"
@@ -73,7 +70,6 @@
           (click)="onOpenFile(file.id)"
         >
           <div class="file-icon" [ngClass]="file.type">
-            <!-- aici poți pune ulterior icon-uri reale, pentru moment doar litere -->
             <span class="icon-text">
               {{
                 file.type === 'pdf'
