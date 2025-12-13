@@ -42,6 +42,20 @@ export const routes: Routes = [
         .then(m => m.CalendarPageComponent)
   },
   {
+    path: 'grades',
+    loadComponent: () =>
+      import('./features/grades/grades-page/grades-page')
+        .then(m => m.GradesPageComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'resources',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/resources/resources-page/resources-page')
+        .then(m => m.ResourcesPageComponent)
+  },
+  {
     path: '',
     redirectTo: 'login',
     pathMatch: 'full',

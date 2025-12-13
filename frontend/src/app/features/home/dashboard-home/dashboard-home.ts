@@ -1,44 +1,28 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
-import { 
-  faClipboardList, 
-  faClipboardQuestion, 
-  faCode, 
-  faBullhorn, 
-  faCheckCircle, 
+import {
+  faClipboardList,
+  faClipboardQuestion,
+  faCode,
+  faBullhorn,
+  faCheckCircle,
   faComments,
   faCertificate,
   faBoxArchive,
-  faTrophy
+  faTrophy,
 } from '@fortawesome/free-solid-svg-icons';
+import { DashboardService } from '../../../core/services/dashboard.service';
+import {
+  ActiveCourse,
+  CompletedCourse,
+  Deadline as DeadlineDto,
+  Activity as ActivityDto,
+  DashboardHomeResponse,
+} from '../../../core/models/dashboard.model';
 
-interface ActiveCourse {
-  code: string;
-  title: string;
-  teacher: string;
-  progress: number;
-  accent: string;
-}
-
-interface CompletedCourse {
-  code: string;
-  title: string;
-  completedAt: string;
-}
-
-interface Deadline {
-  title: string;
-  course: string;
-  dueIn: string;
-  icon: any;
-}
-
-interface Activity {
-  text: string;
-  timeAgo: string;
-  icon: any;
-}
+type Deadline = DeadlineDto & { icon: any };
+type Activity = ActivityDto & { icon: any };
 
 @Component({
   selector: 'app-dashboard-home',
@@ -47,94 +31,57 @@ interface Activity {
   templateUrl: './dashboard-home.html',
   styleUrl: './dashboard-home.scss',
 })
-export class DashboardHomeComponent {
+export class DashboardHomeComponent implements OnInit {
+  userName = 'Student';
 
-  userName = 'Alex';
-
+  // icons folosite în template
   faCheckCircle = faCheckCircle;
   faCertificate = faCertificate;
   faBoxArchive = faBoxArchive;
+  faTrophy = faTrophy;
 
-  activeCourses: ActiveCourse[] = [
-    {
-      code: 'CS201',
-      title: 'Data Structures',
-      teacher: 'Prof. Eleanor Vance',
-      progress: 75,
-      accent: '#CADFD1',
-    },
-    {
-      code: 'CS350',
-      title: 'Operating Systems',
-      teacher: 'Dr. Ben Carter',
-      progress: 40,
-      accent: '#C5DED7',
-    },
-    {
-      code: 'CS110',
-      title: 'Intro to Programming',
-      teacher: 'Prof. Ada Lovelace',
-      progress: 95,
-      accent: '#213C2F',
-    },
-    {
-      code: 'INFO420',
-      title: 'Project Management',
-      teacher: 'Dr. Ian Malcolm',
-      progress: 60,
-      accent: '#F4F2F0',
-    },
-  ];
+  // date venite din backend
+  activeCourses: ActiveCourse[] = [];
+  completedCourses: CompletedCourse[] = [];
+  deadlines: Deadline[] = [];
+  activities: Activity[] = [];
 
-  completedCourses: CompletedCourse[] = [
-    {
-      code: 'CS101',
-      title: 'Intro to Computer Science',
-      completedAt: 'Dec 15, 2023',
-    },
-    {
-      code: 'MATH251',
-      title: 'Linear Algebra',
-      completedAt: 'Dec 18, 2023',
-    },
-  ];
+  loading = true;
+  error?: string;
 
-  deadlines: Deadline[] = [
-    {
-      title: 'Lab 4 Submission',
-      course: 'CS201: Data Structures',
-      dueIn: 'Due in 2 days',
-      icon: faClipboardList,
-    },
-    {
-      title: 'Mid-term Quiz',
-      course: 'CS350: Operating Systems',
-      dueIn: 'Due in 5 days',
-      icon: faClipboardQuestion,
-    },
-    {
-      title: 'Project Proposal',
-      course: 'INFO420: Project Management',
-      dueIn: 'Due in 7 days',
-      icon: faCode,
-    },
-  ];
+  constructor(private readonly dashboardService: DashboardService) {}
 
-  activities: Activity[] = [
-    {
-      text: 'New announcement in CS350',
-      timeAgo: '2 hours ago',
-      icon: faBullhorn,
-    },
-    {
-      text: 'Assignment graded in CS110',
-      timeAgo: '1 day ago',
-      icon: faCheckCircle,
-    },
-    {
-      text: 'New post in CS201 discussion forum',
-      timeAgo: '3 days ago',
-      icon: faComments,
-    },
-  ];
+  ngOnInit(): void {
+    this.loadDashboard();
+  }
+
+  private loadDashboard(): void {
+    this.dashboardService.getMyDashboard().subscribe({
+      next: (res: DashboardHomeResponse) => {
+        this.loading = false;
+
+        this.userName = res.userName || 'Student';
+        this.activeCourses = res.activeCourses;
+        this.completedCourses = res.completedCourses;
+
+        // atașăm icon-urile doar în front-end
+        const deadlineIcons = [faClipboardList, faClipboardQuestion, faCode];
+        this.deadlines = res.deadlines.map((d, index) => ({
+          ...d,
+          icon: deadlineIcons[index] ?? faClipboardList,
+        }));
+
+        const activityIcons = [faBullhorn, faCheckCircle, faComments];
+        this.activities = res.activities.map((a, index) => ({
+          ...a,
+          icon: activityIcons[index] ?? faBullhorn,
+        }));
+      },
+      error: (err) => {
+        this.loading = false;
+        console.error('Failed to load dashboard', err);
+        this.error = 'Could not load dashboard data.';
+      },
+    });
+  }
 }
