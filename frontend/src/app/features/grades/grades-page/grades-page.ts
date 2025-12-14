@@ -25,7 +25,6 @@ import { GradesPageResponse, CourseGrade } from '../../../core/models/grades.mod
 export class GradesPageComponent implements OnInit {
   private gradesService = inject(GradesService);
 
-  // Icons for the template
   faChevronDown = faChevronDown;
   faQuiz = faQuestionCircle;
   faLab = faFlask;
@@ -35,7 +34,6 @@ export class GradesPageComponent implements OnInit {
   faAttention = faExclamationTriangle;
   faCalendar = faCalendarAlt;
 
-  // View State
   data: GradesPageResponse | null = null;
   selectedTerm = 'Fall 2024';
   courseFilter: 'all' | 'current' = 'current';
@@ -54,8 +52,6 @@ export class GradesPageComponent implements OnInit {
       }
     });
   }
-
-  // Helper getters for the template to access data safely
   get courses(): CourseGrade[] {
     return this.data?.courses || [];
   }
@@ -92,7 +88,6 @@ export class GradesPageComponent implements OnInit {
     return this.data.courses;
   }
 
-  // View logic methods
   toggleFilter(type: 'all' | 'current') {
     this.courseFilter = type;
   }

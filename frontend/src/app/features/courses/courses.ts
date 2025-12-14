@@ -22,7 +22,6 @@ import { CourseOverview, CompletedCourseSummary } from '../../core/models/course
 export class CoursesComponent implements OnInit {
   private coursesService = inject(CoursesService);
 
-  // State
   loading = true;
   userName = '';
   userRole = '';
@@ -31,7 +30,6 @@ export class CoursesComponent implements OnInit {
   activeCourses: CourseOverview[] = [];
   completedCourses: CompletedCourseSummary[] = [];
 
-  // Icons (au rămas aceleași)
   faSearch = faSearch;
   faBell = faBell;
   faArrowRight = faArrowRight;
@@ -45,7 +43,6 @@ export class CoursesComponent implements OnInit {
   faCog = faCog;
   faSignOutAlt = faSignOutAlt;
   
-  // Meniu lateral (static momentan)
   menuItems = [
     { label: 'Dashboard', icon: faTableCellsLarge, link: '/dashboard', active: false },
     { label: 'My Courses', icon: faBookOpen, link: '/courses', active: true },
@@ -59,8 +56,6 @@ export class CoursesComponent implements OnInit {
     { label: 'Log out', icon: faSignOutAlt, link: '/logout' },
   ];
 
-  // Acestea au ramas mock in front pentru ca nu le-am mutat inca in DTO-ul paginii,
-  // dar le putem ascunde sau sterge daca vrei sa fie totul clean.
   deadlines = [
     { title: 'Lab 4 Submission', course: 'CS201: Data Structures', due: 'Due in 2 days', icon: faClipboardList },
     { title: 'Mid-term Quiz', course: 'CS350: Operating Systems', due: 'Due in 5 days', icon: faClipboardQuestion },

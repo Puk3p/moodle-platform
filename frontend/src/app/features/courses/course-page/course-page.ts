@@ -12,7 +12,6 @@ import {
 import { CoursesService } from '../../../core/services/courses.service';
 import { ModuleTypePipe } from '../module-type-pipe';
 
-// Definim interfetele pentru datele ce vin din Backend
 export interface CourseDetailsResponse {
   courseCode: string;
   fullTitle: string;
@@ -45,19 +44,16 @@ export class CoursePageComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private coursesService = inject(CoursesService);
 
-  // State-ul paginii
   data: CourseDetailsResponse | null = null;
   loading = true;
 
-  // Iconite statice pentru UI (Butoane, Navigare)
   faArrowLeft = faArrowLeft;
   faFileAlt = faFileAlt;
   faPlay = faPlay;
   faChevronDown = faChevronDown;
   faTableCellsLarge = faTableCellsLarge;
   
-  // Navigare (Statica momentan)
-  activeNav = 'overview'; // Sau poti implementa logica de tab-uri
+  activeNav = 'overview';
 
   ngOnInit() {
     this.route.paramMap.subscribe(params => {
@@ -72,7 +68,6 @@ export class CoursePageComponent implements OnInit {
     this.loading = true;
     this.coursesService.getCourseDetails(id).subscribe({
       next: (res) => {
-        // TypeScript s-ar putea plange ca res e Object, facem cast daca e nevoie
         this.data = res as unknown as CourseDetailsResponse;
         this.loading = false;
       },
@@ -83,7 +78,6 @@ export class CoursePageComponent implements OnInit {
     });
   }
 
-  // Functia care transforma string-ul din backend ("pdf", "lab") in Iconita
   getIconForType(type: string): IconDefinition {
     if (!type) return faFileAlt;
     switch (type.toLowerCase()) {
