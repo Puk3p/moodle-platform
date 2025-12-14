@@ -18,10 +18,7 @@
                 <h3>{{ course.code }}: {{ course.title }}</h3>
                 <p class="prof">{{ course.prof }}</p>
               </div>
-              <div
-                class="course-thumb-mini"
-                [style.backgroundImage]="'url(' + course.image + ')'"
-              ></div>
+              <div class="h-32 bg-cover bg-center" [style.background-image]="'url(' + course.imageUrl + ')'"></div>
             </div>
 
             <div class="progress-section">

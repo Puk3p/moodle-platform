@@ -1,4 +1,3 @@
-// application/course/MyCoursesUseCase.java
 package moodlev2.application.course;
 
 import lombok.RequiredArgsConstructor;
@@ -11,7 +10,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class MyCoursesUseCase {
+public class MyCoursesService {
 
     private final UserRepositoryPort userRepository;
 

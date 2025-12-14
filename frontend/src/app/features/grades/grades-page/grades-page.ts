@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import {
@@ -10,31 +10,10 @@ import {
   faQuestionCircle,
   faFlask,
   faClipboardList,
+  IconDefinition
 } from '@fortawesome/free-solid-svg-icons';
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
-
-type CourseStatus = 'in-progress' | 'completed';
-
-interface RecentItem {
-  title: string;
-  score: string;      // ex. "17/20"
-  percent: number;    // ex. 85
-  weightLabel: string; // ex. "15% of final"
-  gradedOn: string;   // ex. "Oct 2, 2024"
-  typeLabel: string;  // "Quiz", "Lab", etc.
-  icon: IconDefinition;
-}
-
-interface CourseGrade {
-  code: string;
-  name: string;
-  instructor: string;
-  gradeLetter: string;
-  percentage: number;
-  status: CourseStatus;
-  isCurrent: boolean;
-  recentItems?: RecentItem[];
-}
+import { GradesService } from '../../../core/services/grades.service';
+import { GradesPageResponse, CourseGrade } from '../../../core/models/grades.model';
 
 @Component({
   selector: 'app-grades-page',
@@ -43,7 +22,10 @@ interface CourseGrade {
   templateUrl: './grades-page.html',
   styleUrls: ['./grades-page.scss'],
 })
-export class GradesPageComponent {
+export class GradesPageComponent implements OnInit {
+  private gradesService = inject(GradesService);
+
+  // Icons for the template
   faChevronDown = faChevronDown;
   faQuiz = faQuestionCircle;
   faLab = faFlask;
@@ -53,108 +35,64 @@ export class GradesPageComponent {
   faAttention = faExclamationTriangle;
   faCalendar = faCalendarAlt;
 
+  // View State
+  data: GradesPageResponse | null = null;
   selectedTerm = 'Fall 2024';
   courseFilter: 'all' | 'current' = 'current';
-
   expandedCourseCode: string | null = 'CS350';
+  loading = true;
 
-  courses: CourseGrade[] = [
-    {
-      code: 'CS201',
-      name: 'Data Structures',
-      instructor: 'Prof. Eleanor Vance',
-      gradeLetter: 'A-',
-      percentage: 91,
-      status: 'in-progress',
-      isCurrent: true,
-    },
-    {
-      code: 'CS350',
-      name: 'Operating Systems',
-      instructor: 'Dr. Ben Carter',
-      gradeLetter: 'B',
-      percentage: 85,
-      status: 'in-progress',
-      isCurrent: true,
-      recentItems: [
-        {
-          title: 'Quiz 2 – Trees & Graphs',
-          score: '17/20',
-          percent: 85,
-          weightLabel: '15% of final',
-          gradedOn: 'Oct 2, 2024',
-          typeLabel: 'Quiz',
-          icon: this.faQuiz,
-        },
-        {
-          title: 'Lab 3 – Schedulers',
-          score: '22/25',
-          percent: 88,
-          weightLabel: '10% of final',
-          gradedOn: 'Sep 25, 2024',
-          typeLabel: 'Lab',
-          icon: this.faLab,
-        },
-      ],
-    },
-    {
-      code: 'CS110',
-      name: 'Intro to Programming',
-      instructor: 'Prof. Ada Lovelace',
-      gradeLetter: 'A',
-      percentage: 96,
-      status: 'completed',
-      isCurrent: true,
-    },
-    {
-      code: 'MATH251',
-      name: 'Linear Algebra',
-      instructor: 'Dr. Alan Turing',
-      gradeLetter: 'B-',
-      percentage: 81,
-      status: 'completed',
-      isCurrent: true,
-    },
-  ];
-
-  overallGpa = 3.85;
-  gpaDelta = +0.12;
-
-  gradeBreakdown = {
-    totalCourses: 4,
-    aCourses: 2,
-    bCourses: 1,
-    cCourses: 1,
-  };
-
-  bestCourse = {
-    code: 'CS110',
-    label: 'A (96%)',
-  };
-
-  needsAttention = {
-    code: 'MATH251',
-    label: 'B- (81%)',
-  };
-
-  upcomingGradeReleases = [
-    {
-      course: 'CS350 – Lab 4 grade',
-      dateLabel: 'Expected on Oct 12',
-    },
-    {
-      course: 'CS201 – Midterm Exam',
-      dateLabel: 'Expected on Oct 15',
-    },
-  ];
-
-  get filteredCourses(): CourseGrade[] {
-    if (this.courseFilter === 'current') {
-      return this.courses.filter(c => c.isCurrent);
-    }
-    return this.courses;
+  ngOnInit() {
+    this.gradesService.getGradesPage().subscribe({
+      next: (res) => {
+        this.data = res;
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Error loading grades', err);
+        this.loading = false;
+      }
+    });
   }
 
+  // Helper getters for the template to access data safely
+  get courses(): CourseGrade[] {
+    return this.data?.courses || [];
+  }
+
+  get overallGpa(): number {
+    return this.data?.overallGpa || 0;
+  }
+
+  get gpaDelta(): number {
+    return this.data?.gpaDelta || 0;
+  }
+
+  get gradeBreakdown() {
+    return this.data?.gradeBreakdown || { totalCourses: 0, aCourses: 0, bCourses: 0, cCourses: 0 };
+  }
+
+  get bestCourse() {
+    return this.data?.bestCourse || { code: '', label: '' };
+  }
+
+  get needsAttention() {
+    return this.data?.needsAttention || { code: '', label: '' };
+  }
+
+  get upcomingGradeReleases() {
+    return this.data?.upcomingGradeReleases || [];
+  }
+
+  get filteredCourses(): CourseGrade[] {
+    if (!this.data) return [];
+    if (this.courseFilter === 'current') {
+      return this.data.courses.filter(c => c.isCurrent);
+    }
+    return this.data.courses;
+  }
+
+  // View logic methods
   toggleFilter(type: 'all' | 'current') {
     this.courseFilter = type;
   }
@@ -173,5 +111,15 @@ export class GradesPageComponent {
 
   statusLabel(course: CourseGrade): string {
     return course.status === 'in-progress' ? 'In Progress' : 'Completed';
+  }
+
+  getIconForType(type: string): IconDefinition {
+    if (!type) return this.faAssignment;
+    switch (type.toLowerCase()) {
+      case 'quiz': return this.faQuiz;
+      case 'lab': return this.faLab;
+      case 'assignment': return this.faAssignment;
+      default: return this.faAssignment;
+    }
   }
 }

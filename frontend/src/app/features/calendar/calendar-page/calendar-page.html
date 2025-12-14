@@ -6,25 +6,36 @@
         <h1>Calendar</h1>
 
         <div class="view-toggle">
-          <button class="toggle-btn active">Month</button>
-          <button class="toggle-btn">Week</button>
+          <button 
+            class="toggle-btn" 
+            [class.active]="viewMode === 'month'"
+            (click)="setView('month')">
+            Month
+          </button>
+          <button 
+            class="toggle-btn" 
+            [class.active]="viewMode === 'week'"
+            (click)="setView('week')">
+            Week
+          </button>
         </div>
       </header>
+      
       <div class="calendar-card">
         <div class="calendar-card-header">
           <div class="month-nav">
-            <button class="nav-btn">
+            <button class="nav-btn" (click)="prev()">
               <fa-icon [icon]="faChevronLeft"></fa-icon>
             </button>
 
             <h2>{{ monthLabel }}</h2>
 
-            <button class="nav-btn">
+            <button class="nav-btn" (click)="next()">
               <fa-icon [icon]="faChevronRight"></fa-icon>
             </button>
           </div>
 
-          <button class="today-btn">
+          <button class="today-btn" (click)="goToday()">
             Today
           </button>
         </div>
@@ -39,13 +50,13 @@
           <div
             class="day-cell"
             *ngFor="let day of days"
-            [class.muted]="!day.inCurrentMonth"
+            [class.muted]="!day.inCurrentRange"
           >
             <span class="day-number">{{ day.dayNumber }}</span>
 
             <span
               class="today-dot"
-              *ngIf="day.isToday && day.inCurrentMonth"
+              *ngIf="day.isToday"
             ></span>
 
             <div
@@ -75,12 +86,7 @@
             *ngFor="let d of deadlines"
           >
             <div class="icon-box">
-              <fa-icon
-                [icon]="d.title.startsWith('Lab') ? faLab :
-                        d.title.startsWith('Assignment') ? faAssignment :
-                        d.title.includes('Project') ? faProject :
-                        faCode">
-              </fa-icon>
+              <fa-icon [icon]="getIconForType(d.type)"></fa-icon>
             </div>
 
             <div class="deadline-info">

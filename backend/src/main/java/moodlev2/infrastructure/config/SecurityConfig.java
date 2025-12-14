@@ -35,9 +35,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/oauth2/**").permitAll()
                         .requestMatchers("/login/oauth2/**").permitAll()
-                        .requestMatchers(
-                                "/api/courses/my-dashboard"
-                        ).permitAll()
+                        .requestMatchers("/api/courses/**").permitAll()
+                        .requestMatchers("/api/calendar/**").permitAll()
+                        .requestMatchers("/api/grades/**").permitAll()
                         .anyRequest().authenticated()
                 )
 

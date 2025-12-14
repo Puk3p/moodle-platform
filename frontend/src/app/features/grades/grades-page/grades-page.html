@@ -1,4 +1,4 @@
-<div class="grades-page">
+<div class="grades-page" *ngIf="data; else loader">
   <header class="page-header">
     <div class="page-title">
       <h1>Grades</h1>
@@ -102,7 +102,7 @@
                           *ngFor="let item of course.recentItems"
                         >
                           <div class="recent-icon">
-                            <fa-icon [icon]="item.icon"></fa-icon>
+                            <fa-icon [icon]="getIconForType(item.typeIcon)"></fa-icon>
                           </div>
 
                           <div class="recent-main">
@@ -243,3 +243,7 @@
     </aside>
   </div>
 </div>
+
+<ng-template #loader>
+  <div style="display:flex;justify-content:center;padding:50px;color:#6b7280;">Loading grades...</div>
+</ng-template>
