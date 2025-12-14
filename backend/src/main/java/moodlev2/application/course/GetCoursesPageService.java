@@ -3,46 +3,57 @@ package moodlev2.application.course;
 import lombok.RequiredArgsConstructor;
 import moodlev2.domain.user.User;
 import moodlev2.domain.user.ports.UserRepositoryPort;
+import moodlev2.infrastructure.persistence.jpa.CourseRepository;
+import moodlev2.infrastructure.persistence.jpa.entity.CourseEntity;
 import moodlev2.web.course.dto.CompletedCourseSummaryDto;
 import moodlev2.web.course.dto.CourseOverviewDto;
 import moodlev2.web.course.dto.CoursesPageResponse;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class GetCoursesPageService {
     private final UserRepositoryPort userRepository;
+    private final CourseRepository courseRepository;
 
     public CoursesPageResponse getCoursesPageForUser(String email) {
+
+        //datele despre useri
         String userName = "Guest";
-        String userRole = "Student";
-        String avatar = "https://ui-avatars.com/api/?name=Guest+User&background=random";
+        String avatar = "https://ui-avatars.com/api/?background=random";
 
         if (email != null) {
             User user = userRepository.findByEmail(email).orElse(null);
             if (user != null) {
                 userName = user.getFirstName() + " " + user.getLastName();
-                avatar = "https://ui-avatars.com/api/?name=" + user.getFirstName() + "+" + user.getLastName() + "&background=0D8ABC&color=fff";
+                avatar = "https://ui-avatars.com/api/?name=" + userName + "&background=0D8ABC&color=fff";
             }
         }
 
-        List<CourseOverviewDto> activeCourses = List.of(
-                new CourseOverviewDto("cs201", "CS201", "Data Structures", "Prof. Eleanor Vance", 75, "Lab 4 in 2 days", "https://img.freepik.com/free-vector/gradient-abstract-background_23-2149121815.jpg"),
-                new CourseOverviewDto("cs350", "CS350", "Operating Systems", "Dr. Ben Carter", 40, "Mid-term in 5 days", "https://img.freepik.com/free-vector/clean-gradient-background_23-2149132549.jpg"),
-                new CourseOverviewDto("cs110", "CS110", "Intro to Programming", "Prof. Ada Lovelace", 95, "Final Project in 1 day", "https://img.freepik.com/free-vector/dark-green-background-design_1035-18237.jpg"),
-                new CourseOverviewDto("info420", "INFO420", "Project Management", "Dr. Ian Malcolm", 60, "Proposal in 7 days", "https://img.freepik.com/free-photo/white-painted-wall-texture-background_53876-138197.jpg")
-        );
+        // date despre cursuri din db
+        List<CourseEntity> courseEntities = courseRepository.findAllByUserEmail(email);
 
-        List<CompletedCourseSummaryDto> completedCourses = List.of(
-                new CompletedCourseSummaryDto("CS101: Intro to Computer Science", "Dec 15, 2023", "A+"),
-                new CompletedCourseSummaryDto("MATH251: Linear Algebra", "Dec 18, 2023", "A-")
-        );
+        List<CourseOverviewDto> activeCourses = courseEntities.stream()
+                .map(c -> new CourseOverviewDto(
+                        c.getCode().toLowerCase(), // id pentru url
+                        c.getCode(),
+                        c.getName(),
+                        c.getInstructorName(),
+                        0, // TODO:calcula progresul real din note/module
+                        "Check calendar", //TODO: Cel mai apropiat deadline
+                        c.getImageUrl()
+                ))
+                .toList();
+
+        //cursuri finalizate
+        List<CompletedCourseSummaryDto> completedCourses = new ArrayList<>();
 
         return new CoursesPageResponse(
                 userName,
-                "Computer Science",
+                "Student", // Sau user.getRoles()
                 avatar,
                 activeCourses,
                 completedCourses

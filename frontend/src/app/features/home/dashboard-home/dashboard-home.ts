@@ -34,13 +34,11 @@ type Activity = ActivityDto & { icon: any };
 export class DashboardHomeComponent implements OnInit {
   userName = 'Student';
 
-  // icons folosite în template
   faCheckCircle = faCheckCircle;
   faCertificate = faCertificate;
   faBoxArchive = faBoxArchive;
   faTrophy = faTrophy;
 
-  // date venite din backend
   activeCourses: ActiveCourse[] = [];
   completedCourses: CompletedCourse[] = [];
   deadlines: Deadline[] = [];

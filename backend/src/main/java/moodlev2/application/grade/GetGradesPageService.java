@@ -1,44 +1,91 @@
 package moodlev2.application.grade;
 
+import lombok.RequiredArgsConstructor;
+import moodlev2.infrastructure.persistence.jpa.CourseRepository;
+import moodlev2.infrastructure.persistence.jpa.GradeRepository;
+import moodlev2.infrastructure.persistence.jpa.entity.CourseEntity;
+import moodlev2.infrastructure.persistence.jpa.entity.GradeEntity;
 import moodlev2.web.grade.dto.*;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class GetGradesPageService {
 
+    private final GradeRepository gradeRepository;
+    private final CourseRepository courseRepository;
+
     public GradesPageResponse getGradesPageForUser(String email) {
+        //acilisa luam toate notele userului
+        List<GradeEntity> allGrades = gradeRepository.findAllByUserEmail(email);
 
-        List<RecentGradeItemDto> cs350Recent = List.of(
-                new RecentGradeItemDto("Quiz 2 – Trees & Graphs", "17/20", 85, "15% of final", "Oct 2, 2024", "Quiz", "quiz"),
-                new RecentGradeItemDto("Lab 3 – Schedulers", "22/25", 88, "10% of final", "Sep 25, 2024", "Lab", "lab")
-        );
+        //aici luam cursurile userului
+        List<CourseEntity> courses = courseRepository.findAllByUserEmail(email);
 
-        List<CourseGradeDto> courses = List.of(
-                new CourseGradeDto("CS201", "Data Structures", "Prof. Eleanor Vance", "A-", 91, "in-progress", true, null),
-                new CourseGradeDto("CS350", "Operating Systems", "Dr. Ben Carter", "B", 85, "in-progress", true, cs350Recent),
-                new CourseGradeDto("CS110", "Intro to Programming", "Prof. Ada Lovelace", "A", 96, "completed", false, null), // Nota: Am pus false la isCurrent pt testare filtrare
-                new CourseGradeDto("MATH251", "Linear Algebra", "Dr. Alan Turing", "B-", 81, "completed", false, null)
-        );
+        //aici gupaam notele pe cursuri
+        Map<Long, List<GradeEntity>> gradesByCourse = allGrades.stream()
+                .collect(Collectors.groupingBy(g -> g.getCourse().getId()));
 
-        GradeBreakdownDto breakdown = new GradeBreakdownDto(4, 2, 1, 1);
-        SimpleCourseGradeDto best = new SimpleCourseGradeDto("CS110", "A (96%)");
-        SimpleCourseGradeDto attention = new SimpleCourseGradeDto("MATH251", "B- (81%)");
+        List<CourseGradeDto> courseGradeDtos = new ArrayList<>();
 
-        List<UpcomingGradeDto> upcoming = List.of(
-                new UpcomingGradeDto("CS350 – Lab 4 grade", "Expected on Oct 12"),
-                new UpcomingGradeDto("CS201 – Midterm Exam", "Expected on Oct 15")
-        );
+        //folosim DTO-urile
+        for (CourseEntity course : courses) {
+            List<GradeEntity> grades = gradesByCourse.getOrDefault(course.getId(), List.of());
+
+            double totalPercent = 0;
+            for (GradeEntity g : grades) {
+                if (g.getMaxScore().doubleValue() > 0) {
+                    totalPercent += (g.getScoreReceived().doubleValue() / g.getMaxScore().doubleValue());
+                }
+            }
+            int average = grades.isEmpty() ? 0 : (int)((totalPercent / grades.size()) * 100);
+
+            List<RecentGradeItemDto> recentItems = grades.stream()
+                    .limit(2)
+                    .map(g -> new RecentGradeItemDto(
+                            g.getItemName(),
+                            g.getScoreReceived() + "/" + g.getMaxScore(),
+                            (int)((g.getScoreReceived().doubleValue() / g.getMaxScore().doubleValue()) * 100),
+                            g.getWeightLabel(),
+                            g.getGradedAt().toString(),
+                            "Grade",
+                            g.getTypeIcon()
+                    ))
+                    .toList();
+
+            courseGradeDtos.add(new CourseGradeDto(
+                    course.getCode(),
+                    course.getName(),
+                    course.getInstructorName(),
+                    calculateLetter(average),
+                    average,
+                    "in-progress",
+                    true,
+                    recentItems
+            ));
+        }
 
         return new GradesPageResponse(
-                courses,
-                3.85,
-                0.12,
-                breakdown,
-                best,
-                attention,
-                upcoming
+                courseGradeDtos,
+                0.0,
+                0.0,
+                new GradeBreakdownDto(courses.size(), 0, 0, 0),
+                new SimpleCourseGradeDto("-", "-"),
+                new SimpleCourseGradeDto("-", "-"),
+                List.of()
         );
+    }
+
+    private String calculateLetter(int percentage) {
+        if (percentage >= 90) return "A";
+        if (percentage >= 80) return "B";
+        if (percentage >= 70) return "C";
+        if (percentage >= 60) return "D";
+        return "F";
     }
 }

@@ -1,92 +1,75 @@
 package moodlev2.application.course;
 
+import lombok.RequiredArgsConstructor;
+import moodlev2.common.exception.NotFoundException;
+import moodlev2.infrastructure.persistence.jpa.CourseRepository;
+import moodlev2.infrastructure.persistence.jpa.entity.CourseEntity;
 import moodlev2.web.course.dto.*;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
+
+
+//PUN COMENTARII SA INTELEGETI CE VREAU SA FAC CA SA PUTETI SA CONTINUATI
 @Service
+@RequiredArgsConstructor
 public class GetCourseDetailsService {
 
-    public CourseDetailsResponse getCourseDetails(String courseId) {
+    private final CourseRepository courseRepository;
+
+    @Transactional(readOnly = true)
+    public CourseDetailsResponse getCourseDetails(String courseCode) {
 
 
-        CourseCurrentModuleDto currentModule = new CourseCurrentModuleDto(
-                "Module 4 · Trees & Graphs",
-                60,
-                "Due in 3 days"
-        );
+        //cautam cursul in DB dupa cod!! gen fiecare curs are un cod unic pe care il gasim in DB
+        CourseEntity course = courseRepository.findByCode(courseCode.toUpperCase())
+                .orElseThrow(() -> new NotFoundException("Course not found: " + courseCode));
 
-        CourseStatsDto stats = new CourseStatsDto(75, 3, 10, "A- (91%)");
+        //trebuie acum sa mapam modulele si itemii (modul = semestru, item = lectie/material)
+        List<CourseModuleDto> modules = course.getModules().stream()
+                .map(mod -> new CourseModuleDto(
+                        mod.getTitle(),
+                        mod.getDescription(),
+                        mod.getItems().stream()
+                                .map(item -> new CourseModuleItemDto(
+                                        item.getFileType() != null ? item.getFileType() : item.getType(),
+                                        item.getTitle()
+                                ))
+                                .toList()
+                ))
+                .toList();
 
-        List<CourseModuleDto> modules = List.of(
-                new CourseModuleDto(
-                        "Module 1 · Introduction to Data Structures",
-                        "Fundamental concepts, asymptotic complexity, and basic array operations.",
-                        List.of(
-                                new CourseModuleItemDto("pdf", "Lecture 1 · Slides"),
-                                new CourseModuleItemDto("video", "Lecture 1 · Recording"),
-                                new CourseModuleItemDto("resource", "Reading · Course Syllabus"),
-                                new CourseModuleItemDto("lab", "Lab 1 · Arrays & Complexity"),
-                                new CourseModuleItemDto("assignment", "Assignment 1 · Array Exercises"),
-                                new CourseModuleItemDto("quiz", "Quiz 1 · Big-O Basics")
-                        )
-                ),
-                new CourseModuleDto(
-                        "Module 2 · Linked Lists",
-                        "Singly, doubly, and circular linked lists; iteration vs recursion.",
-                        List.of(
-                                new CourseModuleItemDto("pdf", "Lecture 2 · Slides"),
-                                new CourseModuleItemDto("video", "Lecture 2 · Recording"),
-                                new CourseModuleItemDto("resource", "Cheat Sheet · Pointer Diagrams"),
-                                new CourseModuleItemDto("lab", "Lab 2 · Implementing a Linked List"),
-                                new CourseModuleItemDto("assignment", "Assignment 2 · Playlist Manager")
-                        )
-                ),
-                new CourseModuleDto(
-                        "Module 3 · Stacks & Queues",
-                        "LIFO and FIFO abstractions, array vs linked implementations.",
-                        List.of(
-                                new CourseModuleItemDto("pdf", "Lecture 3 · Slides"),
-                                new CourseModuleItemDto("video", "Lecture 3 · Recording"),
-                                new CourseModuleItemDto("lab", "Lab 3 · Queue Simulation"),
-                                new CourseModuleItemDto("assignment", "Assignment 3 · Browser History Stack"),
-                                new CourseModuleItemDto("quiz", "Quiz 2 · Stacks & Queues")
-                        )
-                )
-                // ... poti adauga restul modulelor aici
-        );
+        //trebuie sa mapam anunturile in caz ca exista
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd").withZone(ZoneId.systemDefault());
 
-        List<CourseDeadlineDto> deadlines = List.of(
-                new CourseDeadlineDto("Lab 4 · Trees and Graphs", "CS201 · Data Structures", "Due in 3 days", "lab"),
-                new CourseDeadlineDto("Assignment 3 · BST", "Submit via Moodle", "Due in 10 days", "assignment"),
-                new CourseDeadlineDto("Quiz 2", "Covers Modules 1–3", "Due in 12 days", "quiz")
-        );
-
-        List<CourseAnnouncementDto> announcements = List.of(
-                new CourseAnnouncementDto(
-                        "Office Hours Canceled (Oct 28)",
-                        "Office hours for this Friday are canceled. Email me if you have urgent questions.",
-                        "Posted 2 days ago",
+        List<CourseAnnouncementDto> announcements = course.getAnnouncements().stream()
+                .map(a -> new CourseAnnouncementDto(
+                        a.getTitle(),
+                        a.getBody(),
+                        "Posted on " + formatter.format(a.getCreatedAt()),
                         false
-                ),
-                new CourseAnnouncementDto(
-                        "Midterm Exam Info",
-                        "Midterm will cover Modules 1–5. A study guide is available in Resources.",
-                        "Posted 1 week ago",
-                        true
-                )
-        );
+                ))
+                .toList();
+
+        //acum folosim doar date fake pentru statistici si deadlinnes (todo mai tarziu)
+        //putem folosi CalendarEventRepository aici pentru deadlines reale dupa ce terminam restu
+        CourseStatsDto stats = new CourseStatsDto(0, 0, 0, "N/A");
+        CourseCurrentModuleDto currentModule = new CourseCurrentModuleDto("Start Learning", 0, "No deadlines");
+
 
         return new CourseDetailsResponse(
-                "CS201",
-                "Data Structures & Algorithms",
-                "Fall 2024",
-                "Prof. Eleanor Vance",
+                course.getCode(),
+                course.getName(),
+                course.getTerm(),
+                course.getInstructorName(),
                 currentModule,
                 stats,
                 modules,
-                deadlines,
+                List.of(),
                 announcements
         );
     }
