@@ -84,15 +84,14 @@ export class Register {
     });
   }
 
-loginWithGoogle(): void {
-  window.location.href = 'http://localhost:8080/api/auth/google';
-}
+  loginWithGoogle(): void {
+    window.location.href = 'http://localhost:8080/api/auth/google';
+  }
 
 
   loginWithFacebook(): void {
-    console.log('Facebook login not implemented yet');
+    window.location.href = 'http://localhost:8080/oauth2/authorization/facebook';  }
   }
-}
 
 export function matchPasswordValidator(control: AbstractControl): ValidationErrors | null {
   const form = control.parent;

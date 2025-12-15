@@ -1,0 +1,104 @@
+<div class="courses-page">
+  <div class="welcome-section">
+    <h1>Welcome back, {{ userName.split(' ')[0] }}!</h1>
+    <p>Here's your overview for today.</p>
+  </div>
+
+  <div class="dashboard-columns">
+    <div class="col-left">
+      <section>
+        <h2>My Courses</h2>
+        <div class="courses-list">
+          <div
+            class="course-card-horizontal"
+            *ngFor="let course of activeCourses"
+          >
+            <div class="card-header">
+              <div class="course-info">
+                <h3>{{ course.code }}: {{ course.title }}</h3>
+                <p class="prof">{{ course.prof }}</p>
+              </div>
+              <div class="h-32 bg-cover bg-center" [style.background-image]="'url(' + course.imageUrl + ')'"></div>
+            </div>
+
+            <div class="progress-section">
+              <div class="progress-labels">
+                <span>Progress</span>
+                <span>{{ course.progress }}%</span>
+              </div>
+              <div class="progress-track">
+                <div
+                  class="progress-fill"
+                  [style.width.%]="course.progress"
+                ></div>
+              </div>
+            </div>
+
+            <div class="next-deadline">
+              <fa-icon [icon]="faCalendarDay"></fa-icon>
+              <span>Next deadline: {{ course.nextDeadline }}</span>
+            </div>
+
+            <div class="card-actions">
+              <button class="btn-primary" [routerLink]="['/courses', course.id]">
+                <fa-icon [icon]="faArrowRight"></fa-icon>
+                Go to course
+              </button>
+              <button class="btn-secondary">
+                <fa-icon [icon]="faFileAlt"></fa-icon>
+                View materials
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="completed-section">
+        <h2>Completed Courses</h2>
+        <div class="completed-list">
+          <div class="completed-item" *ngFor="let c of completedCourses">
+            <span class="c-title">{{ c.title }}</span>
+            <span class="c-date">{{ c.date }}</span>
+            <div class="c-grade">
+              <fa-icon [icon]="faAward"></fa-icon>
+              <span>{{ c.grade }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="col-right">
+      <section class="widget-card">
+        <h2>Upcoming Deadlines</h2>
+        <div class="widget-list">
+          <div class="widget-item" *ngFor="let d of deadlines">
+            <div class="icon-box orange">
+              <fa-icon [icon]="d.icon"></fa-icon>
+            </div>
+            <div class="info-box">
+              <p class="w-title">{{ d.title }}</p>
+              <p class="w-sub">{{ d.course }}</p>
+              <p class="w-accent">{{ d.due }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="widget-card">
+        <h2>Recent Activity</h2>
+        <div class="widget-list">
+          <div class="widget-item" *ngFor="let a of recentActivity">
+            <div class="icon-box gray">
+              <fa-icon [icon]="a.icon"></fa-icon>
+            </div>
+            <div class="info-box">
+              <p class="w-text">{{ a.text }}</p>
+              <p class="w-sub">{{ a.time }}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>

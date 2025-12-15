@@ -1,0 +1,249 @@
+<div class="grades-page" *ngIf="data; else loader">
+  <header class="page-header">
+    <div class="page-title">
+      <h1>Grades</h1>
+      <p>Here’s your performance across your enrolled courses.</p>
+    </div>
+
+    <div class="page-filters">
+      <button class="term-filter">
+        <span>Term: {{ selectedTerm }}</span>
+        <fa-icon [icon]="faChevronDown" class="chevron-icon"></fa-icon>
+      </button>
+
+      <div class="course-filter-toggle">
+        <button
+          type="button"
+          [class.active]="courseFilter === 'all'"
+          (click)="toggleFilter('all')"
+        >
+          All courses
+        </button>
+        <button
+          type="button"
+          [class.active]="courseFilter === 'current'"
+          (click)="toggleFilter('current')"
+        >
+          Current courses
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="grades-layout">
+    <section class="grades-main">
+      <div class="card card-table">
+        <h2>Course Grades (Enrolled Courses)</h2>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Course</th>
+                <th>Instructor</th>
+                <th class="center">Grade</th>
+                <th class="center">Percentage</th>
+                <th class="center">Status</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <ng-container *ngFor="let course of filteredCourses">
+                <tr
+                  class="course-row"
+                  [class.clickable]="course.recentItems?.length"
+                  (click)="toggleExpanded(course)"
+                >
+                  <td>
+                    <div class="course-name">
+                      {{ course.code }}: {{ course.name }}
+                    </div>
+                    <div class="course-code">{{ course.code }}</div>
+                  </td>
+                  <td>
+                    <span class="instructor">
+                      {{ course.instructor }}
+                    </span>
+                  </td>
+                  <td class="center">
+                    <span class="grade-letter">
+                      {{ course.gradeLetter }}
+                    </span>
+                  </td>
+                  <td class="center">
+                    <span class="percentage">
+                      {{ course.percentage }}%
+                    </span>
+                  </td>
+                  <td class="center">
+                    <span
+                      class="status-pill"
+                      [class.in-progress]="course.status === 'in-progress'"
+                      [class.completed]="course.status === 'completed'"
+                    >
+                      {{ statusLabel(course) }}
+                    </span>
+                  </td>
+                </tr>
+
+                <tr
+                  *ngIf="course.recentItems?.length && isExpanded(course)"
+                  class="expanded-row"
+                >
+                  <td colspan="5">
+                    <div class="expanded-content">
+                      <p class="expanded-heading">
+                        Recent graded items
+                      </p>
+
+                      <div class="recent-items">
+                        <div
+                          class="recent-item"
+                          *ngFor="let item of course.recentItems"
+                        >
+                          <div class="recent-icon">
+                            <fa-icon [icon]="getIconForType(item.typeIcon)"></fa-icon>
+                          </div>
+
+                          <div class="recent-main">
+                            <p class="recent-title">{{ item.title }}</p>
+                            <div class="weight-row">
+                              <div class="weight-bar">
+                                <div
+                                  class="weight-fill"
+                                  [style.width.%]="item.percent"
+                                ></div>
+                              </div>
+                              <span class="weight-label">
+                                {{ item.weightLabel }}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div class="recent-score">
+                            <p class="score">{{ item.score }}</p>
+                            <p class="score-percent">
+                              {{ item.percent }}%
+                            </p>
+                          </div>
+
+                          <div class="recent-meta">
+                            <p class="graded-on">{{ item.gradedOn }}</p>
+                            <p class="type-label">
+                              {{ item.typeLabel }}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </ng-container>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="table-note">
+          Grades are calculated from assignments, quizzes, labs and exams for
+          your enrolled courses.
+        </p>
+      </div>
+    </section>
+
+    <aside class="grades-sidebar">
+      <section class="card gpa-card">
+        <h3>Overall GPA</h3>
+        <div class="gpa-main">
+          <span class="gpa-value">{{ overallGpa }}</span>
+          <div class="gpa-delta" *ngIf="gpaDelta">
+            <fa-icon [icon]="faGpaTrend"></fa-icon>
+            <span>{{ gpaDelta > 0 ? '+' : '' }}{{ gpaDelta }}</span>
+          </div>
+        </div>
+        <p class="gpa-caption">
+          Based on enrolled courses this term.
+        </p>
+      </section>
+
+      <section class="card breakdown-card">
+        <h3>Grade Breakdown</h3>
+        <div class="breakdown-content">
+          <div class="breakdown-circle">
+            <div class="breakdown-number">
+              <span>{{ gradeBreakdown.totalCourses }}</span>
+              <small>Courses</small>
+            </div>
+          </div>
+
+          <div class="breakdown-legend">
+            <div class="legend-row">
+              <span class="dot dot-a"></span>
+              A: {{ gradeBreakdown.aCourses }} Course(s)
+            </div>
+            <div class="legend-row">
+              <span class="dot dot-b"></span>
+              B: {{ gradeBreakdown.bCourses }} Course(s)
+            </div>
+            <div class="legend-row">
+              <span class="dot dot-c"></span>
+              C: {{ gradeBreakdown.cCourses }} Course(s)
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card highlights-card">
+        <h3>Course Highlights</h3>
+
+        <div class="highlight-row">
+          <div class="highlight-icon best">
+            <fa-icon [icon]="faBestCourse"></fa-icon>
+          </div>
+          <div class="highlight-text">
+            <p class="label">Best performing course</p>
+            <p class="value">
+              {{ bestCourse.code }} –
+              <span>{{ bestCourse.label }}</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="highlight-row">
+          <div class="highlight-icon warn">
+            <fa-icon [icon]="faAttention"></fa-icon>
+          </div>
+          <div class="highlight-text">
+            <p class="label">Needs attention</p>
+            <p class="value">
+              {{ needsAttention.code }} –
+              <span class="attention">
+                {{ needsAttention.label }}
+              </span>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card upcoming-card">
+        <h3>Upcoming Grade Releases</h3>
+
+        <div
+          class="upcoming-row"
+          *ngFor="let g of upcomingGradeReleases"
+        >
+          <div class="upcoming-icon">
+            <fa-icon [icon]="faCalendar"></fa-icon>
+          </div>
+          <div class="upcoming-text">
+            <p class="course">{{ g.course }}</p>
+            <p class="date">{{ g.dateLabel }}</p>
+          </div>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<ng-template #loader>
+  <div style="display:flex;justify-content:center;padding:50px;color:#6b7280;">Loading grades...</div>
+</ng-template>

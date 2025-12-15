@@ -1,9 +1,95 @@
-<main class="public-home">
-  <h1>Moodle V2</h1>
-  <p>Welcome to the platform 👋</p>
+<div class="public-home">
+  <section class="hero">
+    <div class="hero-content">
+      <h1>Moodle V2</h1>
+      <p class="subtitle">
+        Your central hub for <span>Informatics classes</span>, labs și proiecte.
+      </p>
 
-  <div class="actions">
-    <button mat-raised-button color="primary" routerLink="/login">Login</button>
-    <button mat-stroked-button color="accent" routerLink="/register">Register</button>
+      <ul class="hero-highlights">
+        <li>
+          <i class="fa-solid fa-check-circle"></i>
+          Access rapid la cursuri, laboratoare și anunțuri.
+        </li>
+        <li>
+          <i class="fa-solid fa-check-circle"></i>
+          Toate materialele într-un singur loc, organizate pe discipline.
+        </li>
+        <li>
+          <i class="fa-solid fa-check-circle"></i>
+          Progress tracking pentru teme, proiecte și teste.
+        </li>
+      </ul>
+    </div>
+
+    <div class="hero-visual">
+      <div class="glass-card">
+        <p class="glass-title">Next class</p>
+        <p class="glass-course">Data Structures & Algorithms</p>
+        <p class="glass-meta">Today • 18:00 • Lab 3</p>
+      </div>
+      <div class="hero-orbit"></div>
+    </div>
+  </section>
+  <section class="tracks">
+    <header class="tracks-header">
+      <h2>What you&apos;ll learn here</h2>
+      <p>
+        Moodle V2 devine locul unde îți ții toate materiile de informatică
+        sub control – de la bazele programării până la proiecte complexe.
+      </p>
+    </header>
+
+    <div class="carousel">
+      <button class="nav-btn" (click)="prev()" aria-label="Previous track">
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+
+      <div class="cards-wrapper">
+        <article
+          class="track-card"
+          *ngFor="let track of tracks; let i = index"
+          [class.active]="i === activeIndex"
+          [style.--accent]="track.color"
+        >
+          <div class="icon-badge">
+            <i class="fa-solid" [ngClass]="track.icon"></i>
+          </div>
+          <p class="track-tag">{{ track.tag }}</p>
+          <h3>{{ track.title }}</h3>
+          <p class="track-description">
+            {{ track.description }}
+          </p>
+
+          <ul class="skills-list">
+            <li *ngFor="let skill of track.skills">
+              <i class="fa-solid fa-circle-small"></i>
+              {{ skill }}
+            </li>
+          </ul>
+
+          <button class="btn small-outline">
+            View example syllabus
+          </button>
+        </article>
+      </div>
+
+      <button class="nav-btn" (click)="next()" aria-label="Next track">
+        <i class="fa-solid fa-chevron-right"></i>
+      </button>
+    </div>
+
+    <div class="dots">
+      <button
+        *ngFor="let t of tracks; let i = index"
+        (click)="goTo(i)"
+        [class.active]="i === activeIndex"
+        aria-label="Go to card {{ i + 1 }}"
+      ></button>
+    </div>
+  </section>
+  <div class="corner-art">
+    <img src="leftPhoto-home.svg" alt="Home illustration" />
   </div>
-</main>
+
+</div>

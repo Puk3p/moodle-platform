@@ -7,27 +7,22 @@ import lombok.RequiredArgsConstructor;
 import moodlev2.domain.auth.ports.TokenServicePort;
 import moodlev2.domain.user.Role;
 import moodlev2.domain.user.User;
-import moodlev2.domain.user.ports.PasswordHasherPort;
 import moodlev2.domain.user.ports.UserRepositoryPort;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.EnumSet;
 import java.util.Set;
-import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
-public class GoogleOAuthSuccessHandler implements AuthenticationSuccessHandler {
+public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final TokenServicePort tokenService;
     private final UserRepositoryPort userRepository;
-    private final PasswordHasherPort passwordHasher;
 
     @Override
     public void onAuthenticationSuccess(
@@ -37,21 +32,31 @@ public class GoogleOAuthSuccessHandler implements AuthenticationSuccessHandler {
     ) throws IOException, ServletException {
 
 
-        var oauth2User = (org.springframework.security.oauth2.core.user.OAuth2User)
+        OAuth2User oauth2User = (OAuth2User)
                 authentication.getPrincipal();
 
         String email = oauth2User.getAttribute("email");
+
+        String firstName = fistNonNull(
+                oauth2User.<String>getAttribute("given_name"),
+                oauth2User.<String>getAttribute("first_name")
+        );
+
+        String lastName = fistNonNull(
+                oauth2User.<String>getAttribute("family_name"),
+                oauth2User.<String>getAttribute("last_name")
+        );
 
         var user = userRepository.findByEmail(email)
                 .orElseGet(() -> {
                     var u = new User();
                     u.setEmail(email);
                     u.setEnabled(true);
-                    u.setFirstName(oauth2User.getAttribute("given_name"));
-                    u.setLastName(oauth2User.getAttribute("family_name"));
+                    u.setFirstName(firstName);
+                    u.setLastName(lastName);
                     u.setRoles(Set.of(Role.STUDENT));
 
-                    u.setPasswordHash(passwordHasher.hash(UUID.randomUUID().toString()));
+                    u.setPasswordHash("OAUTH2_USER");
 
                     return userRepository.save(u);
                 });
@@ -63,5 +68,14 @@ public class GoogleOAuthSuccessHandler implements AuthenticationSuccessHandler {
         );
 
         response.sendRedirect("http://localhost:4200/login?token=" + token);
+    }
+
+    private String fistNonNull(String... valori) {
+        for (String valoare : valori) {
+            if (valoare != null && !valoare.isBlank()) {
+                return valoare;
+            }
+        }
+        return "";
     }
 }

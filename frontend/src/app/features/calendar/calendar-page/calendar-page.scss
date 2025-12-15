@@ -1,0 +1,378 @@
+$primary-orange: #ff5200;
+$primary-orange-light: rgba(255, 82, 0, 0.1);
+$bg-light: #f8f9fa; // Un gri foarte deschis, mai modern
+$bg-white: #ffffff;
+$text-dark: #1f2937; // Un negru mai soft (Gray-800)
+$text-gray: #6b7280; // Gray-500
+$border-color: #e5e7eb; // Gray-200
+$font-family: 'Inter', system-ui, -apple-system, sans-serif;
+$radius-card: 24px;
+$radius-sm: 12px;
+
+:host {
+  display: block;
+  font-family: $font-family;
+  color: $text-dark;
+  height: 100%;
+}
+
+.calendar-page {
+  background: $bg-light;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-layout {
+  flex: 1;
+  padding: 32px 48px;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 1fr 340px; // Fixăm lățimea sidebar-ului
+  gap: 40px;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  
+  @media (max-width: 600px) {
+    padding: 20px;
+  }
+}
+
+// --- MAIN AREA ---
+
+.calendar-main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 0;
+    color: #111827; // Gray-900
+  }
+}
+
+.view-toggle {
+  display: inline-flex;
+  padding: 4px;
+  background: $bg-white;
+  border-radius: 99px;
+  border: 1px solid $border-color;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.toggle-btn {
+  border-radius: 99px;
+  padding: 8px 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: $text-gray;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: $text-dark;
+  }
+
+  &.active {
+    background: $primary-orange;
+    color: #fff;
+    box-shadow: 0 2px 5px rgba(255, 82, 0, 0.3);
+  }
+}
+
+// --- CALENDAR CARD ---
+
+.calendar-card {
+  background: $bg-white;
+  border-radius: $radius-card;
+  border: 1px solid $border-color;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 
+              0 2px 4px -1px rgba(0, 0, 0, 0.03); // Umbră mai fină
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  height: 100%; // Umple spațiul
+  min-height: 600px;
+}
+
+.calendar-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.month-nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    min-width: 180px; // Previne saltul la schimbarea numelui lunii
+    text-align: center;
+  }
+}
+
+.nav-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid $border-color;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: $text-gray;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #f9fafb;
+    border-color: #d1d5db;
+    color: $text-dark;
+    transform: translateY(-1px);
+  }
+  
+  fa-icon {
+    font-size: 0.9rem;
+  }
+}
+
+.today-btn {
+  border-radius: 8px;
+  border: 1px solid $border-color;
+  padding: 8px 16px;
+  background: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: $text-dark;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #f3f4f6;
+  }
+}
+
+// --- GRID ---
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 12px;
+  
+  .weekday {
+    text-align: right;
+    padding-right: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #9ca3af; // Gray-400
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+}
+
+.days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  // Grid lines folosind gap și background
+  gap: 1px;
+  background: #e5e7eb; // Culoarea liniilor
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  flex: 1; // Se extinde sa umple cardul
+}
+
+.day-cell {
+  background: #fff;
+  min-height: 100px; // Celule mai înalte
+  padding: 8px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #fcfcfc; // Foarte subtil highlight la hover
+  }
+
+  &.muted {
+    background: #f9fafb; // Zilele din alta lună ușor gri
+    .day-number {
+      color: #d1d5db;
+    }
+  }
+}
+
+.day-number {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: $text-dark;
+  margin-bottom: 6px;
+  align-self: flex-end; // Numărul în dreapta sus
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+// Highlight Today
+.day-cell:has(.today-dot) {
+    .day-number {
+        background: $primary-orange;
+        color: white;
+        box-shadow: 0 2px 4px rgba(255, 82, 0, 0.4);
+    }
+    
+    .today-dot {
+        display: none; // Ascundem punctul vechi, coloram numarul
+    }
+}
+
+
+// --- EVENTS ---
+
+.events {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  max-height: 100px;
+  
+  /* Scrollbar fin */
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 4px;
+  }
+}
+
+.event-pill {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #eff6ff; // Albastru foarte deschis default
+  color: #1d4ed8; // Albastru text
+  border-left: 3px solid #3b82f6; // Accent stanga
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: transform 0.1s;
+
+  &:hover {
+    transform: scale(1.02);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    z-index: 1;
+  }
+  
+  // Variatii bazate pe tip (ar trebui adaugate clase dinamice in HTML daca vrei culori diferite per tip)
+  // Momentan lasam un stil generic clean, sau putem folosi nth-child pt variatie
+  &:nth-child(odd) {
+      background: $primary-orange-light;
+      color: darken($primary-orange, 10%);
+      border-left-color: $primary-orange;
+  }
+}
+
+// --- SIDEBAR ---
+
+.calendar-right {
+  display: flex;
+  flex-direction: column;
+}
+
+.widget h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 16px;
+}
+
+.widget-card {
+  background: $bg-white;
+  border-radius: $radius-card;
+  border: 1px solid $border-color;
+  padding: 24px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.deadline-item {
+  display: flex;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid #f3f4f6;
+
+  &:first-child { padding-top: 0; }
+  &:last-child { padding-bottom: 0; border-bottom: none; }
+}
+
+.icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: $primary-orange-light;
+  color: $primary-orange;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1.2rem;
+}
+
+.deadline-info {
+  .title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 4px;
+  }
+
+  .date {
+    font-size: 0.85rem;
+    color: $text-gray;
+    margin: 0 0 4px;
+  }
+
+  .course {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: $primary-orange;
+    margin: 0;
+    background: rgba($primary-orange, 0.08);
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: inline-block;
+  }
+}

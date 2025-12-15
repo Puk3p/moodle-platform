@@ -24,6 +24,38 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'courses',
+    loadComponent: () => 
+      import('./features/courses/courses').then(m => m.CoursesComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'courses/:id',
+    loadComponent: () =>
+      import('./features/courses/course-page/course-page')
+        .then(m => m.CoursePageComponent),
+  },
+  {
+    path: 'calendar',
+    loadComponent: () =>
+      import('./features/calendar/calendar-page/calendar-page')
+        .then(m => m.CalendarPageComponent)
+  },
+  {
+    path: 'grades',
+    loadComponent: () =>
+      import('./features/grades/grades-page/grades-page')
+        .then(m => m.GradesPageComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'resources',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/resources/resources-page/resources-page')
+        .then(m => m.ResourcesPageComponent)
+  },
+  {
     path: '',
     redirectTo: 'login',
     pathMatch: 'full',

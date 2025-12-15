@@ -1,100 +1,117 @@
-<div class="page-container">
-  <nav class="navbar">
-    <div class="logo-container">
-      <img src="logo.svg" alt="Logo" />
-    </div>
+<div
+  *ngIf="authService.isLoggedIn(); else loggedOutLayout"
+  class="app-shell"
+>
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-icon">
+          <i class="fa-solid fa-graduation-cap"></i>
+        </div>
+        <span class="sidebar-logo-text">Moodle V2</span>
+      </div>
 
-    <div class="spacer"></div>
-
-    <div class="nav-links" *ngIf="authService.isLoggedIn()">
-      <a
-        routerLink="/home"
-        routerLinkActive="active"
-        [routerLinkActiveOptions]="{ exact: true }"
-      >
-        <i class="fa-solid fa-house"></i>
-        Home
-      </a>
-
-      <a routerLink="/dashboard" routerLinkActive="active">
-        <i class="fa-solid fa-calendar-day"></i>
-        Dashboard
-      </a>
-
-      <a routerLink="/classes" routerLinkActive="active">
-        <i class="fa-solid fa-chalkboard-user"></i>
-        Classes
-      </a>
-
-      <a routerLink="/contact-us" routerLinkActive="active">
-        <i class="fa-solid fa-id-badge"></i>
-        Contact
-      </a>
-
-      <a routerLink="/about-us" routerLinkActive="active">
-        <i class="fa-solid fa-newspaper"></i>
-        About
-      </a>
-
-      <span
-        class="settings-link"
-        (mouseenter)="settingsOpen = true"
-        (mouseleave)="settingsOpen = false"
-      >
-        <a href="javascript:void(0)">
-          <span style="margin-left:2px;vertical-align:middle;">
-            <i class="fa-solid fa-wrench"></i>
-            Settings
-          </span>
-          <span style="font-size:10px; margin-left:2px;">▼</span>
+      <nav class="sidebar-nav">
+        <a
+          routerLink="/dashboard"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          class="sidebar-link"
+        >
+          <i class="fa-solid fa-gauge"></i>
+          <span>Dashboard</span>
         </a>
 
-        <ul class="settings-dropdown" *ngIf="settingsOpen">
-          <li>
-            <a routerLink="/profile">
-              <i class="fa-solid fa-eye"></i>
-              Profile
-            </a>
-          </li>
-          <li>
-            <a routerLink="/forgot-password">
-              <i class="fa-solid fa-key"></i>
-              Reset Password
-            </a>
-          </li>
-          <li>
-            <a routerLink="/two-factor">
-              <i class="fa-solid fa-vault"></i>
-              2FA
-            </a>
-          </li>
-        </ul>
-      </span>
+        <a
+          routerLink="/courses"
+          routerLinkActive="active"
+          class="sidebar-link"
+        >
+          <i class="fa-solid fa-book-open"></i>
+          <span>My Courses</span>
+        </a>
+
+        <a
+          routerLink="/calendar"
+          routerLinkActive="active"
+          class="sidebar-link"
+        >
+          <i class="fa-solid fa-calendar-day"></i>
+          <span>Calendar</span>
+        </a>
+
+        <a
+          routerLink="/grades"
+          routerLinkActive="active"
+          class="sidebar-link"
+        >
+          <i class="fa-solid fa-chart-line"></i>
+          <span>Grades</span>
+        </a>
+
+        <a
+          routerLink="/resources"
+          routerLinkActive="active"
+          class="sidebar-link"
+        >
+          <i class="fa-solid fa-folder-open"></i>
+          <span>Resources</span>
+        </a>
+      </nav>
     </div>
 
-    <div class="actions" *ngIf="!authService.isLoggedIn()">
-      <button class="sign-btn" routerLink="/login">Sign in</button>
-    </div>
+    <div class="sidebar-bottom">
+      <a
+        routerLink="/settings"
+        routerLinkActive="active"
+        class="sidebar-link sidebar-link-small"
+      >
+        <i class="fa-solid fa-gear"></i>
+        <span>Settings</span>
+      </a>
 
-    <div class="actions" *ngIf="authService.isLoggedIn()">
-      <button class="Btn" (click)="logout()" routerLink="/login">
-        <div class="sign">
-          <svg viewBox="0 0 512 512">
-            <path
-              d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z"
-            ></path>
-          </svg>
-        </div>
-        <div class="text">Logout</div>
+      <button
+        type="button"
+        class="sidebar-link sidebar-link-small logout-btn"
+        (click)="logout()"
+      >
+        <i class="fa-solid fa-right-from-bracket"></i>
+        <span>Log out</span>
       </button>
     </div>
-  </nav>
+  </aside>
 
-  <main class="main">
-    <router-outlet></router-outlet>
-  </main>
+  <div class="shell-main">
+    <header class="topbar">
+      <div class="search-wrapper">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input
+          type="text"
+          placeholder="Search courses, assignments..."
+        />
+      </div>
 
-  <footer>
-    © 2025 Moodle. All Rights Reserved.
-  </footer>
+      <div class="topbar-right">
+        <button class="icon-btn" type="button">
+          <i class="fa-regular fa-bell"></i>
+        </button>
+
+        <div class="profile">
+          <div class="avatar"></div>
+          <div class="profile-text">
+            <div class="name">Alex Johnson</div>
+            <div class="subtitle">Computer Science</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
 </div>
+
+<ng-template #loggedOutLayout>
+  <router-outlet></router-outlet>
+</ng-template>
