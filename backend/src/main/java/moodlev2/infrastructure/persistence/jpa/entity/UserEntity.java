@@ -52,6 +52,14 @@ public class UserEntity {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+
+    @Column(name = "two_fa_secret")
+    private String twoFaSecret;
+
+    @Column(name = "two_fa_enabled", nullable = false)
+    private boolean twoFaEnabled = false;
+
+
     @PrePersist
     protected void onCreate() {
         Instant now = Instant.now();

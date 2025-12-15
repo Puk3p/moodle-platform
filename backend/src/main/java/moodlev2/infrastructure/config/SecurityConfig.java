@@ -39,6 +39,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/calendar/**").permitAll()
                         .requestMatchers("/api/grades/**").permitAll()
                         .requestMatchers("/api/resources/**").permitAll()
+                        .requestMatchers("/api/users/**").authenticated()
                         .anyRequest().authenticated()
                 )
 
