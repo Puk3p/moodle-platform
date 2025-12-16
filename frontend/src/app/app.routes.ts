@@ -56,6 +56,13 @@ export const routes: Routes = [
         .then(m => m.ResourcesPageComponent)
   },
   {
+    path: 'settings',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/settings/settings-page/settings-page')
+        .then(m => m.SettingsPageComponent)
+  },
+  {
     path: '',
     redirectTo: 'login',
     pathMatch: 'full',

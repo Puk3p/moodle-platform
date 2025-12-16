@@ -1,0 +1,205 @@
+<div class="settings-page">
+  <section class="settings-header">
+    <div class="settings-title">
+      <h1>Settings</h1>
+      <p>Manage your profile, security, and preferences for your Moodle V2 account.</p>
+    </div>
+  </section>
+
+  <section class="settings-card profile-card">
+    <h2>Profile</h2>
+
+    <div class="profile-content">
+      <div class="avatar-block">
+        <div class="avatar"></div>
+        <button type="button" class="link-button">Change picture</button>
+      </div>
+
+      <div class="profile-form">
+        <div class="field full-width">
+          <label>Email address</label>
+          <input type="email" [(ngModel)]="profile.email" name="email" disabled />
+        </div>
+
+        <div class="field">
+          <label>First name</label>
+          <input type="text" [(ngModel)]="profile.firstName" name="firstName" disabled />
+        </div>
+
+        <div class="field">
+          <label>Last name</label>
+          <input type="text" [(ngModel)]="profile.lastName" name="lastName" disabled />
+        </div>
+
+        <div class="field">
+          <label>Class / Group</label>
+          <input type="text" [(ngModel)]="profile.classGroup" name="classGroup" disabled />
+        </div>
+
+        <div class="field">
+          <label>Student ID</label>
+          <input type="text" [(ngModel)]="profile.studentId" name="studentId" disabled />
+        </div>
+      </div>
+    </div>
+
+    <div class="card-footer">
+      <button type="button" class="ghost-button">Reset changes</button>
+      <button type="button" class="primary-button" (click)="onSaveProfile()">Save changes</button>
+    </div>
+  </section>
+
+  <section class="settings-card security-card">
+    <h2>Account Security</h2>
+    <div class="security-content">
+      <div class="password-section">
+        <h3>Password</h3>
+        <p class="helper-text">
+          Update your password regularly to keep your account secure.
+        </p>
+
+        <div class="password-form">
+          <div class="password-row">
+            <label>Current password</label>
+            <input type="password" placeholder="••••••••" />
+          </div>
+
+          <div class="password-row">
+            <label>New password</label>
+            <input type="password" />
+          </div>
+
+          <div class="password-row">
+            <label>Confirm new password</label>
+            <input type="password" />
+          </div>
+
+          <div class="password-actions">
+            <button type="button" class="secondary-button" (click)="onUpdatePassword()">Update password</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="twofa-section">
+        <div class="twofa-header">
+          <div>
+            <h3>Two-Factor Authentication (2FA)</h3>
+            <p class="helper-text">
+              Add an extra layer of security by requiring a code from an authenticator app
+              when you sign in.
+            </p>
+          </div>
+          <span class="badge" 
+                [class.badge-success]="is2faEnabled" 
+                [class.badge-muted]="!is2faEnabled">
+            {{ is2faEnabled ? 'Enabled' : 'Disabled' }}
+          </span>
+        </div>
+
+        <div class="twofa-body">
+          <div class="twofa-actions" *ngIf="!is2faEnabled && !show2faSetup" style="margin-top: 1rem;">
+             <button type="button" class="primary-button" (click)="onEnable2FA()">Enable 2FA</button>
+          </div>
+
+          <div class="setup-container" *ngIf="show2faSetup">
+            <div class="steps">
+              <div class="step">
+                <span class="step-number">1</span>
+                <p>
+                  Scan this QR code with your authenticator app (Google/Microsoft Authenticator).
+                </p>
+              </div>
+              
+              <div class="qr-display" style="margin: 1.5rem 0; text-align: center;">
+                  <img [src]="qrCodeImage" alt="QR Code" style="width: 180px; height: 180px; border: 1px solid #e5e7eb; padding: 10px; border-radius: 8px;" *ngIf="qrCodeImage" />
+                  <p *ngIf="!qrCodeImage" style="color: #6b7280;">Generating QR Code...</p>
+                  <p class="helper-text" style="font-size: 0.8rem; margin-top: 10px; font-family: monospace; background: #f3f4f6; padding: 4px 8px; border-radius: 4px; display: inline-block;">Secret: {{ secretKey }}</p>
+              </div>
+
+              <div class="step">
+                <span class="step-number">2</span>
+                <p>Enter the 6-digit code from your app to verify and enable.</p>
+              </div>
+
+              <div class="verify-row" style="display: flex; gap: 12px; align-items: center; margin-top: 12px;">
+                  <input type="text" [(ngModel)]="verificationCode" placeholder="123456" maxlength="6" style="width: 140px; text-align: center; letter-spacing: 3px; font-size: 1.1rem; font-weight: 600;" />
+                  <button type="button" class="primary-button" (click)="onConfirm2FA()">Verify & Enable</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="settings-card devices-card">
+      <div class="devices-header">
+      <h2>Login &amp; devices</h2>
+      <p class="helper-text">
+        Review where you are logged in and sign out of sessions you don’t recognize.
+      </p>
+    </div>
+
+    <div class="device-list">
+      <div class="device-item">
+        <div class="device-icon">💻</div>
+        <div class="device-info">
+          <p class="device-name">Windows · Chrome</p>
+          <p class="device-meta">
+            Iași, Romania · <span class="status-active">Active now</span>
+          </p>
+        </div>
+        <span class="badge badge-success">Current device</span>
+      </div>
+
+      <div class="device-separator"></div>
+
+      <div class="device-item">
+        <div class="device-icon">📱</div>
+        <div class="device-info">
+          <p class="device-name">motorola · Safari</p>
+          <p class="device-meta">Iasi, Romania · Last active 2 hours ago</p>
+        </div>
+        <button type="button" class="ghost-button small" (click)="onSignOutMobile()">Sign out</button>
+      </div>
+    </div>
+
+    <div class="device-footer">
+      <button type="button" class="danger-link" (click)="onSignOutOtherDevices()">
+        Sign out from all other devices
+      </button>
+    </div>
+  </section>
+
+  <section class="settings-card preferences-card">
+     <h2>Preferences</h2>
+
+    <div class="preference-row">
+      <div class="preference-text">
+        <span class="label">Dark mode</span>
+        <span class="description">Reduce eye strain by using a dark theme.</span>
+      </div>
+      <label class="switch">
+        <input type="checkbox" checked disabled />
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="preference-divider"></div>
+
+    <div class="preference-row">
+      <div class="preference-text">
+        <span class="label">Email notifications</span>
+        <span class="description">
+          Receive updates about your course progress and grades.
+        </span>
+      </div>
+      <label class="switch">
+        <input type="checkbox" checked />
+        <span class="slider"></span>
+      </label>
+    </div>
+  </section>
+</div>

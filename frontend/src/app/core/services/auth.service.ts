@@ -5,9 +5,16 @@ import { User } from '../models/user.model';
 import { Role } from '../models/role.enum';
 import { RegisterRequest } from '../models/auth/register.request';
 import { AuthResponse } from '../models/auth/auth.response';
-import { AUTH_ENDPOINTS } from '../config/api-endpoints';
+import { API_BASE_URL, AUTH_ENDPOINTS } from '../config/api-endpoints';
 import { LoginRequest } from '../models/auth/login.request';
 import { jwtDecode } from 'jwt-decode';
+
+
+export interface TwoFactorSetup {
+  secret: string;
+  qrImageBase64: string;
+}
+
 
 @Injectable({
   providedIn: 'root',
@@ -115,26 +122,32 @@ export class AuthService {
     this.currentUserSubject.next(user);
   }
 
-handleOAuthCallback(): void {
-  const params = new URLSearchParams(window.location.search);
-  const token = params.get('token');
+  handleOAuthCallback(): void {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
 
-  if (token) {
-    this.saveToken(token);
+    if (token) {
+      this.saveToken(token);
 
-    const decoded: any = this.decodeToken(token);
+      const decoded: any = this.decodeToken(token);
 
-    this.currentUserSubject.next({
-      userId: decoded.sub ?? '',
-      email: decoded.email ?? '',
-      firstName: decoded.firstName ?? '',
-      lastName: decoded.lastName ?? '',
-      roles: decoded.roles ?? []
-    });
+      this.currentUserSubject.next({
+        userId: decoded.sub ?? '',
+        email: decoded.email ?? '',
+        firstName: decoded.firstName ?? '',
+        lastName: decoded.lastName ?? '',
+        roles: decoded.roles ?? []
+      });
+    }
   }
-}
 
+  setup2fa(): Observable<TwoFactorSetup> {
+    return this.http.post<TwoFactorSetup>(`${API_BASE_URL}/api/auth/2fa/setup`, {});
+  }
 
+  verify2fa(code: string): Observable<boolean> {
+    return this.http.post<boolean>(`${API_BASE_URL}/api/auth/2fa/verify`, { code });
+  }
 
 
 }
