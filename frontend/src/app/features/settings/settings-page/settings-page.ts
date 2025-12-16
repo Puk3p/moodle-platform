@@ -36,6 +36,15 @@ export class SettingsPageComponent implements OnInit {
   secretKey = '';
   verificationCode = '';
 
+
+
+  passwordForm = {
+    current: '',
+    newPassword: '',
+    confirm: '',
+    twoFaCode: ''
+  };
+
   ngOnInit() {
     this.userService.getMyProfile().subscribe({
       next: (data) => {
@@ -47,6 +56,8 @@ export class SettingsPageComponent implements OnInit {
         this.profile.classGroup = data.className || 'Not Assigned';
         this.profile.studentId = data.studentId;
 
+        this.is2faEnabled = data.twoFaEnabled;
+
 
         this.loading = false;
         this.cdr.detectChanges();
@@ -56,6 +67,41 @@ export class SettingsPageComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  onUpdatePassword(): void {
+    if (!this.passwordForm.current || !this.passwordForm.newPassword) {
+      alert('Please fill in the current and new password.')
+      return;
+    }
+
+    if (this.passwordForm.newPassword !== this.passwordForm.confirm) {
+      alert('New password do not match.');
+      return;
+    }
+
+    if (this.is2faEnabled && (!this.passwordForm.twoFaCode || this.passwordForm.twoFaCode.length !== 6)) {
+      alert('Please enter your 2FA.')
+      return;
+    }
+
+    const request = {
+      currentPassword: this.passwordForm.current,
+      newPassword: this.passwordForm.newPassword,
+      twoFaCode: this.is2faEnabled ? this.passwordForm.twoFaCode : undefined
+    };
+
+    this.authService.changePassword(request).subscribe({
+      next: () => {
+        alert('Password updated succesfully!');
+        this.passwordForm = { current: '', newPassword: '', confirm: '', twoFaCode: '' };
+
+      },
+      error: (err) => {
+        console.error(err);
+        alert(err.error?.message || 'Failed to update password. Check current password or 2FA code.');
+      }
+    })
   }
 
 
@@ -96,7 +142,6 @@ export class SettingsPageComponent implements OnInit {
 
   onResetProfile(): void { console.log('Reset profile (TODO)'); }
   onSaveProfile(): void { console.log('Save profile (TODO)', this.profile); }
-  onUpdatePassword(): void { console.log('Update password (TODO)'); }
   onSignOutOtherDevices(): void { console.log('Sign out others (TODO)'); }
   onSignOutMobile(): void { console.log('Sign out mobile (TODO)'); }
 }

@@ -1,7 +1,7 @@
 package moodlev2.application.auth.implementations;
 
 import lombok.RequiredArgsConstructor;
-import moodlev2.application.auth.interfaces.RegisterService;
+import moodlev2.application.auth.interfaces.IRegisterService;
 import moodlev2.domain.auth.ports.TokenServicePort;
 import moodlev2.domain.user.Role;
 import moodlev2.domain.user.User;
@@ -17,7 +17,7 @@ import java.util.Set;
 
 @RequiredArgsConstructor
 @Service
-public class RegisterServiceImpl implements RegisterService {
+public class RegisterService implements IRegisterService {
 
     private static final Duration ACCES_TOKEN_VALIDITY = Duration.ofHours(1);
 

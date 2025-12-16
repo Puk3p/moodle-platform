@@ -4,4 +4,5 @@ export interface UserProfile {
   lastName: string;
   className: string;
   studentId: string;
+  twoFaEnabled: boolean;
 }

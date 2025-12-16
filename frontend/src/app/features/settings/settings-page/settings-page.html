@@ -61,17 +61,27 @@
         <div class="password-form">
           <div class="password-row">
             <label>Current password</label>
-            <input type="password" placeholder="••••••••" />
+            <input type="password" [(ngModel)]="passwordForm.current" placeholder="••••••••" />
           </div>
 
           <div class="password-row">
             <label>New password</label>
-            <input type="password" />
+            <input type="password" [(ngModel)]="passwordForm.newPassword" />
           </div>
 
           <div class="password-row">
             <label>Confirm new password</label>
-            <input type="password" />
+            <input type="password" [(ngModel)]="passwordForm.confirm" />
+          </div>
+
+          <div class="password-row" *ngIf="is2faEnabled" style="border-top: 1px dashed #e5e7eb; padding-top: 15px; margin-top: 5px;">
+            <label style="color: #ff5200; font-weight: 600;">Security Check: 2FA Code</label>
+            <p class="helper-text" style="margin-bottom: 8px;">Enter code from your authenticator app to authorize this change.</p>
+            <input type="text" 
+                   [(ngModel)]="passwordForm.twoFaCode" 
+                   placeholder="123456" 
+                   maxlength="6" 
+                   style="width: 120px; text-align: center; letter-spacing: 2px; font-weight: bold;" />
           </div>
 
           <div class="password-actions">

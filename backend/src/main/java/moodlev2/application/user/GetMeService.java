@@ -25,7 +25,8 @@ public class GetMeService {
                 user.getFirstName(),
                 user.getLastName(),
                 className,
-                String.valueOf(user.getId())
+                String.valueOf(user.getId()),
+                user.isTwoFaEnabled()
         );
     }
 }

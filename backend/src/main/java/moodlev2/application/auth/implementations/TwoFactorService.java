@@ -23,7 +23,7 @@ import static dev.samstevens.totp.util.Utils.getDataUriForImage;
 
 @Service
 @RequiredArgsConstructor
-public class TwoFactorServiceImpl {
+public class TwoFactorService {
 
     private final SpringDataUserRepository userRepository;
 
@@ -80,6 +80,19 @@ public class TwoFactorServiceImpl {
         }
 
         return isValid;
+    }
+
+    // În TwoFactorServiceImpl.java
+    public boolean verifyCode(String email, String code) {
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
+        if (user.getTwoFaSecret() == null) return false;
+
+        TimeProvider timeProvider = new SystemTimeProvider();
+        CodeVerifier codeVerifier = new DefaultCodeVerifier(new DefaultCodeGenerator(), timeProvider);
+
+        return codeVerifier.isValidCode(user.getTwoFaSecret(), code);
     }
 
     public record TwoFactorSetupDto(String secret, String qrImageBase64) {}
