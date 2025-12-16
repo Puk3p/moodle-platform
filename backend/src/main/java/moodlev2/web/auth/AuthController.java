@@ -1,5 +1,6 @@
 package moodlev2.web.auth;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import moodlev2.application.auth.implementations.LoginService;
@@ -20,8 +21,10 @@ public class AuthController {
     private final RegisterService registerService;
 
     @PostMapping("/login")
-    public AuthResponse login(@Valid @RequestBody LoginRequest request) {
-        return loginService.login(request);
+    public AuthResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+        String ip = httpRequest.getRemoteAddr();
+        String ua = httpRequest.getHeader("User-Agent");
+        return loginService.login(request, ip, ua);
     }
 
     @PostMapping("/register")

@@ -145,7 +145,7 @@
   </section>
 
   <section class="settings-card devices-card">
-      <div class="devices-header">
+    <div class="devices-header">
       <h2>Login &amp; devices</h2>
       <p class="helper-text">
         Review where you are logged in and sign out of sessions you don’t recognize.
@@ -153,27 +153,37 @@
     </div>
 
     <div class="device-list">
-      <div class="device-item">
-        <div class="device-icon">💻</div>
-        <div class="device-info">
-          <p class="device-name">Windows · Chrome</p>
-          <p class="device-meta">
-            Iași, Romania · <span class="status-active">Active now</span>
-          </p>
-        </div>
-        <span class="badge badge-success">Current device</span>
-      </div>
+      
+      <ng-container *ngFor="let session of sessions; let last = last">
+        
+        <div class="device-item">
+          <div class="device-icon">
+             {{ session.deviceName.includes('Mobile') || session.deviceName.includes('Android') || session.deviceName.includes('iPhone') ? '📱' : '💻' }}
+          </div>
+          
+          <div class="device-info">
+            <p class="device-name">{{ session.deviceName }}</p>
+            <p class="device-meta">
+              {{ session.ipAddress }} · 
+              <span *ngIf="session.isCurrent" class="status-active">Active now</span>
+              <span *ngIf="!session.isCurrent">Last active {{ session.lastActive }}</span>
+            </p>
+          </div>
 
-      <div class="device-separator"></div>
-
-      <div class="device-item">
-        <div class="device-icon">📱</div>
-        <div class="device-info">
-          <p class="device-name">motorola · Safari</p>
-          <p class="device-meta">Iasi, Romania · Last active 2 hours ago</p>
+          <span *ngIf="session.isCurrent" class="badge badge-success">Current device</span>
+          <button *ngIf="!session.isCurrent" 
+                  type="button" 
+                  class="ghost-button small" 
+                  (click)="onSignOutSession(session.id)">
+            Sign out
+          </button>
         </div>
-        <button type="button" class="ghost-button small" (click)="onSignOutMobile()">Sign out</button>
-      </div>
+
+        <div class="device-separator" *ngIf="!last"></div>
+      </ng-container>
+
+      <p *ngIf="sessions.length === 0" style="padding: 20px; color: #6b7280;">No active sessions found.</p>
+
     </div>
 
     <div class="device-footer">

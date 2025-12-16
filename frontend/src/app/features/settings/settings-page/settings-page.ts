@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { UserService } from '../../../core/services/user.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { Session } from '../../../core/sessions/session.model';
 
 @Component({
   selector: 'app-settings-page',
@@ -45,6 +46,8 @@ export class SettingsPageComponent implements OnInit {
     twoFaCode: ''
   };
 
+  sessions: Session[] = [];
+
   ngOnInit() {
     this.userService.getMyProfile().subscribe({
       next: (data) => {
@@ -57,8 +60,8 @@ export class SettingsPageComponent implements OnInit {
         this.profile.studentId = data.studentId;
 
         this.is2faEnabled = data.twoFaEnabled;
-
-
+        this.loadSessions();
+        
         this.loading = false;
         this.cdr.detectChanges();
       },
@@ -66,6 +69,28 @@ export class SettingsPageComponent implements OnInit {
         console.error('Failed to load profile', err);
         this.loading = false;
       }
+    });
+  }
+
+  loadSessions() {
+    this.userService.getSessions().subscribe({
+      next: (data) => {
+        this.sessions = data;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  onSignOutSession(id: number) {
+    this.userService.revokeSession(id).subscribe(() => {
+      this.sessions = this.sessions.filter(s => s.id !== id);
+      this.cdr.detectChanges();
+    });
+  }
+
+  onSignOutOtherDevices() {
+    this.userService.revokeOthers().subscribe(() => {
+      this.loadSessions();
     });
   }
 
@@ -142,6 +167,5 @@ export class SettingsPageComponent implements OnInit {
 
   onResetProfile(): void { console.log('Reset profile (TODO)'); }
   onSaveProfile(): void { console.log('Save profile (TODO)', this.profile); }
-  onSignOutOtherDevices(): void { console.log('Sign out others (TODO)'); }
   onSignOutMobile(): void { console.log('Sign out mobile (TODO)'); }
 }
