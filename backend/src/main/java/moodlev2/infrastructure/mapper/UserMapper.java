@@ -25,6 +25,10 @@ public class UserMapper {
         user.setCreatedAt(entity.getCreatedAt());
         user.setUpdatedAt(entity.getUpdatedAt());
 
+
+        user.setTwoFaSecret(entity.getTwoFaSecret());
+        user.setTwoFaEnabled(entity.isTwoFaEnabled());
+
         if (entity.getClazz() != null) {
             user.setClassId(entity.getClazz().getId());
         }
@@ -47,6 +51,9 @@ public class UserMapper {
         entity.setActive(user.isEnabled());
         entity.setCreatedAt(user.getCreatedAt());
         entity.setUpdatedAt(user.getUpdatedAt());
+
+        entity.setTwoFaSecret(user.getTwoFaSecret());
+        entity.setTwoFaEnabled(user.isTwoFaEnabled());
 
         if (user.getClassId() != null) {
             ClassEntity classReference = new ClassEntity();

@@ -23,6 +23,11 @@ public class User {
     private Instant updatedAt; //data ultima actualizare cont
 
     private Long classId;
+
+
+    private String twoFaSecret;
+    private boolean twoFaEnabled;
+
     //metoda pentru verificare roluri gen
     public boolean hasRole(Role role) {
         return roles != null && roles.contains(role);

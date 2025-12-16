@@ -5,5 +5,6 @@ public record UserProfileDto(
         String firstName,
         String lastName,
         String className,
-        String studentId
+        String studentId,
+        boolean twoFaEnabled
 ) {}

@@ -15,6 +15,11 @@ export interface TwoFactorSetup {
   qrImageBase64: string;
 }
 
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  twoFaCode?: string;
+}
 
 @Injectable({
   providedIn: 'root',
@@ -149,5 +154,8 @@ export class AuthService {
     return this.http.post<boolean>(`${API_BASE_URL}/api/auth/2fa/verify`, { code });
   }
 
+  changePassword(request: ChangePasswordRequest): Observable<void> {
+    return this.http.post<void>(`${API_BASE_URL}/api/users/change-password`, request);
+  }
 
 }

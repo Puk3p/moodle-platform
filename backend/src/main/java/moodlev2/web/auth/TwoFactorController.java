@@ -1,7 +1,7 @@
 package moodlev2.web.auth;
 
 import lombok.RequiredArgsConstructor;
-import moodlev2.application.auth.implementations.TwoFactorServiceImpl;
+import moodlev2.application.auth.implementations.TwoFactorService;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,10 +10,10 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class TwoFactorController {
 
-    private final TwoFactorServiceImpl twoFactorService;
+    private final TwoFactorService twoFactorService;
 
     @PostMapping("/setup")
-    public TwoFactorServiceImpl.TwoFactorSetupDto setup(Authentication authentication) {
+    public TwoFactorService.TwoFactorSetupDto setup(Authentication authentication) {
         return twoFactorService.setupTwoFactor(authentication.getName());
     }
 
