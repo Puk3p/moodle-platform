@@ -138,3 +138,15 @@ CREATE TABLE notifications (
 
                                CONSTRAINT fk_notification_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+
+CREATE TABLE user_sessions (
+                               id            BIGINT AUTO_INCREMENT PRIMARY KEY,
+                               user_id       BIGINT NOT NULL,
+                               device_name   VARCHAR(255), -- ex: "Windows · Chrome"
+                               ip_address    VARCHAR(50),
+                               token_signature VARCHAR(500) NOT NULL,
+                               last_active   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+                               CONSTRAINT fk_session_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);

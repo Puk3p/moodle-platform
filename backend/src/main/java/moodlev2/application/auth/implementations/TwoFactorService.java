@@ -82,7 +82,6 @@ public class TwoFactorService {
         return isValid;
     }
 
-    // În TwoFactorServiceImpl.java
     public boolean verifyCode(String email, String code) {
         UserEntity user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException("User not found"));
