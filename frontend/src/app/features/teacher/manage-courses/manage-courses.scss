@@ -1,0 +1,364 @@
+$primary: #ff5100;
+$bg-light: #f8f6f5;
+$border: rgba(148, 163, 184, 0.45);
+$text-dark: #181310;
+$text-gray: #6b7280;
+
+.manage-courses-page {
+  padding: 0;
+}
+
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 32px;
+
+  h1 {
+    font-size: 32px;
+    font-weight: 800;
+    color: $text-dark;
+    margin: 0 0 8px 0;
+    line-height: 1.1;
+  }
+
+  .subtitle {
+    font-size: 16px;
+    color: $text-gray;
+    max-width: 600px;
+    margin: 0;
+  }
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.filters {
+  display: flex;
+  gap: 12px;
+}
+
+.term-select {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background-color: white;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  outline: none;
+
+  &:focus {
+    border-color: rgba($primary, 0.5);
+    box-shadow: 0 0 0 2px rgba($primary, 0.1);
+  }
+}
+
+.toggle-group {
+  display: flex;
+  padding: 4px;
+  background: #f3f4f6;
+  border-radius: 8px;
+
+  .toggle-btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    background: transparent;
+    color: $text-gray;
+
+    &.active {
+      background: white;
+      color: $text-dark;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+  }
+}
+
+.create-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: $primary;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  opacity: 0.8;
+  
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
+.courses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+.course-card {
+  background: white;
+  border: 1px solid rgba(229, 231, 235, 0.8);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    border-color: rgba($primary, 0.2);
+  }
+}
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 600;
+  
+  &.published {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #d1fae5;
+    
+    .dot { background: #10b981; }
+  }
+
+  &.draft-badge {
+    background: #f3f4f6;
+    color: #4b5563;
+    border: 1px solid #e5e7eb;
+    
+    .dot { background: #9ca3af; }
+  }
+
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+}
+
+.icon-btn-ghost {
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 16px;
+  
+  &:hover { color: $primary; }
+}
+
+.card-content {
+  margin-bottom: 16px;
+
+  h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: $text-dark;
+    margin: 0 0 8px 0;
+  }
+
+  .course-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    color: $text-gray;
+
+    .separator {
+      width: 4px;
+      height: 4px;
+      background: #d1d5db;
+      border-radius: 50%;
+    }
+  }
+}
+
+.card-stats {
+  margin-bottom: 16px;
+  
+  .stat-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    
+    background: #f9fafb;
+    border: 1px solid #f3f4f6;
+    color: #4b5563;
+
+    &.warning {
+      background: #fff7ed;
+      border-color: #ffedd5;
+    }
+
+    &.info {
+      background: transparent;
+      border: 1px dashed #e5e7eb;
+      color: #9ca3af;
+    }
+
+    i { font-size: 16px; }
+    .text-green { color: #34d399; }
+    .text-orange { color: $primary; }
+    .text-gray { color: #9ca3af; }
+  }
+}
+
+.card-footer {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid #f3f4f6;
+  display: flex;
+  gap: 8px;
+}
+
+.action-buttons {
+  flex: 1;
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #f9fafb;
+  }
+
+  &.primary {
+    background: $primary;
+    color: white;
+    border-color: $primary;
+    &:hover { opacity: 0.9; }
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.folder-btn {
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 18px;
+  
+  &:hover { color: $primary; }
+}
+
+
+.activity-section {
+  h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: $text-dark;
+    margin-bottom: 24px;
+  }
+}
+
+.activity-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.activity-card {
+  display: flex;
+  align-items: start;
+  gap: 16px;
+  padding: 20px;
+  background: white;
+  border: 1px solid rgba(229, 231, 235, 0.8);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  transition: box-shadow 0.2s;
+
+  &:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.activity-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  &.bg-blue { background: #eff6ff; color: #2563eb; }
+  &.bg-purple { background: #f5f3ff; color: #7c3aed; }
+  &.bg-orange { background: #fff7ed; color: $primary; }
+}
+
+.activity-info {
+  .activity-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: $text-dark;
+    margin: 0;
+    
+    .highlight { font-weight: 700; }
+  }
+
+  .activity-subtitle {
+    font-size: 12px;
+    color: #6b7280;
+    margin: 4px 0 8px 0;
+  }
+
+  .activity-time {
+    font-size: 10px;
+    font-weight: 700;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0;
+  }
+}

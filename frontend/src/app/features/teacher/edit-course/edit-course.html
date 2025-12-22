@@ -1,0 +1,85 @@
+<div class="edit-course-page">
+  
+  <div class="page-nav">
+    <a routerLink="/manage-courses" class="back-link">
+      <i class="fa-solid fa-arrow-left"></i> Back to Manage Courses
+    </a>
+    <nav class="breadcrumbs">
+      <a routerLink="/manage-courses">Manage Courses</a>
+      <span class="sep">/</span>
+      <span class="current">{{ course.code || 'New Course' }}</span>
+      <span class="sep">/</span>
+      <span class="current bold">Edit</span>
+    </nav>
+  </div>
+
+  <div class="page-header">
+    <h1>Edit Course</h1>
+    <p class="subtitle">Update course details, visibility settings, and basic information.</p>
+  </div>
+
+  <div class="form-card">
+    <div class="card-body">
+      
+      <div class="form-row grid-2-1">
+        <div class="form-group">
+          <label>Course Title</label>
+          <input type="text" [(ngModel)]="course.title" name="title" placeholder="e.g. Data Structures">
+        </div>
+        <div class="form-group">
+          <label>Course Code</label>
+          <input type="text" [(ngModel)]="course.code" name="code" placeholder="e.g. CS201">
+        </div>
+      </div>
+
+      <div class="form-row grid-1-1">
+        <div class="form-group">
+          <label>Term</label>
+          <div class="select-wrapper">
+            <select [(ngModel)]="course.term" name="term">
+              <option>Fall 2024</option>
+              <option>Spring 2024</option>
+              <option>Summer 2024</option>
+            </select>
+            <i class="fa-solid fa-chevron-down"></i>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Visibility</label>
+          <div class="toggle-group">
+            <button 
+              type="button" 
+              class="toggle-btn" 
+              [class.active-published]="course.status === 'Published'"
+              (click)="setStatus('Published')">
+              <span class="dot"></span> Published
+            </button>
+            <button 
+              type="button" 
+              class="toggle-btn" 
+              [class.active]="course.status === 'Draft'"
+              (click)="setStatus('Draft')">
+              Draft
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Description</label>
+        <textarea [(ngModel)]="course.description" name="description" rows="5"></textarea>
+        <p class="helper-text">A brief summary displayed on the course card and catalog.</p>
+      </div>
+
+    </div>
+
+    <div class="card-footer">
+      <button type="button" class="btn-secondary" (click)="onCancel()">Cancel</button>
+      <button type="button" class="btn-primary" (click)="onSave()">
+        <i class="fa-solid fa-floppy-disk"></i> Save changes
+      </button>
+    </div>
+  </div>
+
+</div>

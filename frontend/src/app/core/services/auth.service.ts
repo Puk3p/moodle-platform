@@ -31,7 +31,32 @@ export class AuthService {
 
   private apiUrl = '/api/auth';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {
+    const token = this.getToken();
+    if (token) {
+        this.decodeAndSetUser(token);
+    }
+  }
+
+  private decodeAndSetUser(token: string): void {
+      try {
+        const decoded: any = jwtDecode(token);
+        const user: User = {
+            userId: decoded.sub ?? decoded.userId ?? '',
+            email: decoded.email ?? '',
+            firstName: decoded.firstName ?? '',
+            lastName: decoded.lastName ?? '',
+            roles: decoded.roles ?? [],
+        };
+        this.currentUserSubject.next(user);
+      } catch (e) {
+          console.error('Err decode', e);
+      }
+  }
+
+  currentUser(): User | null {
+    return this.currentUserSubject.value;
+  }
 
   register(data: RegisterRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(AUTH_ENDPOINTS.register, data).pipe(
@@ -80,12 +105,12 @@ export class AuthService {
     return this.currentUserSubject.value;
   }
 
-  hasRole(role: Role): boolean {
+  hasRole(role: Role | string): boolean {
     const user = this.currentUserValue;
     if (!user || !user.roles) {
       return false;
     }
-    return user.roles.includes(role);
+    return user.roles.some(r => r.toString() === role.toString());
   }
 
   decodeToken(token: string): any {
