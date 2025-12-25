@@ -1,0 +1,108 @@
+<div class="manage-courses-page">
+  
+  <div class="page-header">
+    <div class="header-left">
+      <h1>Manage Courses</h1>
+      <p class="subtitle">Manage your taught courses, visibility, resources, and enrolled students.</p>
+    </div>
+
+    <div class="header-actions">
+      <div class="filters">
+        <select class="term-select">
+          <option>Fall 2024</option>
+          <option>Spring 2024</option>
+          <option>All Terms</option>
+        </select>
+        
+        <div class="toggle-group">
+          <button class="toggle-btn active">Current</button>
+          <button class="toggle-btn">All</button>
+        </div>
+      </div>
+
+      <button class="create-btn" disabled title="Coming soon">
+        <i class="fa-solid fa-plus"></i>
+        <span>Create Course</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="courses-grid">
+    <div class="course-card" *ngFor="let course of courses" [class.draft]="course.status === 'Draft'">
+      
+      <div class="card-top">
+        <span class="status-badge" [class.published]="course.status === 'Published'" [class.draft-badge]="course.status === 'Draft'">
+          <span class="dot"></span>
+          {{ course.status }}
+        </span>
+        <button class="icon-btn-ghost">
+          <i class="fa-solid" [class.fa-eye]="course.status === 'Published'" [class.fa-eye-slash]="course.status === 'Draft'"></i>
+        </button>
+      </div>
+
+      <div class="card-content">
+        <h3>{{ course.code }} – {{ course.title }}</h3>
+        <div class="course-meta">
+          <span class="meta-item"><i class="fa-solid fa-user-group"></i> {{ course.studentsCount }}</span>
+          <span class="separator"></span>
+          <span>{{ course.modulesCount }} Modules</span>
+          <span class="separator"></span>
+          <span>{{ course.term }}</span>
+        </div>
+      </div>
+
+      <div class="card-stats">
+        <div class="stat-box" *ngIf="course.avgGrade">
+          <i class="fa-solid fa-arrow-trend-up text-green"></i>
+          <span>Avg grade: <strong>{{ course.avgGrade }}</strong></span>
+        </div>
+
+        <div class="stat-box warning" *ngIf="course.pendingSubmissions">
+          <i class="fa-solid fa-circle-exclamation text-orange"></i>
+          <span>Pending submissions: <strong class="text-orange">{{ course.pendingSubmissions }}</strong></span>
+        </div>
+
+        <div class="stat-box info" *ngIf="!course.isStarted">
+          <i class="fa-solid fa-circle-info text-gray"></i>
+          <span>Course not started yet</span>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <div class="action-buttons">
+          <button class="action-btn" [disabled]="!course.isStarted" (click)="openCourse(course.code)">Open</button>
+          
+          <button class="action-btn" [class.primary]="!course.isStarted" *ngIf="!course.isStarted">Continue</button>
+          <button class="action-btn" *ngIf="course.isStarted" (click)="editCourse(course.code)">Edit</button>
+          
+          <button class="action-btn" (click)="viewStudents(course.code)">Students</button>
+        </div>
+        <button class="folder-btn">
+          <i class="fa-solid fa-folder"></i>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="activity-section">
+    <h2>Recent Activity in Your Courses</h2>
+    
+    <div class="activity-grid">
+      <div class="activity-card" *ngFor="let activity of recentActivities">
+        <div class="activity-icon" [ngClass]="[activity.iconBgClass, activity.iconTextClass]">
+          <span class="material-symbols-outlined" *ngIf="activity.icon">{{ activity.icon }}</span>
+          </div>
+        
+        <div class="activity-info">
+          <p class="activity-title">
+            {{ activity.title }} <span class="highlight">{{ activity.courseCode }}</span>
+          </p>
+          <p class="activity-subtitle">{{ activity.subtitle }}</p>
+          <p class="activity-time">{{ activity.timeAgo }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

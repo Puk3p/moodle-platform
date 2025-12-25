@@ -1,7 +1,4 @@
-<div
-  *ngIf="authService.isLoggedIn(); else loggedOutLayout"
-  class="app-shell"
->
+<div *ngIf="authService.isLoggedIn(); else loggedOutLayout" class="app-shell">
   <aside class="sidebar">
     <div class="sidebar-top">
       <div class="sidebar-logo">
@@ -12,69 +9,70 @@
       </div>
 
       <nav class="sidebar-nav">
-        <a
-          routerLink="/dashboard"
-          routerLinkActive="active"
-          [routerLinkActiveOptions]="{ exact: true }"
-          class="sidebar-link"
-        >
+        <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="sidebar-link">
           <i class="fa-solid fa-gauge"></i>
           <span>Dashboard</span>
         </a>
 
-        <a
-          routerLink="/courses"
-          routerLinkActive="active"
-          class="sidebar-link"
-        >
+        <a routerLink="/courses" routerLinkActive="active" class="sidebar-link">
           <i class="fa-solid fa-book-open"></i>
           <span>My Courses</span>
         </a>
 
-        <a
-          routerLink="/calendar"
-          routerLinkActive="active"
-          class="sidebar-link"
-        >
+        <a routerLink="/calendar" routerLinkActive="active" class="sidebar-link">
           <i class="fa-solid fa-calendar-day"></i>
           <span>Calendar</span>
         </a>
 
-        <a
-          routerLink="/grades"
-          routerLinkActive="active"
-          class="sidebar-link"
-        >
+        <a routerLink="/grades" routerLinkActive="active" class="sidebar-link">
           <i class="fa-solid fa-chart-line"></i>
           <span>Grades</span>
         </a>
 
-        <a
-          routerLink="/resources"
-          routerLinkActive="active"
-          class="sidebar-link"
-        >
+        <a routerLink="/resources" routerLinkActive="active" class="sidebar-link">
           <i class="fa-solid fa-folder-open"></i>
           <span>Resources</span>
         </a>
+
+        <div class="nav-section" *ngIf="authService.hasRole('TEACHER')">
+          <p class="section-title">Teacher Tools</p>
+          
+          <a routerLink="/manage-courses" routerLinkActive="active" class="sidebar-link">
+            <i class="fa-solid fa-pen-to-square"></i>
+            <span>Manage Courses</span>
+          </a>
+
+          <a routerLink="/upload-resources" routerLinkActive="active" class="sidebar-link">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+            <span>Upload Resources</span>
+          </a>
+
+          <a routerLink="/create-announcement" routerLinkActive="active" class="sidebar-link">
+            <i class="fa-solid fa-bullhorn"></i>
+            <span>Create Announcement</span>
+          </a>
+
+          <a routerLink="/gradebook" routerLinkActive="active" class="sidebar-link">
+            <i class="fa-solid fa-clipboard-list"></i>
+            <span>Gradebook (Admin)</span>
+          </a>
+
+          <a routerLink="/students" routerLinkActive="active" class="sidebar-link">
+            <i class="fa-solid fa-users"></i>
+            <span>Students / Enrollments</span>
+          </a>
+        </div>
+
       </nav>
     </div>
 
     <div class="sidebar-bottom">
-      <a
-        routerLink="/settings"
-        routerLinkActive="active"
-        class="sidebar-link sidebar-link-small"
-      >
+      <a routerLink="/settings" routerLinkActive="active" class="sidebar-link sidebar-link-small">
         <i class="fa-solid fa-gear"></i>
         <span>Settings</span>
       </a>
 
-      <button
-        type="button"
-        class="sidebar-link sidebar-link-small logout-btn"
-        (click)="logout()"
-      >
+      <button type="button" class="sidebar-link sidebar-link-small logout-btn" (click)="logout()">
         <i class="fa-solid fa-right-from-bracket"></i>
         <span>Log out</span>
       </button>
@@ -85,10 +83,7 @@
     <header class="topbar">
       <div class="search-wrapper">
         <i class="fa-solid fa-magnifying-glass"></i>
-        <input
-          type="text"
-          placeholder="Search courses, assignments..."
-        />
+        <input type="text" placeholder="Search courses, assignments..." />
       </div>
 
       <div class="topbar-right">
@@ -99,8 +94,8 @@
         <div class="profile">
           <div class="avatar"></div>
           <div class="profile-text">
-            <div class="name">Alex Johnson</div>
-            <div class="subtitle">Computer Science</div>
+            <div class="name">{{ authService.currentUser()?.firstName }} {{ authService.currentUser()?.lastName }}</div>
+            <div class="subtitle">{{ authService.hasRole('TEACHER') ? 'Teacher' : 'Student' }}</div>
           </div>
         </div>
       </div>

@@ -2,6 +2,9 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth-guard';
 import { PublicHomeComponent } from './features/home/public-home/public-home';
 import { DashboardHomeComponent } from './features/home/dashboard-home/dashboard-home';
+import { ManageCoursesComponent } from './features/teacher/manage-courses/manage-courses';
+import { EditCourseComponent } from './features/teacher/edit-course/edit-course';
+import { EnrolledStudentsComponent } from './features/teacher/enrolled-students/enrolled-students';
 
 export const routes: Routes = [
   {
@@ -62,10 +65,26 @@ export const routes: Routes = [
       import('./features/settings/settings-page/settings-page')
         .then(m => m.SettingsPageComponent)
   },
+
+  {
+    path: 'manage-courses',
+    component: ManageCoursesComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'manage-courses/:code/edit',
+    component: EditCourseComponent,
+    canActivate: [authGuard]
+  },
   {
     path: '',
     redirectTo: 'login',
     pathMatch: 'full',
+  },
+  { 
+    path: 'manage-courses/:code/students', 
+    component: EnrolledStudentsComponent, 
+    canActivate: [authGuard] 
   },
   {
     path: '**',
