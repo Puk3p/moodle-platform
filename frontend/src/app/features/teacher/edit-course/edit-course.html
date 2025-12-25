@@ -1,4 +1,4 @@
-<div class="edit-course-page">
+<div class="edit-course-page" *ngIf="!isLoading">
   
   <div class="page-nav">
     <a routerLink="/manage-courses" class="back-link">
@@ -7,7 +7,7 @@
     <nav class="breadcrumbs">
       <a routerLink="/manage-courses">Manage Courses</a>
       <span class="sep">/</span>
-      <span class="current">{{ course.code || 'New Course' }}</span>
+      <span class="current">{{ course.code }}</span>
       <span class="sep">/</span>
       <span class="current bold">Edit</span>
     </nav>
@@ -15,20 +15,24 @@
 
   <div class="page-header">
     <h1>Edit Course</h1>
-    <p class="subtitle">Update course details, visibility settings, and basic information.</p>
+    <p class="subtitle">Update course details, visibility settings, and module structure.</p>
   </div>
 
-  <div class="form-card">
+  <div class="content-card">
+    <div class="card-header-row">
+      <h3>General Information</h3>
+      <span class="badge-gray">Read-only metadata available</span>
+    </div>
+
     <div class="card-body">
-      
       <div class="form-row grid-2-1">
         <div class="form-group">
           <label>Course Title</label>
-          <input type="text" [(ngModel)]="course.title" name="title" placeholder="e.g. Data Structures">
+          <input type="text" [(ngModel)]="course.title" placeholder="Data Structures">
         </div>
         <div class="form-group">
           <label>Course Code</label>
-          <input type="text" [(ngModel)]="course.code" name="code" placeholder="e.g. CS201">
+          <input type="text" [(ngModel)]="course.code" placeholder="CS201">
         </div>
       </div>
 
@@ -36,7 +40,7 @@
         <div class="form-group">
           <label>Term</label>
           <div class="select-wrapper">
-            <select [(ngModel)]="course.term" name="term">
+            <select [(ngModel)]="course.term">
               <option>Fall 2024</option>
               <option>Spring 2024</option>
               <option>Summer 2024</option>
@@ -48,16 +52,12 @@
         <div class="form-group">
           <label>Visibility</label>
           <div class="toggle-group">
-            <button 
-              type="button" 
-              class="toggle-btn" 
+            <button type="button" class="toggle-btn" 
               [class.active-published]="course.status === 'Published'"
               (click)="setStatus('Published')">
               <span class="dot"></span> Published
             </button>
-            <button 
-              type="button" 
-              class="toggle-btn" 
+            <button type="button" class="toggle-btn" 
               [class.active]="course.status === 'Draft'"
               (click)="setStatus('Draft')">
               Draft
@@ -66,20 +66,154 @@
         </div>
       </div>
 
+      <div class="form-group" style="position: relative; z-index: 10;">
+        <label>Assigned Class Groups</label>
+        <div class="custom-select-trigger" (click)="showGroupDropdown = !showGroupDropdown">
+          <span [class.placeholder]="course.selectedGroupIds.length === 0">
+            {{ getSelectedGroupsLabel() }}
+          </span>
+          <i class="fa-solid fa-chevron-down"></i>
+        </div>
+        <div class="custom-dropdown-menu" *ngIf="showGroupDropdown">
+          <div class="dropdown-item" *ngFor="let group of availableGroups" (click)="toggleGroup(group.id)">
+            <div class="checkbox-box" [class.checked]="isGroupSelected(group.id)">
+              <i class="fa-solid fa-check" *ngIf="isGroupSelected(group.id)"></i>
+            </div>
+            <span>{{ group.name }}</span>
+          </div>
+        </div>
+        <div class="click-overlay" *ngIf="showGroupDropdown" (click)="showGroupDropdown = false"></div>
+      </div>
+
       <div class="form-group">
         <label>Description</label>
-        <textarea [(ngModel)]="course.description" name="description" rows="5"></textarea>
-        <p class="helper-text">A brief summary displayed on the course card and catalog.</p>
+        <textarea [(ngModel)]="course.description" rows="4"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-card mt-6">
+    <div class="card-body">
+      
+      <div class="module-header-actions">
+        <div class="text-group">
+          <h3>Module Management</h3>
+          <p class="helper-text">Organize your course content into ordered modules.</p>
+        </div>
+        <div class="btn-group">
+          <button class="btn-primary-ghost small" (click)="openAddModuleModal()">
+            <i class="fa-solid fa-plus-circle"></i> Add Module
+          </button>
+        </div>
+      </div>
+
+      <div class="modules-list" cdkDropList (cdkDropListDropped)="drop($event)">
+        
+        <div class="module-item group" *ngFor="let module of course.modules; let i = index" cdkDrag>
+          
+          <div class="custom-placeholder" *cdkDragPlaceholder></div>
+
+          <div class="module-main">
+            <div class="drag-handle" cdkDragHandle>
+                <i class="fa-solid fa-grip-vertical"></i>
+            </div>
+            
+            <div class="module-info">
+              <div class="module-title-row">
+                <span class="module-badge">Module {{ i + 1 }}</span>
+                <h4>{{ module.title }}</h4>
+              </div>
+              <p class="module-desc">{{ module.description }}</p>
+              
+              <div class="module-dates" *ngIf="module.startDate">
+                 <small class="text-gray-500"><i class="fa-regular fa-calendar"></i> {{ module.startDate }} — {{ module.endDate }}</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="module-actions">
+            <button title="Edit Module" (click)="openEditModuleModal(module, i)">
+                <i class="fa-solid fa-pen"></i>
+            </button>
+            <button title="Delete Module" class="danger" (click)="deleteModule(i)">
+                <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+
+          <div class="module-stats" *ngIf="module.stats">
+            <span><i class="fa-regular fa-file-lines"></i> {{ module.stats.lectures }} Lectures</span>
+            <span><i class="fa-regular fa-circle-question"></i> {{ module.stats.quizzes }} Quiz</span>
+            <span><i class="fa-solid fa-code"></i> {{ module.stats.labs }} Labs</span>
+          </div>
+
+        </div>
       </div>
 
     </div>
+  </div>
 
-    <div class="card-footer">
-      <button type="button" class="btn-secondary" (click)="onCancel()">Cancel</button>
-      <button type="button" class="btn-primary" (click)="onSave()">
-        <i class="fa-solid fa-floppy-disk"></i> Save changes
+  <div class="sticky-footer">
+    <div class="footer-info">
+      <span class="unsaved">Unsaved changes</span>
+    </div>
+    <div class="footer-actions">
+      <button class="btn-secondary" (click)="onCancel()" [disabled]="isSaving">Discard</button>
+      <button class="btn-primary" (click)="onSave()" [disabled]="isSaving">
+        <span *ngIf="!isSaving"><i class="fa-solid fa-floppy-disk"></i> Save All Changes</span>
+        <span *ngIf="isSaving"><i class="fa-solid fa-spinner fa-spin"></i> Saving...</span>
       </button>
     </div>
   </div>
 
+  <div class="modal-overlay" *ngIf="showModuleModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>{{ editingModuleIndex === -1 ? 'Add Module' : 'Edit Module' }}</h3>
+        <button class="close-btn" (click)="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Module Title</label>
+          <input type="text" [(ngModel)]="currentModule.title" placeholder="e.g. Trees and Graphs">
+        </div>
+
+        <div class="form-row grid-1-1">
+          <div class="form-group">
+            <label>Start Date</label>
+            <input type="date" [(ngModel)]="currentModule.startDate">
+          </div>
+          <div class="form-group">
+            <label>End Date</label>
+            <input type="date" [(ngModel)]="currentModule.endDate">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <textarea [(ngModel)]="currentModule.description" rows="4"></textarea>
+        </div>
+
+        <div class="form-group" style="flex-direction: row; justify-content: space-between; align-items: center;">
+            <label style="margin:0;">Module Status</label>
+            <div class="toggle-group small">
+                <button type="button" class="toggle-btn" 
+                  [class.active-published]="currentModule.status === 'Published'"
+                  (click)="currentModule.status = 'Published'">Published</button>
+                <button type="button" class="toggle-btn" 
+                  [class.active]="currentModule.status === 'Draft'"
+                  (click)="currentModule.status = 'Draft'">Draft</button>
+            </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeModal()">Cancel</button>
+        <button class="btn-primary" (click)="saveModuleFromModal()">
+            {{ editingModuleIndex === -1 ? 'Add Module' : 'Save Module' }}
+        </button>
+      </div>
+    </div>
+  </div>
+  <div style="height: 80px;"></div> 
 </div>

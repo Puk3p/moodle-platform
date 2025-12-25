@@ -1,0 +1,127 @@
+<div class="bank-container">
+  
+  <header class="page-header">
+    <div class="header-titles">
+      <h1>Question Bank</h1>
+      <p class="subtitle">Create, organize, and take quizzes based on a reusable question bank.</p>
+    </div>
+  </header>
+
+  <div class="content-split">
+    
+    <section class="categories-panel">
+      <div class="panel-header">
+        <h2>Categories</h2>
+        <button class="btn-icon-small" title="Add Category">
+          <fa-icon [icon]="faPlus"></fa-icon>
+        </button>
+      </div>
+
+      <div class="categories-list">
+        <div 
+          class="category-item" 
+          *ngFor="let cat of categories"
+          [class.active]="selectedCategoryId === cat.id"
+          [class.level-1]="cat.level === 1"
+          (click)="selectCategory(cat.id)"
+        >
+          <fa-icon [icon]="cat.id === '1' ? faFolderOpen : faFolder" class="folder-icon"></fa-icon>
+          <span class="cat-name">{{ cat.name }}</span>
+          
+          <span *ngIf="cat.count" class="badge-count">{{ cat.count }}</span>
+          
+          <div class="hover-actions" *ngIf="cat.id !== '1'">
+            <fa-icon [icon]="faEllipsisVertical"></fa-icon>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="questions-panel">
+      
+      <div class="toolbar">
+        <div class="search-and-filters">
+          <div class="search-box">
+            <fa-icon [icon]="faSearch" class="search-icon"></fa-icon>
+            <input type="text" placeholder="Search questions by keyword or tag...">
+          </div>
+          
+          <div class="filters">
+            <button class="filter-btn">
+              Type: All <fa-icon [icon]="faChevronDown"></fa-icon>
+            </button>
+            <button class="filter-btn">
+              Difficulty: Any <fa-icon [icon]="faChevronDown"></fa-icon>
+            </button>
+          </div>
+        </div>
+
+        <button class="btn-primary">
+          <fa-icon [icon]="faPlus"></fa-icon>
+          New Question
+        </button>
+      </div>
+
+      <div class="table-header">
+        <div class="col-question">Question</div>
+        <div class="col-type">Type</div>
+        <div class="col-diff">Difficulty</div>
+        <div class="col-usage">Usage</div>
+        <div class="col-actions">Actions</div>
+      </div>
+
+      <div class="questions-list">
+        <div class="question-row" *ngFor="let q of questions">
+          
+          <div class="col-question">
+            <p class="q-text">{{ q.text }}</p>
+            <div class="tags">
+              <span class="tag" *ngFor="let tag of q.tags">#{{ tag }}</span>
+            </div>
+          </div>
+
+          <div class="col-type">
+            <span class="badge-type" [ngClass]="q.type | lowercase | slice:0:4"> <fa-icon [icon]="getTypeIcon(q.type)"></fa-icon>
+               {{ q.type }}
+            </span>
+          </div>
+
+          <div class="col-diff">
+            <span class="badge-diff" [ngClass]="q.difficulty | lowercase">
+              {{ q.difficulty }}
+            </span>
+          </div>
+
+          <div class="col-usage">
+            <span class="usage-text">{{ q.usageCount }} Quizzes</span>
+          </div>
+
+          <div class="col-actions">
+            <button class="action-btn edit" title="Edit">
+              <fa-icon [icon]="faPen"></fa-icon>
+            </button>
+            <button class="action-btn delete" title="Delete">
+              <fa-icon [icon]="faTrash"></fa-icon>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="pagination-bar">
+        <span class="showing-text">Showing 1-5 of 142 questions</span>
+        <div class="page-controls">
+          <button class="page-btn"><fa-icon [icon]="faChevronLeft"></fa-icon></button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn">3</button>
+          <span class="dots">...</span>
+          <button class="page-btn">12</button>
+          <button class="page-btn"><fa-icon [icon]="faChevronRight"></fa-icon></button>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+</div>

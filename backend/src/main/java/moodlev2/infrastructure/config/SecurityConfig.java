@@ -1,5 +1,6 @@
 package moodlev2.infrastructure.config;
 
+import jakarta.servlet.http.HttpServletResponse; // <--- IMPORT NOU
 import lombok.RequiredArgsConstructor;
 import moodlev2.infrastructure.security.OAuth2LoginSuccessHandler;
 import moodlev2.infrastructure.security.JwtAuthenticationFilter;
@@ -31,15 +32,23 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
 
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+                        })
+                )
+
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/oauth2/**").permitAll()
                         .requestMatchers("/login/oauth2/**").permitAll()
-                        .requestMatchers("/api/courses/**").permitAll()
-                        .requestMatchers("/api/calendar/**").permitAll()
-                        .requestMatchers("/api/grades/**").permitAll()
-                        .requestMatchers("/api/resources/**").permitAll()
+
+                        .requestMatchers("/api/courses/**").authenticated()
+                        .requestMatchers("/api/calendar/**").authenticated()
+                        .requestMatchers("/api/grades/**").authenticated()
+                        .requestMatchers("/api/resources/**").authenticated()
                         .requestMatchers("/api/users/**").authenticated()
+
                         .anyRequest().authenticated()
                 )
 

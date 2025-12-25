@@ -5,21 +5,22 @@ import { DashboardHomeComponent } from './features/home/dashboard-home/dashboard
 import { ManageCoursesComponent } from './features/teacher/manage-courses/manage-courses';
 import { EditCourseComponent } from './features/teacher/edit-course/edit-course';
 import { EnrolledStudentsComponent } from './features/teacher/enrolled-students/enrolled-students';
+import { CourseResourcesComponent } from './features/teacher/course-resources/course-resources';
+import { CoursePreviewComponent } from './features/teacher/course-preview/course-preview';
+import { UploadResourceComponent } from './features/teacher/upload-resource/upload-resource'; 
 
 export const routes: Routes = [
   {
     path: '',
-    component : PublicHomeComponent
+    component: PublicHomeComponent
   },
   {
     path: 'login',
-    loadComponent: () =>
-      import('./features/auth/login/login').then(m => m.Login),
+    loadComponent: () => import('./features/auth/login/login').then(m => m.Login),
   },
   {
     path: 'register',
-    loadComponent: () =>
-      import('./features/auth/register/register').then(m => m.Register),
+    loadComponent: () => import('./features/auth/register/register').then(m => m.Register),
   },
   {
     path: 'dashboard',
@@ -28,42 +29,31 @@ export const routes: Routes = [
   },
   {
     path: 'courses',
-    loadComponent: () => 
-      import('./features/courses/courses').then(m => m.CoursesComponent),
+    loadComponent: () => import('./features/courses/courses').then(m => m.CoursesComponent),
     canActivate: [authGuard]
   },
   {
     path: 'courses/:id',
-    loadComponent: () =>
-      import('./features/courses/course-page/course-page')
-        .then(m => m.CoursePageComponent),
+    loadComponent: () => import('./features/courses/course-page/course-page').then(m => m.CoursePageComponent),
   },
   {
     path: 'calendar',
-    loadComponent: () =>
-      import('./features/calendar/calendar-page/calendar-page')
-        .then(m => m.CalendarPageComponent)
+    loadComponent: () => import('./features/calendar/calendar-page/calendar-page').then(m => m.CalendarPageComponent)
   },
   {
     path: 'grades',
-    loadComponent: () =>
-      import('./features/grades/grades-page/grades-page')
-        .then(m => m.GradesPageComponent),
+    loadComponent: () => import('./features/grades/grades-page/grades-page').then(m => m.GradesPageComponent),
     canActivate: [authGuard]
   },
   {
     path: 'resources',
     canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/resources/resources-page/resources-page')
-        .then(m => m.ResourcesPageComponent)
+    loadComponent: () => import('./features/resources/resources-page/resources-page').then(m => m.ResourcesPageComponent)
   },
   {
     path: 'settings',
     canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/settings/settings-page/settings-page')
-        .then(m => m.SettingsPageComponent)
+    loadComponent: () => import('./features/settings/settings-page/settings-page').then(m => m.SettingsPageComponent)
   },
 
   {
@@ -72,19 +62,45 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
-    path: 'manage-courses/:code/edit',
-    component: EditCourseComponent,
+    path: 'manage-quizzes',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/teacher/manage-quizzes/manage-quizzes').then(m => m.ManageQuizzesComponent)
+  },
+  {
+    path: 'question-bank',
+    loadComponent: () => import('./features/teacher/question-bank/question-bank').then(m => m.QuestionBankComponent),
     canActivate: [authGuard]
   },
   {
-    path: '',
-    redirectTo: 'login',
-    pathMatch: 'full',
+    path: 'upload-resource',
+    component: UploadResourceComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'manage-courses/:code/edit',
+    component: EditCourseComponent,
+    canActivate: [authGuard]
   },
   { 
     path: 'manage-courses/:code/students', 
     component: EnrolledStudentsComponent, 
     canActivate: [authGuard] 
+  },
+  {
+    path: 'manage-courses/:code/resources',
+    component: CourseResourcesComponent,
+    canActivate: [authGuard]
+  },
+  { 
+    path: 'manage-courses/:code/preview', 
+    component: CoursePreviewComponent, 
+    canActivate: [authGuard] 
+  },
+
+  {
+    path: '',
+    redirectTo: 'login',
+    pathMatch: 'full',
   },
   {
     path: '**',

@@ -1,0 +1,112 @@
+<div class="quizzes-container">
+  
+  <div class="page-header">
+    <div class="header-titles">
+      <h1>Quizzes</h1>
+      <p class="subtitle">Create, organize, and take quizzes based on a reusable question bank.</p>
+    </div>
+    <button class="btn-primary" (click)="onCreateQuiz()">
+      <fa-icon [icon]="faPlus"></fa-icon>
+      New Quiz
+    </button>
+  </div>
+
+  <div class="filters-bar">
+    <div class="search-box">
+      <fa-icon [icon]="faSearch" class="search-icon"></fa-icon>
+      <input 
+        type="text" 
+        placeholder="Search quizzes..." 
+        [(ngModel)]="searchTerm"
+      >
+      </div>
+
+    <div class="dropdowns">
+      <div class="select-wrapper">
+        <select [(ngModel)]="selectedCourse">
+          <option [ngValue]="'All Courses'">All Courses</option>
+          <option *ngFor="let course of availableCourses" [value]="course">
+            {{ course }}
+          </option>
+        </select>
+        <fa-icon [icon]="faChevronDown" class="select-icon"></fa-icon>
+      </div>
+
+      <div class="select-wrapper">
+        <select [(ngModel)]="selectedStatus">
+          <option [ngValue]="'All Statuses'">All Statuses</option>
+          <option [ngValue]="'Published'">Published</option>
+          <option [ngValue]="'Draft'">Draft</option>
+        </select>
+        <fa-icon [icon]="faChevronDown" class="select-icon"></fa-icon>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-state">
+    <p>Loading quizzes...</p>
+  </div>
+
+  <div *ngIf="!isLoading && filteredQuizzes.length === 0" class="empty-state">
+    <p>No quizzes found matching your filters.</p>
+  </div>
+
+  <div class="quiz-grid" *ngIf="!isLoading && filteredQuizzes.length > 0">
+     <div class="quiz-card" *ngFor="let quiz of filteredQuizzes" [class.draft-card]="quiz.status === 'Draft'">
+      
+      <div class="card-top">
+        <span class="status-badge" [ngClass]="quiz.status === 'Published' ? 'published' : 'draft'">
+          <span class="dot"></span>
+          {{ quiz.status }}
+        </span>
+        <button class="btn-icon">
+          <fa-icon [icon]="faEllipsisVertical"></fa-icon>
+        </button>
+      </div>
+
+      <div class="card-content">
+        <h3>{{ quiz.title }}</h3>
+        <p class="course-context">
+          {{ quiz.courseName }} 
+          <span *ngIf="quiz.context">• {{ quiz.context }}</span>
+        </p>
+
+        <div class="stats-row">
+          <div class="stat-item">
+            <fa-icon [icon]="faListOl"></fa-icon>
+            {{ quiz.questionsCount }} Questions
+          </div>
+          <div class="stat-item">
+            <fa-icon [icon]="faClock"></fa-icon>
+            {{ quiz.durationMinutes }} Mins
+          </div>
+          <div class="stat-item">
+            <fa-icon [icon]="faRotateRight"></fa-icon>
+            {{ quiz.attemptsLabel }}
+          </div>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <span class="updated-text">Updated: {{ quiz.lastUpdated }}</span>
+        
+        <div class="card-actions">
+          <ng-container *ngIf="quiz.status === 'Published'">
+            <button class="btn-icon-secondary" title="Preview">
+              <fa-icon [icon]="faEye"></fa-icon>
+            </button>
+            <button class="btn-accent">Results</button>
+          </ng-container>
+
+          <ng-container *ngIf="quiz.status === 'Draft'">
+            <button class="btn-icon-secondary" title="Edit">
+              <fa-icon [icon]="faPen"></fa-icon>
+            </button>
+            <button class="btn-secondary">Continue Editing</button>
+          </ng-container>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

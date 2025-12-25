@@ -9,4 +9,6 @@ import java.util.List;
 public interface CalendarEventRepository extends JpaRepository<CalendarEventEntity, Long> {
     @Query("SELECT ce FROM CalendarEventEntity ce JOIN EnrollmentEntity e ON ce.course.id = e.course.id WHERE e.user.email = :email")
     List<CalendarEventEntity> findAllByUserEmail(String email);
+
+    List<CalendarEventEntity> findTop3ByCourseCodeOrderByEventDateAsc(String courseCode);
 }

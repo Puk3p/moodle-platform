@@ -2,17 +2,8 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-
-interface Student {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  group: string;
-  progress: number;
-  lastActivity: string;
-  avatarColor: string;
-}
+import { CoursesService } from '../../../core/services/courses.service';
+import { EnrolledStudentsResponse, Student } from '../../../core/models/enrolled-students.model';
 
 @Component({
   selector: 'app-enrolled-students',
@@ -23,27 +14,50 @@ interface Student {
 })
 export class EnrolledStudentsComponent implements OnInit {
   private route = inject(ActivatedRoute);
+  private coursesService = inject(CoursesService);
   
   courseCode = '';
   searchTerm = '';
-
-  stats = {
-    total: 124,
-    activeRate: 98,
-    pending: 14
-  };
-
-  students: Student[] = [
-    { id: 1, firstName: 'Sarah', lastName: 'Jenkins', email: 'sarah.j@university.edu', group: 'Group A', progress: 92, lastActivity: 'Today, 10:42 AM', avatarColor: '#eff6ff' },
-    { id: 2, firstName: 'Michael', lastName: 'Chen', email: 'm.chen22@university.edu', group: 'Group B', progress: 78, lastActivity: 'Yesterday', avatarColor: '#fdf2f8' }, 
-    { id: 3, firstName: 'Emma', lastName: 'Larson', email: 'emma.l@university.edu', group: 'Group A', progress: 95, lastActivity: '2 hours ago', avatarColor: '#ecfdf5' },
-    { id: 4, firstName: 'David', lastName: 'Kim', email: 'd.kim@university.edu', group: 'Group C', progress: 45, lastActivity: '3 days ago', avatarColor: '#fffbeb' },
-    { id: 5, firstName: 'Jessica', lastName: 'Smith', email: 'j.smith@university.edu', group: 'Group B', progress: 88, lastActivity: 'Yesterday', avatarColor: '#f3e8ff' }, 
-    { id: 6, firstName: 'Ryan', lastName: 'Brooks', email: 'ryan.b@university.edu', group: 'Group A', progress: 62, lastActivity: '5 days ago', avatarColor: '#ecfeff' }, 
-  ];
+  
+  data: EnrolledStudentsResponse | null = null;
+  isLoading = true;
 
   ngOnInit() {
-    this.courseCode = this.route.snapshot.paramMap.get('code') || 'CS201';
+    this.courseCode = this.route.snapshot.paramMap.get('code') || '';
+    if (this.courseCode) {
+      this.loadData();
+    }
+  }
+
+  loadData() {
+    this.isLoading = true;
+    this.coursesService.getEnrolledStudents(this.courseCode).subscribe({
+      next: (response) => {
+        this.data = response;
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('Error loading students', err);
+        this.isLoading = false;
+      }
+    });
+  }
+
+  get students(): Student[] {
+    if (!this.data) return [];
+    if (!this.searchTerm) return this.data.students;
+    
+    // Filtrare simpla
+    const term = this.searchTerm.toLowerCase();
+    return this.data.students.filter(s => 
+      s.firstName.toLowerCase().includes(term) || 
+      s.lastName.toLowerCase().includes(term) ||
+      s.email.toLowerCase().includes(term)
+    );
+  }
+
+  get stats() {
+    return this.data?.stats || { total: 0, activeRate: 0, pending: 0 };
   }
 
   getInitials(s: Student): string {
@@ -51,6 +65,7 @@ export class EnrolledStudentsComponent implements OnInit {
   }
 
   getAvatarTextColor(bgColor: string): string {
+    if (!bgColor) return '#0891b2';
     if (bgColor.includes('eff6ff')) return '#2563eb';
     if (bgColor.includes('fdf2f8')) return '#db2777'; 
     if (bgColor.includes('ecfdf5')) return '#059669';

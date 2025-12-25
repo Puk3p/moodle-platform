@@ -1,6 +1,6 @@
 $primary: #ff5100;
 $bg-light: #f8f6f5;
-$border: rgba(148, 163, 184, 0.45);
+$border: #e5e7eb;
 $text-dark: #181310;
 $text-gray: #6b7280;
 
@@ -9,12 +9,13 @@ $text-gray: #6b7280;
   margin: 0 auto;
 }
 
+.mt-6 { margin-top: 24px; }
+
 .page-nav {
   margin-bottom: 24px;
   display: flex;
   flex-direction: column;
   gap: 8px;
-
   .back-link {
     display: inline-flex;
     align-items: center;
@@ -23,26 +24,15 @@ $text-gray: #6b7280;
     font-weight: 500;
     color: $text-gray;
     text-decoration: none;
-    transition: color 0.2s;
-
     &:hover { color: $primary; }
-    i { font-size: 14px; }
   }
-
   .breadcrumbs {
     display: flex;
-    align-items: center;
     gap: 8px;
     font-size: 14px;
     color: $text-gray;
-
-    a {
-      text-decoration: none;
-      color: $text-gray;
-      &:hover { color: $primary; }
-    }
-
-    .sep { color: #d1d5db; font-size: 12px; }
+    a { text-decoration: none; color: $text-gray; &:hover { color: $primary; } }
+    .sep { color: #d1d5db; }
     .current { color: $text-dark; }
     .bold { font-weight: 600; }
   }
@@ -50,23 +40,11 @@ $text-gray: #6b7280;
 
 .page-header {
   margin-bottom: 32px;
-
-  h1 {
-    font-size: 32px;
-    font-weight: 800;
-    color: $text-dark;
-    margin: 0 0 8px 0;
-    line-height: 1.1;
-  }
-
-  .subtitle {
-    font-size: 16px;
-    color: $text-gray;
-    margin: 0;
-  }
+  h1 { font-size: 32px; font-weight: 800; color: $text-dark; margin: 0 0 8px 0; }
+  .subtitle { font-size: 16px; color: $text-gray; margin: 0; }
 }
 
-.form-card {
+.content-card {
   background: white;
   border: 1px solid rgba(229, 231, 235, 0.8);
   border-radius: 12px;
@@ -81,152 +59,277 @@ $text-gray: #6b7280;
   gap: 24px;
 }
 
+.card-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 32px 0 32px;
+  
+  h3 { font-size: 18px; font-weight: 700; color: $text-dark; margin: 0; }
+  .badge-gray {
+    background: #f3f4f6;
+    color: $text-gray;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 8px;
+    border-radius: 6px;
+  }
+}
+
 .form-row {
   display: grid;
   gap: 24px;
-
   &.grid-2-1 { grid-template-columns: 2fr 1fr; }
   &.grid-1-1 { grid-template-columns: 1fr 1fr; }
-  
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr !important;
-  }
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
   gap: 8px;
-
-  label {
-    font-size: 14px;
-    font-weight: 600;
-    color: #374151;
-  }
-
+  label { font-size: 14px; font-weight: 600; color: #374151; }
   input, textarea, select {
-    width: 100%;
-    padding: 10px 16px;
-    border-radius: 8px;
-    border: 1px solid #d1d5db;
-    font-size: 14px;
-    color: $text-dark;
-    outline: none;
-    transition: all 0.2s;
-    font-family: inherit;
-
-    &:focus {
-      border-color: $primary;
-      box-shadow: 0 0 0 3px rgba($primary, 0.1);
-    }
+    width: 100%; padding: 10px 16px; border-radius: 8px; border: 1px solid #d1d5db;
+    font-size: 14px; outline: none; transition: all 0.2s;
+    &:focus { border-color: $primary; box-shadow: 0 0 0 3px rgba($primary, 0.1); }
   }
-
-  textarea { resize: vertical; }
-
-  .helper-text {
-    font-size: 12px;
-    color: $text-gray;
-    margin: 0;
-  }
+  .helper-text { font-size: 12px; color: $text-gray; margin: 0; }
 }
 
 .select-wrapper {
   position: relative;
-  
-  select {
-    appearance: none;
-    background: white;
-    cursor: pointer;
-  }
+  select { appearance: none; background: white; cursor: pointer; }
+  i { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: $text-gray; pointer-events: none; font-size: 12px; }
+}
 
-  i {
-    position: absolute;
-    right: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: $text-gray;
-    pointer-events: none;
-    font-size: 12px;
+.custom-select-trigger {
+  width: 100%; padding: 10px 16px; border-radius: 8px; border: 1px solid #d1d5db; background: white;
+  cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 14px;
+  .placeholder { color: #9ca3af; }
+}
+.custom-dropdown-menu {
+  position: absolute; top: 100%; left: 0; width: 100%; background: white; border: 1px solid $border;
+  border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-top: 4px; padding: 8px; z-index: 20;
+  .dropdown-item {
+    display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 6px; cursor: pointer;
+    &:hover { background: #f3f4f6; }
+    .checkbox-box { width: 18px; height: 18px; border: 2px solid #d1d5db; border-radius: 4px; display: flex; align-items: center; justify-content: center; &.checked { background: $primary; border-color: $primary; color: white; i { font-size: 10px; } } }
   }
 }
+.click-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 5; }
 
 .toggle-group {
-  display: flex;
-  background: #f3f4f6;
-  padding: 4px;
-  border-radius: 8px;
-  width: fit-content;
-
+  display: flex; background: #f3f4f6; padding: 4px; border-radius: 8px; width: fit-content;
   .toggle-btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 16px;
-    border: 1px solid transparent;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    background: transparent;
-    color: $text-gray;
-    transition: all 0.2s;
-
-    &.active {
-      background: white;
-      color: $text-dark;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-      border-color: #e5e7eb;
-    }
-
-    &.active-published {
-      background: white;
-      color: #047857;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-      border-color: #e5e7eb;
-
-      .dot { background: #10b981; }
-    }
-
-    .dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: transparent;
-    }
+    display: flex; align-items: center; gap: 6px; padding: 6px 16px; border: 1px solid transparent;
+    border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; background: transparent; color: $text-gray;
+    &.active-published { background: white; color: #047857; border-color: #e5e7eb; .dot { background: #10b981; } }
+    &.active { background: white; color: $text-dark; border-color: #e5e7eb; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; }
   }
 }
 
-.card-footer {
-  padding: 16px 24px;
-  background: #f9fafb;
-  border-top: 1px solid #f3f4f6;
+.module-header-actions {
   display: flex;
-  justify-content: flex-end;
-  gap: 12px;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 8px;
 
-  button {
-    padding: 8px 20px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    border: 1px solid transparent;
-  }
+  h3 { font-size: 18px; font-weight: 700; color: $text-dark; margin: 0 0 4px 0; }
+  .btn-group { display: flex; gap: 12px; }
+  .small { padding: 6px 14px; font-size: 13px; }
+}
 
-  .btn-secondary {
+.modules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.module-item {
+  position: relative;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.2s;
+
+  &:hover {
     background: white;
-    border-color: #d1d5db;
-    color: #374151;
-    &:hover { background: #f3f4f6; }
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border-color: rgba($primary, 0.2);
+    
+    .module-actions { opacity: 1; pointer-events: auto; }
   }
 
-  .btn-primary {
-    background: $primary;
-    color: white;
-    box-shadow: 0 4px 6px -1px rgba($primary, 0.2);
-    &:hover { opacity: 0.9; }
+  .module-main {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
   }
+
+  .drag-handle {
+    padding: 4px;
+    color: #9ca3af;
+    cursor: grab;
+    &:hover { color: $primary; background: #f3f4f6; border-radius: 4px; }
+  }
+
+  .module-info {
+    flex: 1;
+    .module-title-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 6px;
+      
+      .module-badge {
+        font-size: 11px; font-weight: 700; text-transform: uppercase;
+        color: $primary; background: rgba($primary, 0.1);
+        padding: 2px 8px; border-radius: 4px;
+      }
+      h4 { font-size: 16px; font-weight: 700; color: $text-dark; margin: 0; }
+    }
+    .module-desc { font-size: 14px; color: $text-gray; margin: 0; }
+  }
+
+  .module-actions {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.2s;
+
+    button {
+      padding: 6px;
+      border: none;
+      background: transparent;
+      color: #9ca3af;
+      cursor: pointer;
+      border-radius: 6px;
+      &:hover { background: #f3f4f6; color: #374151; }
+      &.danger:hover { background: #fef2f2; color: #ef4444; }
+    }
+  }
+
+  .module-stats {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #f3f4f6;
+    margin-left: 40px;
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    font-weight: 500;
+    color: $text-gray;
+    
+    i { margin-right: 4px; font-size: 14px; }
+  }
+}
+
+.module-footer {
+  border-top: 1px solid $border;
+  background: #f9fafb;
+  margin: 0 -32px -32px -32px; 
+  padding: 16px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  p { font-size: 12px; color: $text-gray; font-style: italic; margin: 0; }
+}
+
+.sticky-footer {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%); 
+  width: 90%;
+  max-width: 960px;
+  background: white;
+  border: 1px solid rgba(229, 231, 235, 0.8);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  padding: 12px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 100;
+
+  .footer-info {
+    display: flex;
+    flex-direction: column;
+    .unsaved { font-size: 14px; font-weight: 700; color: $text-dark; }
+    .last-saved { font-size: 12px; color: $text-gray; }
+  }
+
+  .footer-actions {
+    display: flex;
+    gap: 12px;
+  }
+}
+
+.btn-primary {
+  background: $primary; color: white; padding: 8px 20px; border-radius: 8px;
+  font-weight: 700; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px;
+  box-shadow: 0 4px 6px -1px rgba($primary, 0.2);
+  &:hover { opacity: 0.9; }
+}
+.btn-primary-ghost {
+  background: rgba($primary, 0.1); color: $primary; padding: 8px 16px; border-radius: 8px;
+  font-weight: 700; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px;
+  &:hover { background: rgba($primary, 0.2); }
+}
+.btn-secondary {
+  background: white; color: $text-gray; border: 1px solid $border; padding: 8px 16px;
+  border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;
+  &:hover { background: #f9fafb; color: $text-dark; }
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+.modal-card {
+  background: white;
+  width: 90%; max-width: 500px;
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+  overflow: hidden;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid $border;
+  display: flex; justify-content: space-between; align-items: center;
+  h3 { margin: 0; font-size: 18px; font-weight: 700; color: $text-dark; }
+  .close-btn { background: none; border: none; cursor: pointer; font-size: 18px; color: #9ca3af; }
+}
+
+.modal-body {
+  padding: 24px;
+  display: flex; flex-direction: column; gap: 20px;
+}
+
+.modal-footer {
+  padding: 16px 24px; background: #f9fafb; border-top: 1px solid $border;
+  display: flex; justify-content: flex-end; gap: 12px;
+}
+
+// Small Toggle for Modal
+.toggle-group.small {
+    padding: 2px;
+    .toggle-btn { padding: 4px 12px; font-size: 12px; }
 }

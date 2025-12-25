@@ -1,0 +1,140 @@
+<div class="preview-page">
+
+  <div class="page-nav">
+    <div class="breadcrumbs">
+      <a routerLink="/manage-courses">Manage Courses</a>
+      <span class="sep">/</span>
+      <span class="current">{{ courseCode }}</span>
+      <span class="sep">/</span>
+      <span class="current bold">Preview</span>
+    </div>
+    <a routerLink="/manage-courses" class="back-link">
+      <i class="fa-solid fa-arrow-left"></i> Back to Manage Courses
+    </a>
+  </div>
+
+  <div *ngIf="isLoading" style="text-align: center; padding: 40px; color: #6b7280;">
+    <i class="fa-solid fa-spinner fa-spin" style="font-size: 24px;"></i>
+    <p>Loading course preview...</p>
+  </div>
+
+  <div *ngIf="errorMessage" style="text-align: center; padding: 40px; color: #ef4444;">
+    <i class="fa-solid fa-triangle-exclamation"></i> {{ errorMessage }}
+  </div>
+
+  <div *ngIf="previewData && !isLoading">
+
+    <div class="header-section">
+      <div class="title-block">
+        <h1>{{ previewData.title }}</h1> <span class="status-badge published"><span class="dot"></span> Published</span>
+      </div>
+      
+      <div class="meta-row">
+        <span>{{ previewData.term }}</span>
+        <span class="dot-sep"></span>
+        <span>{{ previewData.instructorName }}</span>
+      </div>
+
+      <div class="preview-banner">
+        <i class="fa-solid fa-eye"></i> Previewing as Student
+      </div>
+    </div>
+
+    <div class="content-grid">
+      
+      <div class="modules-column">
+        
+        <div class="module-card" *ngFor="let module of previewData.modules" 
+             [class.current-week]="module.status === 'current'"
+             [class.locked]="module.status === 'locked'">
+          
+          <div class="week-badge" *ngIf="module.status === 'current'">Current Week</div>
+
+          <div class="module-header">
+            <div class="header-text">
+              <h3>{{ module.title }}</h3>
+              <span class="date-range">{{ module.dateRange }}</span>
+            </div>
+            
+            <div class="status-icon completed" *ngIf="module.status === 'completed'">
+              <i class="fa-solid fa-check"></i>
+            </div>
+            <div class="status-icon lock" *ngIf="module.status === 'locked'">
+              <i class="fa-solid fa-lock"></i>
+            </div>
+          </div>
+
+          <div class="module-items" *ngIf="module.status !== 'locked'">
+            <div class="item-row" *ngFor="let item of module.items">
+              
+              <div class="item-icon" 
+                   [class.blue]="item.type.includes('pdf') || item.type.includes('doc')" 
+                   [class.purple]="item.type.includes('video')" 
+                   [class.orange]="item.isAssignment">
+                <i class="fa-solid" [ngClass]="getItemIcon(item.type)"></i>
+              </div>
+
+              <div class="item-info">
+                <p class="item-title">{{ item.title }}</p>
+                
+                <div class="item-meta" *ngIf="!item.isAssignment">{{ item.meta }}</div>
+                <div class="item-meta urgent" *ngIf="item.isAssignment">
+                  <span class="pulse-dot"></span> {{ item.meta }}
+                </div>
+              </div>
+              <i class="fa-solid fa-chevron-right arrow"></i>
+            </div>
+          </div>
+
+          <div class="module-items locked-msg" *ngIf="module.status === 'locked'">
+            <p><i class="fa-solid fa-circle-info"></i> Content will unlock on {{ module.unlockDate }}</p>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="widgets-column">
+        
+        <div class="widget-card">
+          <div class="widget-header">
+            <i class="fa-solid fa-bullhorn"></i>
+            <span>Latest Announcements</span>
+          </div>
+          <div class="widget-body">
+            <div class="announcement-item" *ngFor="let ann of previewData.announcements">
+              <div class="ann-title">
+                <span class="dot"></span> {{ ann.title }}
+              </div>
+              <p class="ann-body">{{ ann.body }}</p>
+              <span class="ann-time">{{ ann.timeAgo }}</span>
+            </div>
+            
+            <p *ngIf="previewData.announcements.length === 0" style="font-size: 12px; color: #9ca3af;">No announcements.</p>
+          </div>
+          <button class="widget-footer-btn">View All Announcements</button>
+        </div>
+
+        <div class="widget-card">
+          <div class="widget-header">
+            <i class="fa-solid fa-calendar-check"></i>
+            <span>Upcoming Deadlines</span>
+          </div>
+          <div class="widget-body gap-small">
+            <div class="deadline-item" *ngFor="let d of previewData.deadlines" [class.urgent-bg]="d.urgent">
+              <div class="d-icon" [class.text-red]="d.urgent">
+                <i class="fa-solid" [ngClass]="d.icon"></i>
+              </div>
+              <div class="d-info">
+                <p class="d-title">{{ d.title }}</p>
+                <p class="d-due" [class.text-red]="d.urgent">{{ d.due }}</p>
+              </div>
+            </div>
+            <p *ngIf="previewData.deadlines.length === 0" style="font-size: 12px; color: #9ca3af;">No upcoming deadlines.</p>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>

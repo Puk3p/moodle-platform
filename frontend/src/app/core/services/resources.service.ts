@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 import { CourseResources, ResourcesPageResponse } from '../models/resource.model';
 import { API_BASE_URL } from '../config/api-endpoints';
+import { UploadOptions } from '../models/upload-resource.model';
 
 @Injectable({
   providedIn: 'root'
@@ -19,5 +20,13 @@ export class ResourcesService {
     return this.http.get<ResourcesPageResponse>(this.baseUrl, { params }).pipe(
       map(response => response.courses)
     );
+  }
+
+  getUploadOptions(): Observable<UploadOptions> {
+    return this.http.get<UploadOptions>(`${this.baseUrl}/options`);
+  }
+
+  uploadResource(formData: FormData): Observable<void> {
+    return this.http.post<void>(this.baseUrl, formData);
   }
 }
