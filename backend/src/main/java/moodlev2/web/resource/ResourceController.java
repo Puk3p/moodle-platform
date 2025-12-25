@@ -2,12 +2,13 @@ package moodlev2.web.resource;
 
 import lombok.RequiredArgsConstructor;
 import moodlev2.application.resource.GetResourcesService;
+import moodlev2.application.resource.ResourceService; // <--- Import Service-ul de scriere
+import moodlev2.web.resource.dto.CreateResourceDto;
 import moodlev2.web.resource.dto.ResourcesPageResponse;
+import moodlev2.web.resource.dto.UploadOptionsDto;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/resources")
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ResourceController {
 
     private final GetResourcesService getResourcesService;
+    private final ResourceService resourceService;
 
     @GetMapping
     public ResourcesPageResponse getResources(
@@ -24,5 +26,15 @@ public class ResourceController {
     ) {
         String email = (authentication != null) ? authentication.getName() : null;
         return getResourcesService.getResourcesForUser(email, term, scope);
+    }
+
+    @GetMapping("/options")
+    public UploadOptionsDto getUploadOptions(Authentication authentication) {
+        return resourceService.getUploadOptions(authentication.getName());
+    }
+
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public void uploadResource(@ModelAttribute CreateResourceDto dto) {
+        resourceService.createResource(dto);
     }
 }

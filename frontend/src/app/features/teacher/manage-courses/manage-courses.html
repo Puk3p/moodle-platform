@@ -77,7 +77,7 @@
           
           <button class="action-btn" (click)="viewStudents(course.code)">Students</button>
         </div>
-        <button class="folder-btn">
+        <button class="folder-btn" (click)="viewResources(course.code)">
           <i class="fa-solid fa-folder"></i>
         </button>
       </div>
@@ -89,10 +89,13 @@
     <h2>Recent Activity in Your Courses</h2>
     
     <div class="activity-grid">
+      <div *ngIf="isLoading" class="p-4 text-center text-gray-500">Loading activity...</div>
+
       <div class="activity-card" *ngFor="let activity of recentActivities">
-        <div class="activity-icon" [ngClass]="[activity.iconBgClass, activity.iconTextClass]">
-          <span class="material-symbols-outlined" *ngIf="activity.icon">{{ activity.icon }}</span>
-          </div>
+        <div class="activity-icon" 
+             [ngClass]="[getActivityStyles(activity.type).bg, getActivityStyles(activity.type).text]">
+          <span class="material-symbols-outlined">{{ activity.icon }}</span>
+        </div>
         
         <div class="activity-info">
           <p class="activity-title">

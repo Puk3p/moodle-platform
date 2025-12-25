@@ -1,0 +1,343 @@
+$primary-color: #ff5100;
+$primary-light: #fff5f0;
+$text-dark: #181310;
+$text-gray: #8d6d5e;
+$border-color: #e7deda;
+$bg-light: #f8f6f5;
+$bg-white: #ffffff;
+$hover-bg: #f9fafb;
+
+$purple-bg: #f3e8ff; $purple-text: #7e22ce;
+$blue-bg: #eff6ff; $blue-text: #1d4ed8;
+$orange-bg: #fff7ed; $orange-text: #c2410c;
+$indigo-bg: #eef2ff; $indigo-text: #4338ca;
+
+$green-bg: #f0fdf4; $green-text: #15803d;
+$yellow-bg: #fefce8; $yellow-text: #a16207;
+$red-bg: #fef2f2; $red-text: #b91c1c;
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+}
+
+.bank-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 2rem;
+  padding-bottom: 0; 
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+}
+
+.page-header {
+  margin-bottom: 1.5rem;
+  .header-titles {
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: $text-dark;
+      margin: 0 0 0.25rem 0;
+    }
+    .subtitle {
+      color: $text-gray;
+      font-size: 0.875rem;
+    }
+  }
+}
+
+.content-split {
+  display: flex;
+  gap: 1.5rem;
+  flex: 1;
+  overflow: hidden;
+}
+.categories-panel {
+  width: 280px;
+  flex-shrink: 0;
+  background: $bg-white;
+  border: 1px solid $border-color;
+  border-radius: 1rem;
+  display: flex;
+  flex-direction: column;
+
+  .panel-header {
+    padding: 1rem;
+    border-bottom: 1px solid $border-color;
+    @include flex-center;
+    justify-content: space-between;
+
+    h2 { font-size: 0.875rem; font-weight: 600; color: $text-dark; margin: 0; }
+    
+    .btn-icon-small {
+      background: none; border: none; cursor: pointer; color: $text-gray;
+      &:hover { color: $primary-color; }
+    }
+  }
+
+  .categories-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem;
+  }
+
+  .category-item {
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 2px;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    @include flex-center;
+    gap: 0.75rem;
+    color: $text-dark;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    position: relative;
+
+    .folder-icon { color: $text-gray; font-size: 1.1rem; }
+    .cat-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    &.level-1 { padding-left: 2rem; font-weight: 400; color: $text-gray; }
+
+    .hover-actions { opacity: 0; transition: opacity 0.2s; color: $text-gray; }
+    &:hover {
+      background-color: $bg-light;
+      .hover-actions { opacity: 1; }
+    }
+
+    &.active {
+      background-color: $primary-light;
+      color: $primary-color;
+      .folder-icon { color: $primary-color; }
+      
+      .badge-count {
+        background-color: $bg-white;
+        border: 1px solid rgba($primary-color, 0.2);
+        color: $primary-color;
+      }
+    }
+
+    .badge-count {
+      font-size: 0.7rem;
+      font-weight: 600;
+      background-color: $bg-light;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: $primary-color;
+    }
+  }
+}
+
+.questions-panel {
+  flex: 1;
+  background: $bg-white;
+  border: 1px solid $border-color;
+  border-radius: 1rem;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 600px;
+
+  .toolbar {
+    padding: 1rem;
+    border-bottom: 1px solid $border-color;
+    @include flex-center;
+    justify-content: space-between;
+    gap: 1rem;
+
+    .search-and-filters {
+      display: flex;
+      gap: 1rem;
+      flex: 1;
+    }
+
+    .search-box {
+      position: relative;
+      flex: 1;
+      max-width: 320px;
+      
+      .search-icon {
+        position: absolute;
+        left: 0.75rem; top: 50%; transform: translateY(-50%);
+        color: $text-gray;
+      }
+      input {
+        width: 100%;
+        padding: 0.6rem 1rem 0.6rem 2.2rem;
+        border: 1px solid $border-color;
+        border-radius: 0.75rem;
+        outline: none;
+        font-size: 0.875rem;
+        &:focus { border-color: $primary-color; }
+      }
+    }
+
+    .filters {
+      display: flex;
+      gap: 0.5rem;
+      .filter-btn {
+        background: $bg-light;
+        border: 1px solid transparent;
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: $text-dark;
+        cursor: pointer;
+        @include flex-center;
+        gap: 0.4rem;
+        &:hover { border-color: $border-color; }
+        fa-icon { color: $text-gray; font-size: 0.7rem; }
+      }
+    }
+
+    .btn-primary {
+      background-color: $primary-color;
+      color: white;
+      border: none;
+      padding: 0.6rem 1.25rem;
+      border-radius: 0.75rem;
+      font-weight: 600;
+      font-size: 0.875rem;
+      cursor: pointer;
+      @include flex-center;
+      gap: 0.5rem;
+      &:hover { background-color: darken($primary-color, 5%); }
+    }
+  }
+
+  .table-header {
+    display: flex;
+    padding: 0.75rem 1.5rem;
+    background-color: rgba($bg-light, 0.5);
+    border-bottom: 1px solid $border-color;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: $text-gray;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .questions-list {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .question-row {
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid $border-color;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: rgba($bg-light, 0.5);
+      .action-btn { opacity: 1; }
+    }
+  }
+
+  .col-question { flex: 3; padding-right: 1rem; }
+  .col-type     { flex: 1; min-width: 120px; }
+  .col-diff     { flex: 1; min-width: 100px; }
+  .col-usage    { flex: 0.5; min-width: 80px; }
+  .col-actions  { flex: 0.5; min-width: 80px; text-align: right; display: flex; justify-content: flex-end; gap: 0.5rem;}
+
+  .q-text {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: $text-dark;
+    margin: 0 0 0.25rem 0;
+    display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  
+  .tags {
+    display: flex;
+    gap: 0.5rem;
+    .tag {
+      font-size: 0.7rem;
+      background-color: #f3f4f6;
+      color: $text-gray;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+  }
+
+  .badge-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid transparent;
+
+    &.code { background: $purple-bg; color: $purple-text; border-color: darken($purple-bg, 5%); }
+    &.mult { background: $blue-bg; color: $blue-text; border-color: darken($blue-bg, 5%); }
+    &.true { background: $orange-bg; color: $orange-text; border-color: darken($orange-bg, 5%); }
+    &.drag { background: $indigo-bg; color: $indigo-text; border-color: darken($indigo-bg, 5%); }
+  }
+
+  .badge-diff {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid transparent;
+
+    &.easy { background: $green-bg; color: $green-text; border-color: darken($green-bg, 5%); }
+    &.medium { background: $yellow-bg; color: $yellow-text; border-color: darken($yellow-bg, 5%); }
+    &.hard { background: $red-bg; color: $red-text; border-color: darken($red-bg, 5%); }
+  }
+
+  .usage-text {
+    font-size: 0.75rem;
+    color: $text-gray;
+    font-weight: 500;
+  }
+
+  .action-btn {
+    opacity: 0; 
+    background: none; border: none; cursor: pointer; padding: 0.35rem; border-radius: 0.35rem;
+    color: $text-gray;
+    font-size: 1rem;
+    
+    &.edit:hover { background-color: $primary-light; color: $primary-color; }
+    &.delete:hover { background-color: $red-bg; color: $red-text; }
+  }
+
+  .pagination-bar {
+    padding: 0.75rem 1.5rem;
+    border-top: 1px solid $border-color;
+    @include flex-center;
+    justify-content: space-between;
+
+    .showing-text { font-size: 0.75rem; color: $text-gray; }
+    
+    .page-controls {
+      display: flex; gap: 0.25rem;
+      
+      .page-btn {
+        width: 32px; height: 32px;
+        @include flex-center; justify-content: center;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        cursor: pointer;
+        border: 1px solid $border-color;
+        background: white;
+        color: $text-gray;
+
+        &:hover { background: $bg-light; color: $text-dark; }
+        
+        &.active {
+          background: $primary-color; color: white; border-color: $primary-color;
+        }
+      }
+      .dots { width: 32px; text-align: center; color: $text-gray; font-size: 0.75rem; line-height: 32px; }
+    }
+  }
+}

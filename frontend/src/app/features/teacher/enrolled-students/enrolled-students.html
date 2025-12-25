@@ -13,118 +13,111 @@
     </nav>
   </div>
 
-  <div class="header-section">
-    <div class="title-block">
-      <h1>Enrolled Students: {{ courseCode }}</h1>
-      <p class="subtitle">Manage student enrollments, track individual progress, and review submissions.</p>
-    </div>
-
-    <div class="stats-cards">
-      <div class="stat-card">
-        <div class="icon-circle bg-blue">
-          <i class="fa-solid fa-users"></i>
-        </div>
-        <div class="stat-info">
-          <span class="label">TOTAL STUDENTS</span>
-          <span class="value">{{ stats.total }}</span>
-        </div>
-      </div>
-
-      <div class="stat-card">
-        <div class="icon-circle bg-green">
-          <i class="fa-solid fa-arrow-trend-up"></i>
-        </div>
-        <div class="stat-info">
-          <span class="label">ACTIVE THIS WEEK</span>
-          <span class="value">{{ stats.activeRate }}%</span>
-        </div>
-      </div>
-
-      <div class="stat-card">
-        <div class="icon-circle bg-orange">
-          <i class="fa-solid fa-circle-exclamation"></i>
-        </div>
-        <div class="stat-info">
-          <span class="label">PENDING</span>
-          <span class="value">{{ stats.pending }}</span>
-        </div>
-      </div>
-    </div>
+  <div *ngIf="isLoading" class="text-center p-10 text-gray-500">
+    <i class="fa-solid fa-spinner fa-spin text-2xl"></i> Loading students...
   </div>
 
-  <div class="controls-bar">
-    <div class="search-wrapper">
-      <i class="fa-solid fa-magnifying-glass"></i>
-      <input type="text" [(ngModel)]="searchTerm" placeholder="Search students...">
+  <div *ngIf="!isLoading && data">
+
+    <div class="header-section">
+      <div class="title-block">
+        <h1>Enrolled Students: {{ courseCode }}</h1>
+        <p class="subtitle">Manage student enrollments, track individual progress, and review submissions.</p>
+      </div>
+
+      <div class="stats-cards">
+        <div class="stat-card">
+          <div class="icon-circle bg-blue"><i class="fa-solid fa-users"></i></div>
+          <div class="stat-info">
+            <span class="label">TOTAL STUDENTS</span>
+            <span class="value">{{ stats.total }}</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="icon-circle bg-green"><i class="fa-solid fa-arrow-trend-up"></i></div>
+          <div class="stat-info">
+            <span class="label">ACTIVE THIS WEEK</span>
+            <span class="value">{{ stats.activeRate }}%</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="icon-circle bg-orange"><i class="fa-solid fa-circle-exclamation"></i></div>
+          <div class="stat-info">
+            <span class="label">PENDING</span>
+            <span class="value">{{ stats.pending }}</span>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="actions">
-      <button class="btn-outline">
-        <i class="fa-solid fa-filter"></i> Filter
-      </button>
-      <button class="btn-outline">
-        <i class="fa-solid fa-download"></i> Export
-      </button>
+    <div class="controls-bar">
+      <div class="search-wrapper">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" [(ngModel)]="searchTerm" placeholder="Search students...">
+      </div>
+      <div class="actions">
+        <button class="btn-outline"><i class="fa-solid fa-filter"></i> Filter</button>
+        <button class="btn-outline"><i class="fa-solid fa-download"></i> Export</button>
+      </div>
     </div>
-  </div>
 
-  <div class="table-container">
-    <table>
-      <thead>
-        <tr>
-          <th>STUDENT NAME</th>
-          <th>GROUP</th>
-          <th style="width: 30%;">PROGRESS</th>
-          <th>LAST ACTIVITY</th>
-          <th class="text-right">ACTIONS</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let student of students">
-          <td>
-            <div class="student-profile">
-              <div class="avatar" [style.background-color]="student.avatarColor" [style.color]="getAvatarTextColor(student.avatarColor)">
-                {{ getInitials(student) }}
-              </div>
-              <div class="info">
-                <div class="name">{{ student.firstName }} {{ student.lastName }}</div>
-                <div class="email">{{ student.email }}</div>
-              </div>
-            </div>
-          </td>
-
-          <td>
-            <span class="group-badge">{{ student.group }}</span>
-          </td>
-
-          <td>
-            <div class="progress-wrapper">
-              <div class="progress-track">
-                <div class="progress-fill" 
-                     [style.width.%]="student.progress"
-                     [style.background-color]="getProgressColor(student.progress)">
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>STUDENT NAME</th>
+            <th>GROUP</th>
+            <th style="width: 30%;">PROGRESS</th>
+            <th>LAST ACTIVITY</th>
+            <th class="text-right">ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let student of students">
+            <td>
+              <div class="student-profile">
+                <div class="avatar" [style.background-color]="student.avatarColor" [style.color]="getAvatarTextColor(student.avatarColor)">
+                  {{ getInitials(student) }}
+                </div>
+                <div class="info">
+                  <div class="name">{{ student.firstName }} {{ student.lastName }}</div>
+                  <div class="email">{{ student.email }}</div>
                 </div>
               </div>
-              <span class="progress-text">{{ student.progress }}%</span>
-            </div>
-          </td>
+            </td>
+            <td>
+              <span class="group-badge">{{ student.group }}</span>
+            </td>
+            <td>
+              <div class="progress-wrapper">
+                <div class="progress-track">
+                  <div class="progress-fill" 
+                       [style.width.%]="student.progress"
+                       [style.background-color]="getProgressColor(student.progress)">
+                  </div>
+                </div>
+                <span class="progress-text">{{ student.progress }}%</span>
+              </div>
+            </td>
+            <td class="text-gray">{{ student.lastActivity }}</td>
+            <td class="text-right">
+              <button class="btn-view">View</button>
+            </td>
+          </tr>
+          
+          <tr *ngIf="students.length === 0">
+            <td colspan="5" class="text-center p-8 text-gray-400">No students found.</td>
+          </tr>
+        </tbody>
+      </table>
 
-          <td class="text-gray">{{ student.lastActivity }}</td>
-
-          <td class="text-right">
-            <button class="btn-view">View</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div class="table-footer">
-      <span class="footer-text">Showing 1-{{ students.length }} of {{ stats.total }} students</span>
-      <div class="pagination-btns">
-        <button class="btn-page" disabled>Previous</button>
-        <button class="btn-page">Next</button>
+      <div class="table-footer">
+        <span class="footer-text">Showing {{ students.length }} of {{ stats.total }} students</span>
+        <div class="pagination-btns">
+          <button class="btn-page" disabled>Previous</button>
+          <button class="btn-page">Next</button>
+        </div>
       </div>
     </div>
-  </div>
 
-</div>
+  </div> </div>

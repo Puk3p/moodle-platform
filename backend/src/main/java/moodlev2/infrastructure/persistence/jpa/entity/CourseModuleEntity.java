@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
+import java.time.LocalDate; // <--- IMPORT NOU
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,6 +24,12 @@ public class CourseModuleEntity {
 
     @Column(name = "sort_order")
     private Integer sortOrder;
+
+    @Column(name = "start_date")
+    private LocalDate startDate;
+
+    @Column(name = "end_date")
+    private LocalDate endDate;
 
     @OneToMany(mappedBy = "module", cascade = CascadeType.ALL)
     @OrderBy("sortOrder ASC")

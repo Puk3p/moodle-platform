@@ -20,9 +20,7 @@ public class FixPasswordRunner implements CommandLineRunner {
     public void run(String... args) throws Exception {
         System.out.println("--- STARTED PASSWORD FIX ---");
 
-        resetPasswordFor("student4@test.com", "password");
-
-        resetPasswordFor("profesor@test.com", "password");
+        resetPasswordFor("teacher@test.com", "password");
 
         System.out.println("--- FINISHED PASSWORD FIX ---");
     }

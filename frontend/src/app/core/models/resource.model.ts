@@ -14,3 +14,12 @@ export interface CourseResources {
 export interface ResourcesPageResponse {
   courses: CourseResources[];
 }
+
+export interface Resource {
+  id: number;
+  name: string;
+  category: string;
+  type: string;
+  size: string;
+  date: string;
+}

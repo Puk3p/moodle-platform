@@ -24,7 +24,6 @@ import static dev.samstevens.totp.util.Utils.getDataUriForImage;
 @Service
 @RequiredArgsConstructor
 public class TwoFactorService {
-
     private final SpringDataUserRepository userRepository;
 
     @Transactional
@@ -49,7 +48,9 @@ public class TwoFactorService {
                 .build();
 
         QrGenerator generator = new ZxingPngQrGenerator();
+
         String qrCodeImage;
+
         try {
             byte[] imageData = generator.generate(data);
             qrCodeImage = getDataUriForImage(imageData, generator.getImageMimeType());

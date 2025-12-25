@@ -1,29 +1,8 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-
-interface TeacherCourse {
-  code: string;
-  title: string;
-  studentsCount: number;
-  modulesCount: number;
-  term: string;
-  status: 'Published' | 'Draft';
-  avgGrade?: number;
-  pendingSubmissions?: number;
-  isStarted: boolean;
-}
-
-interface RecentActivity {
-  type: 'submission' | 'resource' | 'announcement';
-  courseCode: string;
-  title: string;
-  subtitle: string;
-  timeAgo: string;
-  icon: string;
-  iconBgClass: string;
-  iconTextClass: string;
-}
+import { CoursesService } from '../../../core/services/courses.service';
+import { TeacherActivity, TeacherCourse } from '../../../core/models/teacher.model';
 
 @Component({
   selector: 'app-manage-courses',
@@ -32,86 +11,44 @@ interface RecentActivity {
   templateUrl: './manage-courses.html',
   styleUrls: ['./manage-courses.scss']
 })
-export class ManageCoursesComponent {
+export class ManageCoursesComponent implements OnInit {
   private router = inject(Router);
+  private coursesService = inject(CoursesService);
   
-  courses: TeacherCourse[] = [
-    {
-      code: 'CS201',
-      title: 'Data Structures',
-      studentsCount: 124,
-      modulesCount: 8,
-      term: 'Fall 2024',
-      status: 'Published',
-      avgGrade: 8.4,
-      isStarted: true
-    },
-    {
-      code: 'CS350',
-      title: 'Operating Systems',
-      studentsCount: 98,
-      modulesCount: 12,
-      term: 'Fall 2024',
-      status: 'Published',
-      pendingSubmissions: 14,
-      isStarted: true
-    },
-    {
-      code: 'CS401',
-      title: 'Advanced Algorithms',
-      studentsCount: 0,
-      modulesCount: 4,
-      term: 'Spring 2025',
-      status: 'Draft',
-      isStarted: false
-    },
-    {
-      code: 'INFO420',
-      title: 'Project Management',
-      studentsCount: 45,
-      modulesCount: 6,
-      term: 'Fall 2024',
-      status: 'Published',
-      avgGrade: 9.1,
-      isStarted: true
-    }
-  ];
+  courses: TeacherCourse[] = [];
+  recentActivities: TeacherActivity[] = [];
+  isLoading = true;
 
-  recentActivities: RecentActivity[] = [
-    {
-      type: 'submission',
-      courseCode: 'CS201',
-      title: 'New submission in',
-      subtitle: 'Student: Sarah Jenkins • Lab 4',
-      timeAgo: '15 MINS AGO',
-      icon: 'upload_file',
-      iconBgClass: 'bg-blue',
-      iconTextClass: 'text-blue'
-    },
-    {
-      type: 'resource',
-      courseCode: 'CS350',
-      title: '2 resources uploaded in',
-      subtitle: 'Lecture slides & Dataset.csv',
-      timeAgo: '2 HOURS AGO',
-      icon: 'cloud_upload',
-      iconBgClass: 'bg-purple',
-      iconTextClass: 'text-purple'
-    },
-    {
-      type: 'announcement',
-      courseCode: 'INFO420',
-      title: 'Announcement posted in',
-      subtitle: '"Project submission guidelines update"',
-      timeAgo: 'YESTERDAY',
-      icon: 'campaign',
-      iconBgClass: 'bg-orange',
-      iconTextClass: 'text-orange'
-    }
-  ];
+  ngOnInit() {
+    this.loadData();
+  }
 
-  openCourse(code: string) { 
-    this.router.navigate(['/courses', code]); 
+  loadData() {
+    this.isLoading = true;
+    this.coursesService.getTeacherDashboard().subscribe({
+      next: (data) => {
+        this.courses = data.courses;
+        this.recentActivities = data.recentActivities;
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('Error loading teacher dashboard', err);
+        this.isLoading = false;
+      }
+    });
+  }
+
+  getActivityStyles(type: string) {
+    switch (type) {
+      case 'submission': return { bg: 'bg-blue', text: 'text-blue' };
+      case 'resource': return { bg: 'bg-purple', text: 'text-purple' };
+      case 'announcement': return { bg: 'bg-orange', text: 'text-orange' };
+      default: return { bg: 'bg-gray', text: 'text-gray' };
+    }
+  }
+
+  openCourse(code: string) {
+    this.router.navigate(['/manage-courses', code, 'preview']); 
   }
 
   editCourse(code: string) { 
@@ -120,5 +57,9 @@ export class ManageCoursesComponent {
   
   viewStudents(code: string) {
     this.router.navigate(['/manage-courses', code, 'students']); 
+  }
+
+  viewResources(code: string) {
+    this.router.navigate(['/manage-courses', code, 'resources']);
   }
 }

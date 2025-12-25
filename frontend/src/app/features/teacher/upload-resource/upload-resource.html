@@ -1,0 +1,137 @@
+<div class="upload-container">
+  
+  <div class="page-header">
+    <div class="header-top">
+      <a routerLink="/manage-courses" class="back-link">
+        <i class="fa-solid fa-arrow-left"></i> Back to Manage Courses
+      </a>
+      <nav class="breadcrumbs">
+        <span>Teacher Tools</span>
+        <span class="sep">/</span>
+        <span class="highlight">Upload Resources</span>
+      </nav>
+    </div>
+    <div class="header-title">
+      <h1>Add Resource</h1>
+      <p>Upload or link new course materials for your students.</p>
+    </div>
+  </div>
+
+  <div class="form-card">
+    <form [formGroup]="uploadForm" (ngSubmit)="onSubmit()">
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label>Select Course</label>
+          <div class="select-wrapper">
+            <select formControlName="courseCode">
+              <option value="" disabled selected>Select a course...</option>
+              <option *ngFor="let c of courses" [value]="c.code">{{ c.code }} - {{ c.name }}</option>
+            </select>
+            <i class="fa-solid fa-chevron-down select-icon"></i>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Select Module</label>
+          <div class="select-wrapper">
+            <select formControlName="moduleId">
+              <option value="" disabled selected>Select a module...</option>
+              <option *ngFor="let m of selectedCourseModules" [value]="m.id">{{ m.title }}</option>
+            </select>
+            <i class="fa-solid fa-chevron-down select-icon"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Resource Title</label>
+        <input type="text" formControlName="title" placeholder="e.g., Lecture Slides: Recursion" />
+      </div>
+
+      <div class="form-group">
+        <label>Resource Type</label>
+        <div class="radio-group">
+          <label class="radio-card" *ngFor="let type of resourceTypes" 
+                 [class.active]="uploadForm.get('type')?.value === type.id">
+            <input type="radio" formControlName="type" [value]="type.id" />
+            <i class="fa-solid" [ngClass]="type.icon"></i>
+            <span class="label">{{ type.label }}</span>
+          </label>
+        </div>
+      </div>
+
+      <ng-container *ngIf="isAssignmentType()">
+        <div class="form-row">
+            <div class="form-group">
+                <label>Due Date</label>
+                <input type="datetime-local" formControlName="dueDate">
+            </div>
+            <div class="form-group">
+                <label>Max Grade</label>
+                <input type="number" formControlName="maxGrade" placeholder="e.g. 100">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Submission Type</label>
+            <div class="select-wrapper">
+                <select formControlName="submissionType">
+                    <option value="File">File Upload Only</option>
+                    <option value="Text">Online Text Only</option>
+                    <option value="Both">Both (Online Text & File Uploads)</option>
+                </select>
+                <i class="fa-solid fa-chevron-down select-icon"></i>
+            </div>
+        </div>
+      </ng-container>
+
+      <div class="form-group" *ngIf="isStandardUploadType()">
+        <label>Upload File</label>
+        <div class="upload-zone" (click)="fileInput.click()">
+          <div class="zone-content">
+            <div class="icon-circle">
+              <i class="fa-solid fa-cloud-arrow-up"></i> 
+            </div>
+            <div class="zone-text">
+              <p class="primary-text"><span>Click to upload</span> or drag and drop</p>
+              <p class="secondary-text" *ngIf="!selectedFileName">PDF, PPTX, ZIP (max. 25MB)</p>
+              <p class="file-name" *ngIf="selectedFileName">{{ selectedFileName }}</p>
+            </div>
+          </div>
+          <input #fileInput type="file" (change)="onFileSelected($event)" hidden />
+        </div>
+      </div>
+
+      <div class="form-group" *ngIf="isLinkType()">
+        <label>External Link URL</label>
+        <input type="url" formControlName="externalUrl" placeholder="https://example.com/resource" />
+      </div>
+
+      <div class="form-group">
+        <label>Description <span class="optional">(Optional)</span></label>
+        <textarea formControlName="description" rows="4"></textarea>
+      </div>
+
+      <div class="toggle-card">
+        <div class="toggle-info">
+          <span class="toggle-title">Visibility</span>
+          <span class="toggle-desc">Controls if students can view this resource immediately.</span>
+        </div>
+        <div class="toggle-switch">
+          <input type="checkbox" id="vis" formControlName="isVisible" />
+          <label for="vis"></label>
+        </div>
+      </div>
+
+      <div class="form-footer">
+        <button type="button" class="btn-cancel" (click)="onCancel()">Cancel</button>
+        <button type="submit" class="btn-submit" [disabled]="isUploading">
+          <span *ngIf="!isUploading"><i class="fa-solid fa-circle-plus"></i></span> 
+          {{ isUploading ? 'Saving...' : 'Add Resource' }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
