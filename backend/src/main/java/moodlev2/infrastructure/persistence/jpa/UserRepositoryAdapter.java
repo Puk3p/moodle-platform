@@ -1,6 +1,5 @@
 package moodlev2.infrastructure.persistence.jpa;
 
-import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import moodlev2.domain.user.User;
 import moodlev2.domain.user.ports.UserRepositoryPort;

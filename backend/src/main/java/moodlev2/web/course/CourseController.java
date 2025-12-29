@@ -2,10 +2,7 @@ package moodlev2.web.course;
 
 import lombok.RequiredArgsConstructor;
 import moodlev2.application.course.*;
-import moodlev2.web.course.dto.CourseDetailsResponse;
-import moodlev2.web.course.dto.CoursesPageResponse;
-import moodlev2.web.course.dto.DashboardHomeResponse;
-import moodlev2.web.course.dto.ResourceDto;
+import moodlev2.web.course.dto.*;
 import moodlev2.web.course.dto.edit.CourseEditDto;
 import moodlev2.web.course.dto.preview.CoursePreviewDto;
 import moodlev2.web.course.dto.students.EnrolledStudentsResponse;
@@ -27,6 +24,7 @@ public class CourseController {
     private final GetCourseEditService getCourseEditService;
     private final GetEnrolledStudentsService getEnrolledStudentsService;
     private final UpdateCourseService updateCourseService;
+    private final GetSimpleCoursesService getSimpleCoursesService;
 
     @GetMapping("/my-dashboard")
     public DashboardHomeResponse getMyDashboard(Authentication authentication) {
@@ -68,5 +66,10 @@ public class CourseController {
     @PutMapping("/{code}")
     public void updateCourse(@PathVariable String code, @RequestBody CourseEditDto dto) {
         updateCourseService.updateCourse(code, dto);
+    }
+
+    @GetMapping("/list")
+    public List<SimpleDto> getCoursesForDropdown() {
+        return getSimpleCoursesService.getCoursesForDropdown();
     }
 }

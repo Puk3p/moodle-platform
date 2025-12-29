@@ -2,7 +2,7 @@ package moodlev2.web.resource;
 
 import lombok.RequiredArgsConstructor;
 import moodlev2.application.resource.GetResourcesService;
-import moodlev2.application.resource.ResourceService; // <--- Import Service-ul de scriere
+import moodlev2.application.resource.ResourceService;
 import moodlev2.web.resource.dto.CreateResourceDto;
 import moodlev2.web.resource.dto.ResourcesPageResponse;
 import moodlev2.web.resource.dto.UploadOptionsDto;

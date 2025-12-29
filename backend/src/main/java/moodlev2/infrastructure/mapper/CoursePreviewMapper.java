@@ -22,11 +22,17 @@ public class CoursePreviewMapper {
                 .map(this::mapModule)
                 .toList();
 
+        // --- FIX: Extragem numele instructorului din UserEntity ---
+        String instructorName = "Unknown Instructor";
+        if (course.getTeacher() != null) {
+            instructorName = course.getTeacher().getFirstName() + " " + course.getTeacher().getLastName();
+        }
+
         return new CoursePreviewDto(
                 course.getCode(),
                 course.getName(),
                 course.getTerm(),
-                course.getInstructorName(),
+                instructorName, // <--- Folosim variabila calculată
                 moduleDtos,
                 announcements.stream().map(this::mapAnnouncement).toList(),
                 events.stream().map(this::mapDeadline).toList()

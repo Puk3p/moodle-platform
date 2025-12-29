@@ -8,6 +8,8 @@ import { EnrolledStudentsComponent } from './features/teacher/enrolled-students/
 import { CourseResourcesComponent } from './features/teacher/course-resources/course-resources';
 import { CoursePreviewComponent } from './features/teacher/course-preview/course-preview';
 import { UploadResourceComponent } from './features/teacher/upload-resource/upload-resource'; 
+import { QuizResultsComponent } from './features/teacher/quiz-results/quiz-results';
+import { QuizAttemptReviewComponent } from './features/teacher/quiz-attempt-review/quiz-attempt-review';
 
 export const routes: Routes = [
   {
@@ -96,7 +98,16 @@ export const routes: Routes = [
     component: CoursePreviewComponent, 
     canActivate: [authGuard] 
   },
-
+  {
+    path: 'teacher/quizzes/:id/results',
+    component: QuizResultsComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'teacher/quizzes/attempts/:attemptId/review', 
+    component: QuizAttemptReviewComponent,
+    canActivate: [authGuard]
+  },
   {
     path: '',
     redirectTo: 'login',

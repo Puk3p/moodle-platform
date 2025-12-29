@@ -1,4 +1,3 @@
-// moodlev2\web\quiz\QuizController.java
 package moodlev2.web.quiz;
 
 import lombok.RequiredArgsConstructor;
@@ -35,4 +34,16 @@ public class QuizController {
     public QuizResultDto submitQuiz(@RequestBody QuizSubmissionDto dto, Authentication auth) {
         return engineService.submitAttempt(dto, auth.getName());
     }
+
+    @DeleteMapping("/{id}")
+    public void deleteQuiz(@PathVariable Long id) {
+        managementService.deleteQuiz(id);
+    }
+
+    @PutMapping("/{id}")
+    public void updateQuiz(@PathVariable Long id, @RequestBody CreateQuizDto dto) {
+        managementService.updateQuiz(id, dto);
+    }
+
+
 }

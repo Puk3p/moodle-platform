@@ -2,7 +2,6 @@ package moodlev2.infrastructure.security;
 
 import lombok.RequiredArgsConstructor;
 import moodlev2.domain.user.ports.PasswordHasherPort;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 

@@ -30,7 +30,7 @@ public class UserEntity {
     @Column(name = "last_name", nullable = false)
     private String lastName;
 
-    @ElementCollection(fetch = FetchType.EAGER) //am zis sa folo eager ca avem rol la auth instant.
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
         name = "user_roles",
         joinColumns = @JoinColumn(name = "user_id")

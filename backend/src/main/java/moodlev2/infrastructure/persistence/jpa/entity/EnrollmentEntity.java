@@ -20,5 +20,5 @@ public class EnrollmentEntity {
     @JoinColumn(name = "course_id")
     private CourseEntity course;
 
-    private String status; // ACTIVE
+    private String status;
 }
