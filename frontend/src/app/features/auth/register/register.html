@@ -1,100 +1,128 @@
-<main class="main-container">
-  <div class="login-form">
-    <h3 class="welcome-text">Welcome !</h3>
-    <h1 class="form-title">Sign up</h1>
+<div class="auth-container">
+  
+  <div class="brand-header">
+    <div class="logo-box">
+      <span class="material-symbols-outlined">school</span>
+    </div>
+    <h1>Moodle V2</h1>
+  </div>
 
-    <form [formGroup]="registerForm" (ngSubmit)="onRegister()">
-      <mat-form-field appearance="fill" class="full-width">
-        <mat-label>First Name</mat-label>
-        <input matInput formControlName="firstName"/>
-        <mat-error *ngIf="firstName.invalid && (firstName.dirty || firstName.touched)">
-          First name is required
-        </mat-error>
-      </mat-form-field>
-
-      <mat-form-field appearance="fill" class="full-width">
-        <mat-label>Last Name</mat-label>
-        <input matInput formControlName="lastName"/>
-        <mat-error *ngIf="lastName.invalid && (lastName.dirty || lastName.touched)">
-          Last name is required
-        </mat-error>
-      </mat-form-field>
-
-      <mat-form-field appearance="fill" class="full-width">
-        <mat-label>Email</mat-label>
-        <input matInput formControlName="email"/>
-        <mat-error *ngIf="email.invalid && (email.dirty || email.touched)">
-          Enter a valid email
-        </mat-error>
-      </mat-form-field>
-
-      <mat-form-field appearance="fill" class="full-width">
-        <mat-label>Password</mat-label>
-        <input matInput
-              [type]="hidePassword ? 'password' : 'text'"
-              formControlName="password" />
-        <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword" aria-label="Toggle password visibility">
-          <svg *ngIf="hidePassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M1 1l22 22"></path>
-            <path d="M9.88 9.88A3 3 0 0 0 12 15a3 3 0 0 0 2.12-.88"></path>
-            <path d="M10.73 5.08A9.77 9.77 0 0 1 12 5c7 0 11 7 11 7a20.29 20.29 0 0 1-3.33 4.74"></path>
-            <path d="M6.18 6.18A9.77 9.77 0 0 0 1 12s4 7 11 7a9.77 9.77 0 0 0 5.82-1.82"></path>
-          </svg>
-          <svg *ngIf="!hidePassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
-            <circle cx="12" cy="12" r="3"></circle>
-          </svg>
-        </button>
-        <mat-error *ngIf="password.invalid && (password.dirty || password.touched)">
-          Password must be at least 8 characters
-        </mat-error>
-      </mat-form-field>
-
-      <mat-form-field appearance="fill" class="full-width">
-        <mat-label>Confirm Password</mat-label>
-        <input matInput
-              [type]="hideConfirmPassword ? 'password' : 'text'"
-              formControlName="confirmPassword" />
-        <button mat-icon-button matSuffix type="button" (click)="hideConfirmPassword = !hideConfirmPassword" aria-label="Toggle confirm password visibility">
-          <svg *ngIf="hideConfirmPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M1 1l22 22"></path>
-            <path d="M9.88 9.88A3 3 0 0 0 12 15a3 3 0 0 0 2.12-.88"></path>
-            <path d="M10.73 5.08A9.77 9.77 0 0 1 12 5c7 0 11 7 11 7a20.29 20.29 0 0 1-3.33 4.74"></path>
-            <path d="M6.18 6.18A9.77 9.77 0 0 0 1 12s4 7 11 7a9.77 9.77 0 0 0 5.82-1.82"></path>
-          </svg>
-          <svg *ngIf="!hideConfirmPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"></path>
-            <circle cx="12" cy="12" r="3"></circle>
-          </svg>
-        </button>
-        <mat-error *ngIf="confirmPassword.errors?.['passwordMismatch'] && (confirmPassword.dirty || confirmPassword.touched)">
-          Passwords must match
-        </mat-error>
-      </mat-form-field>   
-
-      <button mat-raised-button color="primary" class="login-btn" type="submit" [disabled]="registerForm.invalid">
-        Register
-      </button>
-    </form>
-
-    <div class="or-separator" style="margin: 18px 0;">
-      <span>or</span>
+  <div class="auth-card">
+    
+    <div class="auth-tabs">
+      <button class="tab" routerLink="/login">Login</button>
+      <button class="tab active">Register</button>
     </div>
 
-    <button mat-stroked-button color="accent" (click)="loginWithGoogle()" class="login-btn google-btn" style="margin-bottom:10px;">
-      <fa-icon [icon]="faGoogle" style="margin-right: 12px; color: #DB4437;"></fa-icon>
-      Continue with Google
-    </button>
+    <div class="auth-body">
+      
+      <div class="text-center">
+        <h2>Create Account</h2>
+        <p class="subtitle">Join your classmates on Moodle V2.</p>
+      </div>
 
-    <button mat-stroked-button color="primary" (click)="loginWithFacebook()" class="login-btn facebook-btn">
-      <fa-icon [icon]="faFacebookF" style="margin-right: 12px; color: #1877f3;"></fa-icon>
-      Continue with Facebook
-    </button>
+      <form [formGroup]="registerForm" (ngSubmit)="onRegister()" class="auth-form">
+        
+        <label>
+          <span class="label-text">First Name</span>
+          <div class="input-wrapper">
+            <span class="material-symbols-outlined icon">person</span>
+            <input 
+              type="text" 
+              formControlName="firstName"
+              placeholder="Jane"
+              [class.error]="firstName.invalid && (firstName.dirty || firstName.touched)"
+            >
+          </div>
+          <span class="error-text" *ngIf="firstName.invalid && (firstName.dirty || firstName.touched)">
+            First name is required
+          </span>
+        </label>
 
-    <p>Already have an Account ? <a routerLink="/login"> Login </a></p>
+        <label>
+          <span class="label-text">Last Name</span>
+          <div class="input-wrapper">
+            <span class="material-symbols-outlined icon">person</span>
+            <input 
+              type="text" 
+              formControlName="lastName"
+              placeholder="Doe"
+              [class.error]="lastName.invalid && (lastName.dirty || lastName.touched)"
+            >
+          </div>
+          <span class="error-text" *ngIf="lastName.invalid && (lastName.dirty || lastName.touched)">
+            Last name is required
+          </span>
+        </label>
+
+        <label>
+          <span class="label-text">University Email</span>
+          <div class="input-wrapper">
+            <span class="material-symbols-outlined icon">mail</span>
+            <input 
+              type="email" 
+              formControlName="email"
+              placeholder="student@university.edu"
+              [class.error]="email.invalid && (email.dirty || email.touched)"
+            >
+          </div>
+          <span class="error-text" *ngIf="email.invalid && (email.dirty || email.touched)">
+            Valid email is required
+          </span>
+        </label>
+
+        <label>
+          <span class="label-text">Password</span>
+          <div class="input-wrapper">
+            <span class="material-symbols-outlined icon">lock</span>
+            <input 
+              [type]="hidePassword ? 'password' : 'text'" 
+              formControlName="password"
+              placeholder="Create a password"
+              [class.error]="password.invalid && (password.dirty || password.touched)"
+            >
+            <button type="button" class="toggle-pass" (click)="hidePassword = !hidePassword">
+                <span class="material-symbols-outlined">{{ hidePassword ? 'visibility_off' : 'visibility' }}</span>
+            </button>
+          </div>
+          <span class="error-text" *ngIf="password.invalid && (password.dirty || password.touched)">
+            Min 8 characters required
+          </span>
+        </label>
+
+        <label>
+          <span class="label-text">Confirm Password</span>
+          <div class="input-wrapper">
+            <span class="material-symbols-outlined icon">lock_reset</span>
+            <input 
+              [type]="hideConfirmPassword ? 'password' : 'text'" 
+              formControlName="confirmPassword"
+              placeholder="Confirm your password"
+              [class.error]="confirmPassword.invalid && (confirmPassword.dirty || confirmPassword.touched)"
+            >
+             <button type="button" class="toggle-pass" (click)="hideConfirmPassword = !hideConfirmPassword">
+                <span class="material-symbols-outlined">{{ hideConfirmPassword ? 'visibility_off' : 'visibility' }}</span>
+            </button>
+          </div>
+          <span class="error-text" *ngIf="confirmPassword.errors?.['passwordMismatch'] && (confirmPassword.dirty || confirmPassword.touched)">
+            Passwords do not match
+          </span>
+        </label>
+
+        <button type="submit" class="submit-btn" [disabled]="registerForm.invalid">
+          Create Account
+        </button>
+
+      </form>
+
+    </div>
+
+    <div class="auth-footer">
+      <p>Already have an account? <a routerLink="/login">Log in</a></p>
+    </div>
+
   </div>
 
-  <div class="illustration">
-    <img src="/auth/login_page.svg" alt="Workout illustration" />
-  </div>
-</main>
+  <p class="copyright">© 2025 Gheorghe Asachi Technical University of Iaşi.</p>
+
+</div>

@@ -92,20 +92,19 @@ export class Login {
     });
   }
 
-loginWithGoogle(): void {
-  window.location.href = 'http://localhost:8080/api/auth/google';
-}
+  loginWithGoogle(): void {
+    window.location.href = 'http://localhost:8080/api/auth/google';
+  }
 
 
   loginWithFacebook(): void {
     console.log('Facebook login not implemented yet');
   }
 
-constructor() {
-  this.authService.handleOAuthCallback();
-    if (this.authService.isLoggedIn()) {
-      this.router.navigate(['/dashboard']);
-}
-
-}
+  constructor() {
+    this.authService.handleOAuthCallback();
+      if (this.authService.isLoggedIn()) {
+        this.router.navigate(['/dashboard']);
+      }
+  }
 }
