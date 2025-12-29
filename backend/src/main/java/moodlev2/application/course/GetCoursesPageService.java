@@ -21,7 +21,6 @@ public class GetCoursesPageService {
 
     public CoursesPageResponse getCoursesPageForUser(String email) {
 
-        //datele despre useri
         String userName = "Guest";
         String avatar = "https://ui-avatars.com/api/?background=random";
 
@@ -33,27 +32,31 @@ public class GetCoursesPageService {
             }
         }
 
-        // date despre cursuri din db
         List<CourseEntity> courseEntities = courseRepository.findAllByUserEmail(email);
 
         List<CourseOverviewDto> activeCourses = courseEntities.stream()
-                .map(c -> new CourseOverviewDto(
-                        c.getCode().toLowerCase(), // id pentru url
-                        c.getCode(),
-                        c.getName(),
-                        c.getInstructorName(),
-                        0, // TODO:calcula progresul real din note/module
-                        "Check calendar", //TODO: Cel mai apropiat deadline
-                        c.getImageUrl()
-                ))
+                .map(c -> {
+                    String instructorName = (c.getTeacher() != null)
+                            ? c.getTeacher().getFirstName() + " " + c.getTeacher().getLastName()
+                            : "Unknown Instructor";
+
+                    return new CourseOverviewDto(
+                            c.getCode().toLowerCase(),
+                            c.getCode(),
+                            c.getName(),
+                            instructorName,
+                            0, // TODO:calcula progresul real din note/module!!!nu i gata
+                            "Check calendar", //TODO: Cel mai apropiat deadline!!!! nu i gata
+                            c.getImageUrl()
+                    );
+                })
                 .toList();
 
-        //cursuri finalizate
         List<CompletedCourseSummaryDto> completedCourses = new ArrayList<>();
 
         return new CoursesPageResponse(
                 userName,
-                "Student", // Sau user.getRoles()
+                "Student",
                 avatar,
                 activeCourses,
                 completedCourses

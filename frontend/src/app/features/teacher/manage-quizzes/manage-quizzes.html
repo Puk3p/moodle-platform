@@ -6,32 +6,23 @@
       <p class="subtitle">Create, organize, and take quizzes based on a reusable question bank.</p>
     </div>
     <button class="btn-primary" (click)="onCreateQuiz()">
-      <fa-icon [icon]="faPlus"></fa-icon>
-      New Quiz
+      <fa-icon [icon]="faPlus"></fa-icon> New Quiz
     </button>
   </div>
 
   <div class="filters-bar">
     <div class="search-box">
       <fa-icon [icon]="faSearch" class="search-icon"></fa-icon>
-      <input 
-        type="text" 
-        placeholder="Search quizzes..." 
-        [(ngModel)]="searchTerm"
-      >
-      </div>
-
+      <input type="text" placeholder="Search quizzes..." [(ngModel)]="searchTerm">
+    </div>
     <div class="dropdowns">
       <div class="select-wrapper">
         <select [(ngModel)]="selectedCourse">
           <option [ngValue]="'All Courses'">All Courses</option>
-          <option *ngFor="let course of availableCourses" [value]="course">
-            {{ course }}
-          </option>
+          <option *ngFor="let course of availableCourses" [value]="course">{{ course }}</option>
         </select>
         <fa-icon [icon]="faChevronDown" class="select-icon"></fa-icon>
       </div>
-
       <div class="select-wrapper">
         <select [(ngModel)]="selectedStatus">
           <option [ngValue]="'All Statuses'">All Statuses</option>
@@ -43,70 +34,285 @@
     </div>
   </div>
 
-  <div *ngIf="isLoading" class="loading-state">
-    <p>Loading quizzes...</p>
-  </div>
-
-  <div *ngIf="!isLoading && filteredQuizzes.length === 0" class="empty-state">
-    <p>No quizzes found matching your filters.</p>
-  </div>
+  <div *ngIf="isLoading" class="loading-state"><p>Loading quizzes...</p></div>
+  <div *ngIf="!isLoading && filteredQuizzes.length === 0" class="empty-state"><p>No quizzes found.</p></div>
 
   <div class="quiz-grid" *ngIf="!isLoading && filteredQuizzes.length > 0">
      <div class="quiz-card" *ngFor="let quiz of filteredQuizzes" [class.draft-card]="quiz.status === 'Draft'">
-      
       <div class="card-top">
-        <span class="status-badge" [ngClass]="quiz.status === 'Published' ? 'published' : 'draft'">
-          <span class="dot"></span>
-          {{ quiz.status }}
+        <span class="status-badge" 
+              [ngClass]="quiz.status.toString().toLowerCase() === 'published' ? 'published' : 'draft'">
+          <span class="dot"></span> {{ quiz.status }}
         </span>
-        <button class="btn-icon">
-          <fa-icon [icon]="faEllipsisVertical"></fa-icon>
-        </button>
-      </div>
+        
+        <div class="menu-container">
+            <button class="btn-icon" (click)="toggleMenu(quiz.id, $event)">
+                <fa-icon [icon]="faEllipsisVertical"></fa-icon>
+            </button>
+            
+            <div class="dropdown-menu" *ngIf="activeMenuQuizId === quiz.id">
+                <button (click)="onDeleteQuiz(quiz.id)">
+                    <fa-icon [icon]="faTrash" class="icon-danger"></fa-icon> Delete
+                </button>
+            </div>
+        </div>
 
+      </div>
       <div class="card-content">
         <h3>{{ quiz.title }}</h3>
-        <p class="course-context">
-          {{ quiz.courseName }} 
-          <span *ngIf="quiz.context">• {{ quiz.context }}</span>
-        </p>
-
+        <p class="course-context">{{ quiz.courseName }} <span *ngIf="quiz.context">• {{ quiz.context }}</span></p>
         <div class="stats-row">
-          <div class="stat-item">
-            <fa-icon [icon]="faListOl"></fa-icon>
-            {{ quiz.questionsCount }} Questions
-          </div>
-          <div class="stat-item">
-            <fa-icon [icon]="faClock"></fa-icon>
-            {{ quiz.durationMinutes }} Mins
-          </div>
-          <div class="stat-item">
-            <fa-icon [icon]="faRotateRight"></fa-icon>
-            {{ quiz.attemptsLabel }}
-          </div>
+          <div class="stat-item"><fa-icon [icon]="faListOl"></fa-icon> {{ quiz.questionsCount }} Qs</div>
+          <div class="stat-item"><fa-icon [icon]="faClock"></fa-icon> {{ quiz.durationMinutes }}m</div>
+          <div class="stat-item"><fa-icon [icon]="faRotateRight"></fa-icon> {{ quiz.attemptsLabel }}</div>
         </div>
       </div>
-
       <div class="card-footer">
         <span class="updated-text">Updated: {{ quiz.lastUpdated }}</span>
-        
         <div class="card-actions">
-          <ng-container *ngIf="quiz.status === 'Published'">
-            <button class="btn-icon-secondary" title="Preview">
-              <fa-icon [icon]="faEye"></fa-icon>
-            </button>
-            <button class="btn-accent">Results</button>
-          </ng-container>
+          
+          <button *ngIf="quiz.status.toString().toLowerCase() === 'published'" 
+                  class="btn-accent" 
+                  [routerLink]="['/teacher/quizzes', quiz.id, 'results']">
+             Results
+          </button>
 
-          <ng-container *ngIf="quiz.status === 'Draft'">
-            <button class="btn-icon-secondary" title="Edit">
+          <button *ngIf="quiz.status.toString().toLowerCase() === 'published'" 
+                  class="btn-icon-secondary" 
+                  title="Preview">
+              <fa-icon [icon]="faEye"></fa-icon>
+          </button>
+          
+          <button *ngIf="quiz.status.toString().toLowerCase() !== 'published'" 
+                  class="btn-icon-secondary" 
+                  title="Edit">
               <fa-icon [icon]="faPen"></fa-icon>
-            </button>
-            <button class="btn-secondary">Continue Editing</button>
-          </ng-container>
+          </button>
+
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="isModalOpen" (click)="closeModal()">
+  <div class="modal-content large-modal" (click)="$event.stopPropagation()">
+    
+    <div class="modal-header">
+      <h2>Create New Quiz</h2>
+      <div class="steps-indicator">
+        <div class="step" [class.active]="currentStep >= 1">
+            <div class="circle">1</div> <span>Settings</span>
+        </div>
+        <div class="line" [class.active]="currentStep >= 2"></div>
+        <div class="step" [class.active]="currentStep >= 2">
+            <div class="circle">2</div> <span>Questions</span>
+        </div>
+        <div class="line" [class.active]="currentStep >= 3"></div>
+        <div class="step" [class.active]="currentStep >= 3">
+            <div class="circle">3</div> <span>Review</span>
+        </div>
+      </div>
+      <button class="btn-icon close-btn" (click)="closeModal()"><fa-icon [icon]="faXmark"></fa-icon></button>
+    </div>
+
+    <div class="modal-body">
+        
+        <div *ngIf="currentStep === 1" class="step-content">
+            <div class="form-group">
+                <label>Quiz Title <span class="req">*</span></label>
+                <input type="text" [(ngModel)]="quizData.title" placeholder="e.g. Midterm Exam">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group half">
+                    <label>Description</label>
+                    <textarea rows="3" [(ngModel)]="quizData.description" placeholder="Optional instructions..."></textarea>
+                </div>
+                
+                <div class="form-group half">
+                    <label>Course Context <span class="req">*</span></label>
+                    <div class="select-wrapper">
+                        <select [(ngModel)]="quizData.courseId">
+                            <option [ngValue]="null" disabled>Select a course...</option>
+                            <option *ngFor="let c of dropdownCourses" [ngValue]="c.id">
+                                {{ c.name }}
+                            </option>
+                        </select>
+                        <fa-icon [icon]="faChevronDown" class="select-icon"></fa-icon>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Assign to Classes (Optional)</label>
+                <div class="classes-grid">
+                    <div class="class-item" 
+                         *ngFor="let cls of dropdownClasses"
+                         [class.selected]="isClassSelected(cls.id)"
+                         (click)="toggleClassSelection(cls.id)">
+                        
+                        <div class="checkbox-custom">
+                            <fa-icon [icon]="faCheck" *ngIf="isClassSelected(cls.id)"></fa-icon>
+                        </div>
+                        <span>{{ cls.name }}</span>
+                    </div>
+                </div>
+                <p class="hint-small" *ngIf="quizData.assignedClassIds.length === 0">
+                    If no class is selected, the quiz will be available to all students enrolled in the course.
+                </p>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group third">
+                    <label>Time Limit (min)</label>
+                    <input type="number" [(ngModel)]="quizData.timeLimitMinutes">
+                </div>
+                <div class="form-group third">
+                    <label>Attempts</label>
+                    <select [(ngModel)]="quizData.maxAttempts">
+                        <option [value]="1">1 Attempt</option>
+                        <option [value]="2">2 Attempts</option>
+                        <option [value]="3">3 Attempts</option>
+                        <option [value]="0">Unlimited</option>
+                    </select>
+                </div>
+                <div class="form-group third">
+                    <label>Pass Score (%)</label>
+                    <input type="number" [(ngModel)]="quizData.passingScore">
+                </div>
+            </div>
+
+            <div class="form-row">
+                 <div class="form-group half">
+                    <label>Access Password</label>
+                    <input type="text" [(ngModel)]="quizData.password" placeholder="Leave empty for public">
+                </div>
+                <div class="form-group half checkbox-wrapper">
+                    <label class="checkbox-label">
+                        <input type="checkbox" [(ngModel)]="quizData.shuffleOptions"> 
+                        Shuffle Answer Options
+                    </label>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group half">
+                    <label>Available From</label>
+                    <input type="datetime-local" [(ngModel)]="quizData.availableFrom">
+                </div>
+                <div class="form-group half">
+                    <label>Available To</label>
+                    <input type="datetime-local" [(ngModel)]="quizData.availableTo">
+                </div>
+            </div>
+        </div>
+
+        <div *ngIf="currentStep === 2" class="step-content">
+            
+            <div class="strategy-tabs">
+                <button [class.active]="quizData.generationType === 'MANUAL'" (click)="quizData.generationType = 'MANUAL'">
+                    Manual Selection
+                </button>
+                <button [class.active]="quizData.generationType === 'RANDOM'" (click)="quizData.generationType = 'RANDOM'">
+                    Random Generator
+                </button>
+            </div>
+
+            <div *ngIf="quizData.generationType === 'MANUAL'" class="manual-mode">
+                <p class="hint">Select specific questions from the bank. Total selected: <strong>{{ quizData.specificQuestionIds.length }}</strong></p>
+                
+                <div class="question-picker-list">
+                    <div class="picker-item" *ngFor="let q of bankQuestions" 
+                         [class.selected]="isQuestionSelected(q.id)"
+                         (click)="toggleQuestionSelection(q.id)">
+                        
+                        <div class="check-circle">
+                            <fa-icon [icon]="faCheck" *ngIf="isQuestionSelected(q.id)"></fa-icon>
+                        </div>
+                        <div class="q-info">
+                            <span class="q-text">{{ q.text | slice:0:60 }}...</span>
+                            <span class="q-meta">{{ q.type }} • {{ q.difficulty }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div *ngIf="quizData.generationType === 'RANDOM'" class="random-mode">
+                <p class="hint">Define rules to generate a unique quiz for each student. Total Questions: <strong>{{ totalRandomQuestions }}</strong></p>
+                
+                <div class="rules-list">
+                    <div class="rule-row" *ngFor="let rule of quizData.randomRules; let i = index">
+                        <span class="rule-text">Take</span>
+                        <input type="number" [(ngModel)]="rule.count" min="1" class="small-input">
+                        <span class="rule-text">questions from</span>
+                        
+                        <select [(ngModel)]="rule.categoryId">
+                            <option *ngFor="let cat of categories" [value]="cat.id" [disabled]="cat.id === '0'">
+                                {{ cat.name }}
+                            </option>
+                        </select>
+                        
+                        <span class="rule-text">difficulty</span>
+                        <select [(ngModel)]="rule.difficulty">
+                            <option value="ANY">Any</option>
+                            <option value="EASY">Easy</option>
+                            <option value="MEDIUM">Medium</option>
+                            <option value="HARD">Hard</option>
+                        </select>
+                        
+                        <button class="btn-icon-danger" (click)="removeRule(i)">
+                            <fa-icon [icon]="faTrash"></fa-icon>
+                        </button>
+                    </div>
+                </div>
+
+                <button class="btn-secondary small" (click)="addRule()">
+                    <fa-icon [icon]="faPlus"></fa-icon> Add Rule
+                </button>
+            </div>
+        </div>
+
+        <div *ngIf="currentStep === 3" class="step-content review-mode">
+            <div class="review-card">
+                <h3>Quiz Summary</h3>
+                <div class="review-item">
+                    <span class="label">Title:</span>
+                    <span class="value">{{ quizData.title }}</span>
+                </div>
+                <div class="review-item">
+                    <span class="label">Time Limit:</span>
+                    <span class="value">{{ quizData.timeLimitMinutes }} mins</span>
+                </div>
+                <div class="review-item">
+                    <span class="label">Strategy:</span>
+                    <span class="value badge">{{ quizData.generationType }}</span>
+                </div>
+                <div class="review-item">
+                    <span class="label">Total Questions:</span>
+                    <span class="value">
+                        {{ quizData.generationType === 'MANUAL' ? quizData.specificQuestionIds.length : totalRandomQuestions }}
+                    </span>
+                </div>
+                <div class="review-item" *ngIf="quizData.password">
+                    <span class="label">Password Protection:</span>
+                    <span class="value">Enabled</span>
+                </div>
+            </div>
+        </div>
 
     </div>
+
+    <div class="modal-footer wizard-footer">
+        <button class="btn-secondary" (click)="currentStep === 1 ? closeModal() : prevStep()">
+            {{ currentStep === 1 ? 'Cancel' : 'Back' }}
+        </button>
+        
+        <button class="btn-primary" (click)="currentStep === 3 ? submitQuiz() : nextStep()" [disabled]="isCreating">
+            <span *ngIf="isCreating">Creating...</span>
+            <span *ngIf="!isCreating">{{ currentStep === 3 ? 'Create Quiz' : 'Next Step' }}</span>
+        </button>
+    </div>
+
   </div>
 </div>

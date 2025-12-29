@@ -12,9 +12,6 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-
-
-//PUN COMENTARII SA INTELEGETI CE VREAU SA FAC CA SA PUTETI SA CONTINUATI
 @Service
 @RequiredArgsConstructor
 public class GetCourseDetailsService {
@@ -24,12 +21,14 @@ public class GetCourseDetailsService {
     @Transactional(readOnly = true)
     public CourseDetailsResponse getCourseDetails(String courseCode) {
 
-
-        //cautam cursul in DB dupa cod!! gen fiecare curs are un cod unic pe care il gasim in DB
         CourseEntity course = courseRepository.findByCode(courseCode.toUpperCase())
                 .orElseThrow(() -> new NotFoundException("Course not found: " + courseCode));
 
-        //trebuie acum sa mapam modulele si itemii (modul = semestru, item = lectie/material)
+        String instructorName = "Unknown Instructor";
+        if (course.getTeacher() != null) {
+            instructorName = course.getTeacher().getFirstName() + " " + course.getTeacher().getLastName();
+        }
+
         List<CourseModuleDto> modules = course.getModules().stream()
                 .map(mod -> new CourseModuleDto(
                         mod.getTitle(),
@@ -43,7 +42,6 @@ public class GetCourseDetailsService {
                 ))
                 .toList();
 
-        //trebuie sa mapam anunturile in caz ca exista
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd").withZone(ZoneId.systemDefault());
 
         List<CourseAnnouncementDto> announcements = course.getAnnouncements().stream()
@@ -55,17 +53,14 @@ public class GetCourseDetailsService {
                 ))
                 .toList();
 
-        //acum folosim doar date fake pentru statistici si deadlinnes (todo mai tarziu)
-        //putem folosi CalendarEventRepository aici pentru deadlines reale dupa ce terminam restu
         CourseStatsDto stats = new CourseStatsDto(0, 0, 0, "N/A");
         CourseCurrentModuleDto currentModule = new CourseCurrentModuleDto("Start Learning", 0, "No deadlines");
-
 
         return new CourseDetailsResponse(
                 course.getCode(),
                 course.getName(),
                 course.getTerm(),
-                course.getInstructorName(),
+                instructorName,
                 currentModule,
                 stats,
                 modules,

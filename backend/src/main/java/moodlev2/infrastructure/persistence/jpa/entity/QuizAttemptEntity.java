@@ -1,4 +1,3 @@
-// moodlev2\infrastructure\persistence\jpa\entity\QuizAttemptEntity.java
 package moodlev2.infrastructure.persistence.jpa.entity;
 
 import jakarta.persistence.*;

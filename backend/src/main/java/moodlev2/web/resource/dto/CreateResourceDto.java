@@ -9,9 +9,9 @@ public class CreateResourceDto {
     private String courseCode;
     private Long moduleId;
     private String title;
-    private String type; // PDF, Slides, Link...
+    private String type;
     private String description;
     private Boolean isVisible;
-    private String externalUrl; // Daca e link
+    private String externalUrl;
     private MultipartFile file;
 }

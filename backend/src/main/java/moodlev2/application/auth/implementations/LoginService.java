@@ -2,7 +2,7 @@ package moodlev2.application.auth.implementations;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import moodlev2.application.auth.interfaces.ILoginService; // Asigura-te ca interfata are metoda cu 3 parametri
+import moodlev2.application.auth.interfaces.ILoginService;
 import moodlev2.domain.auth.ports.TokenServicePort;
 import moodlev2.domain.user.User;
 import moodlev2.domain.user.ports.PasswordHasherPort;

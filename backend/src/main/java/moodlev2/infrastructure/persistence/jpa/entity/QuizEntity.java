@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,6 +19,8 @@ public class QuizEntity {
 
     @Column(nullable = false)
     private String title;
+
+    private String description;
 
     @ManyToOne
     @JoinColumn(name = "course_id")
@@ -41,8 +44,31 @@ public class QuizEntity {
     @Column(name = "passing_score")
     private Integer passingScore = 50;
 
+    @Column(name = "shuffle_options")
+    private boolean shuffleOptions = false;
+
+    @Column(name = "access_password")
+    private String password;
+
+    @Column(name = "available_from")
+    private LocalDateTime availableFrom;
+
+    @Column(name = "available_to")
+    private LocalDateTime availableTo;
+
+    @Column(name = "generation_type")
+    private String generationType;
+
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<QuizQuestionEntity> questions = new ArrayList<>();
+
+    @ManyToMany
+    @JoinTable(
+            name = "quiz_assigned_classes",
+            joinColumns = @JoinColumn(name = "quiz_id"),
+            inverseJoinColumns = @JoinColumn(name = "class_id")
+    )
+    private List<ClassEntity> assignedClasses = new ArrayList<>();
 
     @Column(name = "created_at")
     private Instant createdAt;
@@ -59,5 +85,8 @@ public class QuizEntity {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = Instant.now();
+    }
+    public boolean isPublished() {
+        return "PUBLISHED".equalsIgnoreCase(this.status);
     }
 }

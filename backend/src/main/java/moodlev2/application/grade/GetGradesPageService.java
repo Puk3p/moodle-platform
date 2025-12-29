@@ -21,19 +21,15 @@ public class GetGradesPageService {
     private final CourseRepository courseRepository;
 
     public GradesPageResponse getGradesPageForUser(String email) {
-        //acilisa luam toate notele userului
         List<GradeEntity> allGrades = gradeRepository.findAllByUserEmail(email);
 
-        //aici luam cursurile userului
         List<CourseEntity> courses = courseRepository.findAllByUserEmail(email);
 
-        //aici gupaam notele pe cursuri
         Map<Long, List<GradeEntity>> gradesByCourse = allGrades.stream()
                 .collect(Collectors.groupingBy(g -> g.getCourse().getId()));
 
         List<CourseGradeDto> courseGradeDtos = new ArrayList<>();
 
-        //folosim DTO-urile
         for (CourseEntity course : courses) {
             List<GradeEntity> grades = gradesByCourse.getOrDefault(course.getId(), List.of());
 
@@ -45,6 +41,11 @@ public class GetGradesPageService {
             }
             int average = grades.isEmpty() ? 0 : (int)((totalPercent / grades.size()) * 100);
 
+            String instructorName = "Unknown Instructor";
+            if (course.getTeacher() != null) {
+                instructorName = course.getTeacher().getFirstName() + " " + course.getTeacher().getLastName();
+            }
+
             List<RecentGradeItemDto> recentItems = grades.stream()
                     .limit(2)
                     .map(g -> new RecentGradeItemDto(
@@ -52,7 +53,7 @@ public class GetGradesPageService {
                             g.getScoreReceived() + "/" + g.getMaxScore(),
                             (int)((g.getScoreReceived().doubleValue() / g.getMaxScore().doubleValue()) * 100),
                             g.getWeightLabel(),
-                            g.getGradedAt().toString(),
+                            g.getGradedAt() != null ? g.getGradedAt().toString() : "",
                             "Grade",
                             g.getTypeIcon()
                     ))
@@ -61,7 +62,7 @@ public class GetGradesPageService {
             courseGradeDtos.add(new CourseGradeDto(
                     course.getCode(),
                     course.getName(),
-                    course.getInstructorName(),
+                    instructorName,
                     calculateLetter(average),
                     average,
                     "in-progress",

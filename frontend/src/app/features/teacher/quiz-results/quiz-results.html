@@ -1,0 +1,157 @@
+<div class="results-container">
+  
+  <div class="header-section">
+    <a routerLink="/manage-quizzes" class="back-link">
+      <fa-icon [icon]="faArrowLeft"></fa-icon> Back to Quizzes
+    </a>
+    
+    <div class="flex flex-col xl:flex-row xl:items-end justify-between gap-6 mb-8">
+      <div class="flex flex-col gap-3">
+        
+        <div class="flex items-center gap-3">
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border"
+                [ngClass]="quizMetadata.isPublished ? 'bg-green-50 text-green-700 border-green-100' : 'bg-gray-100 text-gray-700 border-gray-200'">
+            <span class="w-1.5 h-1.5 rounded-full" [ngClass]="quizMetadata.isPublished ? 'bg-green-500' : 'bg-gray-500'"></span> 
+            {{ quizMetadata.isPublished ? 'Published' : 'Draft' }}
+          </span>
+          
+          <span class="text-sm text-gray-500">{{ quizMetadata.courseName }}</span>
+        </div>
+        
+        <h1>{{ quizMetadata.title }}</h1>
+        
+        <div class="flex flex-wrap gap-4 text-sm text-gray-600">
+          <div class="flex items-center gap-1.5">
+            <fa-icon [icon]="faCalendar" class="text-gray-400"></fa-icon>
+            Due: {{ quizMetadata.dueDate | date:'mediumDate' }}
+          </div>
+          <div class="flex items-center gap-1.5">
+              <fa-icon [icon]="faClock" class="text-gray-400"></fa-icon>
+            {{ quizMetadata.timeLimitMinutes }} Minutes Limit
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+        <div class="icon-circle blue"><fa-icon [icon]="faUserGroup"></fa-icon></div>
+        <div class="stat-info">
+            <span class="label">Total Attempts</span>
+            <span class="value">{{ totalAttempts }}</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="icon-circle orange"><fa-icon [icon]="faChartPie"></fa-icon></div>
+        <div class="stat-info">
+            <span class="label">Avg Score</span>
+            <span class="value">{{ avgScore }}%</span>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="icon-circle green"><fa-icon [icon]="faCheckDouble"></fa-icon></div>
+        <div class="stat-info">
+            <span class="label">Pass Rate</span>
+            <span class="value">{{ passRate }}%</span>
+        </div>
+    </div>
+  </div>
+
+  <div class="table-container">
+    
+    <div class="table-toolbar">
+        <div class="search-wrapper">
+            <fa-icon [icon]="faSearch" class="search-icon"></fa-icon>
+            <input 
+                type="text" 
+                placeholder="Search by student name..."
+                [(ngModel)]="searchTerm"
+                (keyup)="filterData()"
+            >
+        </div>
+        
+        <div class="filters">
+            <button class="btn-filter">
+                All Groups <fa-icon [icon]="faChevronDown"></fa-icon>
+            </button>
+            <button class="btn-filter">
+                All Statuses <fa-icon [icon]="faChevronDown"></fa-icon>
+            </button>
+        </div>
+    </div>
+
+    <table class="results-table">
+        <thead>
+            <tr>
+                <th>Student Name</th>
+                <th>Group</th>
+                <th>Submitted At</th>
+                <th>Score</th>
+                <th>Status</th>
+                <th class="text-right">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let attempt of filteredAttempts" class="hover-row">
+                
+                <td>
+                    <div class="student-info">
+                        <div class="avatar-circle" [ngClass]="getAvatarColor(attempt.studentName)">
+                            {{ getInitials(attempt.studentName) }}
+                        </div>
+                        <div class="names">
+                            <span class="name">{{ attempt.studentName }}</span>
+                            <span class="email">{{ attempt.studentEmail }}</span>
+                        </div>
+                    </div>
+                </td>
+                
+                <td><span class="group-badge">{{ attempt.groupName }}</span></td>
+                
+                <td class="text-muted">
+                    {{ attempt.submittedAt | date:'mediumDate' }} <br> 
+                    <small>{{ attempt.submittedAt | date:'shortTime' }}</small>
+                </td>
+                
+                <td>
+                    <div class="score-col">
+                        <span class="score-percent" [class.text-danger]="!attempt.passed" [class.text-success]="attempt.passed">
+                            {{ (attempt.score / (attempt.maxScore || 100)) | percent }}
+                        </span>
+                        <span class="score-points">{{ attempt.score }}/{{ attempt.maxScore }} pts</span>
+                    </div>
+                </td>
+                
+                <td>
+                    <span class="status-pill" [class.passed]="attempt.passed" [class.failed]="!attempt.passed">
+                        {{ attempt.passed ? 'Passed' : 'Failed' }}
+                    </span>
+                </td>
+                
+                <td class="text-right">
+                    <button class="btn-action" [routerLink]="['/teacher/quizzes/attempts', attempt.attemptId, 'review']">
+                        <fa-icon [icon]="faChevronRight"></fa-icon>
+                    </button>
+                </td>
+            </tr>
+            
+            <tr *ngIf="filteredAttempts.length === 0 && !isLoading">
+                <td colspan="6" style="text-align: center; padding: 2rem; color: #6b7280;">
+                    No attempts found.
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="pagination" *ngIf="filteredAttempts.length > 0">
+        <span>Showing 1-{{ filteredAttempts.length }} of {{ totalAttempts }} results</span>
+        <div class="controls">
+            <button disabled><fa-icon [icon]="faChevronLeft"></fa-icon></button>
+            <button disabled><fa-icon [icon]="faChevronRight"></fa-icon></button>
+        </div>
+    </div>
+
+  </div>
+
+</div>

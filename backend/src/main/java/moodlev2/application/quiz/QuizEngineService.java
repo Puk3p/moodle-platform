@@ -2,17 +2,17 @@ package moodlev2.application.quiz;
 
 import lombok.RequiredArgsConstructor;
 import moodlev2.common.exception.NotFoundException;
+import moodlev2.common.util.ColorUtil;
 import moodlev2.infrastructure.mapper.QuizEngineMapper;
 import moodlev2.infrastructure.persistence.jpa.*;
 import moodlev2.infrastructure.persistence.jpa.entity.*;
-import moodlev2.web.quiz.dto.QuizResultDto;
-import moodlev2.web.quiz.dto.QuizSubmissionDto;
-import moodlev2.web.quiz.dto.StudentQuizViewDto;
+import moodlev2.web.quiz.dto.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -104,6 +104,134 @@ public class QuizEngineService {
                 maxScore,
                 passed,
                 attempt.getCompletedAt().toString()
+        );
+    }
+
+
+    @Transactional(readOnly = true)
+    public List<QuizAttemptListDto> getAttemptsForQuiz(Long quizId) {
+        QuizEntity quiz = quizRepository.findById(quizId)
+                .orElseThrow(() -> new NotFoundException("Quiz not found"));
+
+        return attemptRepository.findByQuizIdOrderByCompletedAtDesc(quizId).stream()
+                .map(this::mapAttemptToListDto)
+                .toList();
+    }
+
+    private QuizAttemptListDto mapAttemptToListDto(QuizAttemptEntity attempt) {
+        String studentName = attempt.getUser().getFirstName() + " " + attempt.getUser().getLastName();
+        String group = (attempt.getUser().getClazz() != null) ? attempt.getUser().getClazz().getName() : "No Group";
+
+        String submittedAt = attempt.getCompletedAt() != null ? attempt.getCompletedAt().toString() : "In Progress";
+
+        BigDecimal maxScore = attempt.getQuiz().getQuestions().stream()
+                .map(q -> BigDecimal.valueOf(q.getPoints()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        double percentage = 0.0;
+        if (maxScore.compareTo(BigDecimal.ZERO) > 0) {
+            percentage = (attempt.getScore().doubleValue() / maxScore.doubleValue()) * 100.0;
+        }
+
+        int passingScoreThreshold = attempt.getQuiz().getPassingScore() != null
+                ? attempt.getQuiz().getPassingScore()
+                : 50;
+        boolean passed = percentage >= passingScoreThreshold;
+
+        return new QuizAttemptListDto(
+                attempt.getId(),
+                attempt.getUser().getId(),
+                studentName,
+                attempt.getUser().getEmail(),
+                ColorUtil.randomPastelColor(),
+                group,
+                submittedAt,
+                attempt.getScore(),
+                maxScore,
+                passed
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public QuizResultsResponse getQuizResultsWithMetadata(Long quizId) {
+        QuizEntity quiz = quizRepository.findById(quizId)
+                .orElseThrow(() -> new NotFoundException("Quiz not found"));
+
+        List<QuizAttemptListDto> attempts = attemptRepository.findByQuizIdOrderByCompletedAtDesc(quizId).stream()
+                .map(this::mapAttemptToListDto)
+                .toList();
+
+        String dueDateStr = quiz.getAvailableTo() != null ? quiz.getAvailableTo().toString() : "No Deadline";
+
+        return new QuizResultsResponse(
+                quiz.getId(),
+                quiz.getTitle(),
+                quiz.getCourse() != null ? quiz.getCourse().getName() : "Unknown Course",
+                dueDateStr,
+                quiz.getDurationMinutes(),
+                quiz.isPublished(),
+                attempts
+        );
+    }
+
+
+    @Transactional(readOnly = true)
+    public QuizAttemptReviewDto getAttemptReview(Long attemptId) {
+        QuizAttemptEntity attempt = attemptRepository.findById(attemptId)
+                .orElseThrow(() -> new NotFoundException("Attempt not found"));
+
+        List<QuestionReviewDto> questions = attempt.getQuiz().getQuestions().stream()
+                .map(q -> mapQuestionToReviewDto(q, attempt))
+                .toList();
+
+        long diffSeconds = java.time.Duration.between(attempt.getStartedAt(), attempt.getCompletedAt()).getSeconds();
+        String timeTaken = String.format("%d min %d sec", diffSeconds / 60, diffSeconds % 60);
+
+        BigDecimal maxScore = attempt.getQuiz().getQuestions().stream()
+                .map(q -> BigDecimal.valueOf(q.getPoints()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return new QuizAttemptReviewDto(
+                attempt.getId(),
+                attempt.getUser().getFirstName() + " " + attempt.getUser().getLastName(),
+                attempt.getUser().getClazz() != null ? attempt.getUser().getClazz().getName() : "-",
+                attempt.getQuiz().getTitle(),
+                attempt.getScore(),
+                maxScore,
+                timeTaken,
+                attempt.getCompletedAt().toString(),
+                questions
+        );
+    }
+
+    private QuestionReviewDto mapQuestionToReviewDto(QuizQuestionEntity q, QuizAttemptEntity attempt) {
+        QuizResponseEntity response = attempt.getResponses().stream()
+                .filter(r -> r.getQuestion().getId().equals(q.getId()))
+                .findFirst()
+                .orElse(null);
+
+        Long selectedOptionId = (response != null && response.getSelectedOption() != null)
+                ? response.getSelectedOption().getId() : null;
+
+        boolean isFullCorrect = (selectedOptionId != null) &&
+                q.getOptions().stream().anyMatch(o -> o.getId().equals(selectedOptionId) && o.isCorrect());
+
+        List<OptionReviewDto> options = q.getOptions().stream().map(o -> new OptionReviewDto(
+                o.getId(),
+                o.getText(),
+                o.getId().equals(selectedOptionId),
+                o.isCorrect()
+        )).toList();
+
+        return new QuestionReviewDto(
+                q.getId(),
+                q.getText(),
+                q.getType(),
+                isFullCorrect ? BigDecimal.valueOf(q.getPoints()) : BigDecimal.ZERO,
+                BigDecimal.valueOf(q.getPoints()),
+                isFullCorrect,
+                options,
+                null
         );
     }
 }

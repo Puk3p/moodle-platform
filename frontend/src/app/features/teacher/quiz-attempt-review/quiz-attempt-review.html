@@ -1,0 +1,93 @@
+<div class="review-container" *ngIf="!isLoading && data">
+  
+  <div class="mb-6">
+    <button class="back-link" (click)="goBack()"> 
+      <fa-icon [icon]="faArrowLeft"></fa-icon> Back to Results
+    </button>
+  </div>
+
+  <div class="header-card">
+    <div class="student-profile">
+      <div class="avatar-large">
+        {{ getInitials(data.studentName) }}
+      </div>
+      <div class="info">
+        <h1>{{ data.studentName }}</h1>
+        <span class="badge-group">{{ data.groupName }}</span>
+        <p class="meta-text">{{ data.quizTitle }}</p>
+      </div>
+    </div>
+
+    <div class="score-stats">
+        <div class="stat-col">
+            <span class="label">Final Score</span>
+            <div class="score-value">
+                <span class="percent" [class.text-green]="data.finalScore >= (data.maxScore/2)" [class.text-red]="data.finalScore < (data.maxScore/2)">
+                    {{ (data.finalScore / data.maxScore) | percent }}
+                </span>
+                <span class="points">{{ data.finalScore }}/{{ data.maxScore }} pts</span>
+            </div>
+        </div>
+        <div class="stat-col border-left">
+            <span class="label">Time Taken</span>
+            <div class="time-value">
+                <fa-icon [icon]="faClock"></fa-icon> {{ data.timeTaken }}
+            </div>
+        </div>
+        <div class="stat-col border-left">
+            <span class="label">Submitted</span>
+            <div class="date-value">
+                {{ data.submittedAt | date:'mediumDate' }} <br>
+                <small>{{ data.submittedAt | date:'shortTime' }}</small>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <div class="questions-list">
+      
+      <div class="question-card" *ngFor="let q of data.questions; let i = index">
+          
+          <div class="q-header" [class.correct-bg]="q.isCorrect" [class.wrong-bg]="!q.isCorrect">
+              <h3>Question {{ i + 1 }}</h3>
+              <div class="badges">
+                  <span class="status-badge" [class.correct]="q.isCorrect" [class.wrong]="!q.isCorrect">
+                      <fa-icon [icon]="q.isCorrect ? faCheck : faTimes"></fa-icon> 
+                      {{ q.isCorrect ? 'Correct' : 'Incorrect' }}
+                  </span>
+                  <span class="points-badge">{{ q.pointsAwarded }} / {{ q.maxPoints }}</span>
+              </div>
+          </div>
+
+          <div class="q-body">
+              <p class="q-text">{{ q.text }}</p>
+
+              <div class="options-stack">
+                  <div class="option-row" *ngFor="let opt of q.options"
+                       [class.selected-correct]="opt.isSelected && opt.isCorrectAnswer"
+                       [class.selected-wrong]="opt.isSelected && !opt.isCorrectAnswer"
+                       [class.correct-answer]="!opt.isSelected && opt.isCorrectAnswer"
+                       [class.neutral]="!opt.isSelected && !opt.isCorrectAnswer">
+                      
+                      <div class="radio-circle">
+                          <div class="dot" *ngIf="opt.isSelected"></div>
+                      </div>
+                      
+                      <span class="opt-text">{{ opt.text }}</span>
+
+                      <fa-icon [icon]="faCheckCircle" class="icon-success" *ngIf="opt.isCorrectAnswer"></fa-icon>
+                      <fa-icon [icon]="faTimesCircle" class="icon-danger" *ngIf="opt.isSelected && !opt.isCorrectAnswer"></fa-icon>
+                      
+                      <span class="badge-correct-label" *ngIf="!opt.isSelected && opt.isCorrectAnswer">Correct Answer</span>
+                  </div>
+              </div>
+
+              <div class="feedback-box" *ngIf="q.feedback">
+                  <strong>Feedback:</strong> {{ q.feedback }}
+              </div>
+          </div>
+
+      </div>
+
+  </div>
+</div>
