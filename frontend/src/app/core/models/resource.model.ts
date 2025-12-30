@@ -22,4 +22,7 @@ export interface Resource {
   type: string;
   size: string;
   date: string;
+
+  isVisible: boolean;
+  url: string;
 }

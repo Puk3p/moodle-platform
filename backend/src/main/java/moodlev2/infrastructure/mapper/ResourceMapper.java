@@ -27,7 +27,8 @@ public class ResourceMapper {
                 category,
                 type,
                 entity.getFileSize() != null ? entity.getFileSize() : "-",
-                dateStr
+                dateStr,
+                entity.isVisible()
         );
     }
 }

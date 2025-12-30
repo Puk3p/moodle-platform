@@ -4,7 +4,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import moodlev2.application.user.ChangePasswordService;
 import moodlev2.application.user.GetMeService;
+import moodlev2.application.user.GetTeachersService;
 import moodlev2.application.user.ManageSessionsService;
+import moodlev2.web.course.dto.SimpleDto;
 import moodlev2.web.user.dto.ChangePasswordRequest;
 import moodlev2.web.user.dto.SessionDto;
 import moodlev2.web.user.dto.UserProfileDto;
@@ -22,6 +24,7 @@ public class UserController {
     private final ChangePasswordService changePasswordService;
 
     private final ManageSessionsService manageSessionsService;
+    private final GetTeachersService getTeachersService;
 
     @GetMapping("/me")
     public UserProfileDto getMyProfile(Authentication authentication) {
@@ -59,5 +62,11 @@ public class UserController {
             return bearer.substring(7);
         }
         return "";
+    }
+
+
+    @GetMapping("/teachers")
+    public List<SimpleDto> getTeachers() {
+        return getTeachersService.getTeachersList();
     }
 }

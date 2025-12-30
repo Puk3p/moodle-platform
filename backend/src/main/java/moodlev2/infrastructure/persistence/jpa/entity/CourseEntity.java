@@ -27,7 +27,6 @@ public class CourseEntity {
     @Column(nullable = false)
     private String term;
 
-    // --- FIX 1: Ștergem instructorName (string) și punem relația cu UserEntity ---
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "teacher_id")
     private UserEntity teacher;
@@ -35,8 +34,7 @@ public class CourseEntity {
     @Column(name = "image_url")
     private String imageUrl;
 
-    // --- FIX 2: Adăugăm câmpul status ---
-    private String status; // "DRAFT", "PUBLISHED"
+    private String status;
 
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CourseModuleEntity> modules = new ArrayList<>();
@@ -44,12 +42,11 @@ public class CourseEntity {
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
     private List<AnnouncementEntity> announcements = new ArrayList<>();
 
-    // --- FIX 3: Adăugăm relația cu Enrollments ---
-    // Notă: Trebuie să ai clasa EnrollmentEntity creată, altfel șterge linia asta momentan
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
     private List<EnrollmentEntity> enrollments = new ArrayList<>();
 
-    // Audit fields (opțional, dar recomandat)
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
+    private List<QuizEntity> quizzes = new ArrayList<>();
     @Column(name = "created_at")
     private Instant createdAt;
 

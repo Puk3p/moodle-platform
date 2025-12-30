@@ -23,4 +23,7 @@ public class QuizResponseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "selected_option_id")
     private QuizOptionEntity selectedOption;
+
+    @Column(name = "text_response", columnDefinition = "TEXT")
+    private String textResponse;
 }

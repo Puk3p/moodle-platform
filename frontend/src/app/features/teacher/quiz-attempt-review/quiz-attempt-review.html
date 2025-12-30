@@ -49,7 +49,13 @@
       <div class="question-card" *ngFor="let q of data.questions; let i = index">
           
           <div class="q-header" [class.correct-bg]="q.isCorrect" [class.wrong-bg]="!q.isCorrect">
-              <h3>Question {{ i + 1 }}</h3>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                  <h3>Question {{ i + 1 }}</h3>
+                  <span style="font-size: 0.7rem; background: #e0e7ff; color: #4338ca; padding: 2px 8px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">
+                      {{ q.type?.replace('_', ' ') }}
+                  </span>
+              </div>
+
               <div class="badges">
                   <span class="status-badge" [class.correct]="q.isCorrect" [class.wrong]="!q.isCorrect">
                       <fa-icon [icon]="q.isCorrect ? faCheck : faTimes"></fa-icon> 
@@ -60,28 +66,59 @@
           </div>
 
           <div class="q-body">
-              <p class="q-text">{{ q.text }}</p>
+              <p class="q-text">{{ getQuestionText(q.text) }}</p>
 
-              <div class="options-stack">
-                  <div class="option-row" *ngFor="let opt of q.options"
-                       [class.selected-correct]="opt.isSelected && opt.isCorrectAnswer"
-                       [class.selected-wrong]="opt.isSelected && !opt.isCorrectAnswer"
-                       [class.correct-answer]="!opt.isSelected && opt.isCorrectAnswer"
-                       [class.neutral]="!opt.isSelected && !opt.isCorrectAnswer">
+              <div [ngSwitch]="q.type">
+
+                  <div *ngSwitchCase="'CODE'" class="review-code-block">
+                      <p style="font-size: 0.85rem; font-weight: 600; color: #6b7280; margin-bottom: 8px; text-transform: uppercase;">Student Code:</p>
                       
-                      <div class="radio-circle">
-                          <div class="dot" *ngIf="opt.isSelected"></div>
+                      <div style="border: 1px solid #374151; border-radius: 8px; overflow: hidden;">
+                          <ngx-codemirror
+                            [ngModel]="q.studentAnswer || '// No code provided'"
+                            [options]="{ lineNumbers: true, theme: 'material', readOnly: 'nocursor', mode: 'text/x-c++src' }">
+                          </ngx-codemirror>
                       </div>
-                      
-                      <span class="opt-text">{{ opt.text }}</span>
-
-                      <fa-icon [icon]="faCheckCircle" class="icon-success" *ngIf="opt.isCorrectAnswer"></fa-icon>
-                      <fa-icon [icon]="faTimesCircle" class="icon-danger" *ngIf="opt.isSelected && !opt.isCorrectAnswer"></fa-icon>
-                      
-                      <span class="badge-correct-label" *ngIf="!opt.isSelected && opt.isCorrectAnswer">Correct Answer</span>
                   </div>
-              </div>
 
+                  <div *ngSwitchCase="'FREE_TEXT'" class="review-text-block">
+                      <p style="font-size: 0.85rem; font-weight: 600; color: #6b7280; margin-bottom: 8px; text-transform: uppercase;">Student Answer:</p>
+                      
+                      <div style="padding: 1rem; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; color: #1f2937; white-space: pre-wrap;">
+                          {{ q.studentAnswer || 'No answer provided' }}
+                      </div>
+                  </div>
+
+                  <div *ngSwitchCase="'DRAG_DROP'" class="options-stack">
+                      <p style="font-size: 0.85rem; font-weight: 600; color: #6b7280; margin-bottom: 8px; text-transform: uppercase;">Submitted Order:</p>
+                      
+                      <div class="option-row" *ngFor="let opt of q.options" style="background: #f3f4f6;">
+                          <fa-icon [icon]="faGripVertical" style="color: #9ca3af; margin-right: 10px;"></fa-icon>
+                          <span class="opt-text">{{ opt.text }}</span>
+                      </div>
+                  </div>
+
+                  <div *ngSwitchDefault class="options-stack">
+                      <div class="option-row" *ngFor="let opt of q.options"
+                           [class.selected-correct]="opt.isSelected && opt.isCorrectAnswer"
+                           [class.selected-wrong]="opt.isSelected && !opt.isCorrectAnswer"
+                           [class.correct-answer]="!opt.isSelected && opt.isCorrectAnswer"
+                           [class.neutral]="!opt.isSelected && !opt.isCorrectAnswer">
+                          
+                          <div class="radio-circle">
+                              <div class="dot" *ngIf="opt.isSelected"></div>
+                          </div>
+                          
+                          <span class="opt-text">{{ opt.text }}</span>
+
+                          <fa-icon [icon]="faCheckCircle" class="icon-success" *ngIf="opt.isCorrectAnswer"></fa-icon>
+                          <fa-icon [icon]="faTimesCircle" class="icon-danger" *ngIf="opt.isSelected && !opt.isCorrectAnswer"></fa-icon>
+                          
+                          <span class="badge-correct-label" *ngIf="!opt.isSelected && opt.isCorrectAnswer">Correct Answer</span>
+                      </div>
+                  </div>
+
+              </div>
               <div class="feedback-box" *ngIf="q.feedback">
                   <strong>Feedback:</strong> {{ q.feedback }}
               </div>

@@ -20,9 +20,14 @@ public class GetCourseCreateService {
     private final SpringDataUserRepository userRepository;
 
     @Transactional
-    public void createCourse(CreateCourseDto dto, String teacherEmail) {
-        UserEntity teacher = userRepository.findByEmail(teacherEmail)
-                .orElseThrow(() -> new NotFoundException("Teacher not found"));
+    public void createCourse(CreateCourseDto dto) {
+
+        if (dto.teacherId() == null) {
+            throw new IllegalArgumentException("Teacher ID is required");
+        }
+
+        UserEntity teacher = userRepository.findById(dto.teacherId())
+                .orElseThrow(() -> new NotFoundException("Teacher not found with ID: " + dto.teacherId()));
 
         CourseEntity course = new CourseEntity();
         course.setCode(dto.code());
@@ -35,7 +40,6 @@ public class GetCourseCreateService {
         course.setStatus("DRAFT");
 
         course.setModules(new ArrayList<>());
-
         course.setEnrollments(new ArrayList<>());
 
         courseRepository.save(course);

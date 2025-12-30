@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { API_BASE_URL } from '../config/api-endpoints';
 import { Quiz } from '../models/quiz.model';
 import { Observable } from 'rxjs';
+import { QuizResult, QuizSubmission, StudentQuizView } from '../models/quiz-take.model';
 
 @Injectable({ providedIn: 'root' })
 export class QuizzesService {
@@ -46,5 +47,14 @@ export class QuizzesService {
 
   getAttemptReview(attemptId: string): Observable<any> {
     return this.http.get<any>(`${API_BASE_URL}/api/teacher/quizzes/attempts/${attemptId}/review`);
+  }
+
+  startQuiz(quizId: number, password?: string): Observable<StudentQuizView> {
+    const body = { password: password || null };
+    return this.http.post<StudentQuizView>(`${this.adminUrl}/${quizId}/start`, body);
+  }
+
+  submitQuiz(submission: QuizSubmission): Observable<QuizResult> {
+    return this.http.post<QuizResult>(`${this.adminUrl}/submit`, submission);
   }
 }

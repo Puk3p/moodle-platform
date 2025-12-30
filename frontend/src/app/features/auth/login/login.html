@@ -1,118 +1,100 @@
-<main class="main-container">
-  <div class="login-form">
-    <h3 class="welcome-text">Welcome !</h3>
-    <h1 class="sign-in-title">Sign in</h1>
+<div class="auth-container">
+  
+  <div class="brand-header">
+    <div class="logo-box">
+      <span class="material-symbols-outlined">school</span>
+    </div>
+    <h1>Moodle V2</h1>
+  </div>
 
-    <div *ngIf="errorMessage" class="error-message">
-      {{ errorMessage }}
+  <div class="auth-card">
+    
+    <div class="auth-tabs">
+      <button class="tab active">Login</button>
+      <button class="tab" routerLink="/register">Register</button>
     </div>
 
-    <form [formGroup]="form" (ngSubmit)="onSubmit()" *ngIf="!isLoggedIn">
-      <mat-form-field appearance="fill" class="full-width">
-        <mat-label>Email</mat-label>
-        <input matInput formControlName="email" />
-        <mat-error *ngIf="emailCtrl.invalid && (emailCtrl.dirty || emailCtrl.touched)">
-          Email is required and must be valid
-        </mat-error>
-      </mat-form-field>
-
-      <mat-form-field appearance="fill" class="full-width">
-        <mat-label>Password</mat-label>
-        <input
-          matInput
-          [type]="hidePassword ? 'password' : 'text'"
-          formControlName="password"
-        />
-        <button
-          mat-icon-button
-          matSuffix
-          type="button"
-          (click)="hidePassword = !hidePassword"
-          aria-label="Toggle password visibility"
-        >
-        
-          <svg
-            *ngIf="!hidePassword"
-            xmlns="http://www.w3.org/2000/svg"
-            height="24"
-            width="24"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-          >
-            <path
-              d="M12 5c-7 0-11 7-11 7s4 7 11 7 11-7 11-7-4-7-11-7zm0 12c-2.8 0-5-2.2-5-5 0-.7.1-1.4.4-2l7.6 7.6c-.6.2-1.3.4-2 .4zm7.6 1.4L3.6 2.4 2.2 3.8l3.3 3.3C3.4 8.5 2 12 2 12s4 7 10 7c2.1 0 4-.6 5.6-1.6l3.3 3.3 1.4-1.4z"
-            />
-          </svg>
-          <svg
-            *ngIf="hidePassword"
-            xmlns="http://www.w3.org/2000/svg"
-            height="24"
-            width="24"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-          >
-            <path
-              d="M12 5c-7 0-11 7-11 7s4 7 11 7 11-7 11-7-4-7-11-7zm0 12c-2.8 0-5-2.2-5-5s2.2-5 5-5 5 2.2 5 5-2.2 5-5 5zm0-8c-1.6 0-3 1.4-3 3s1.4 3 3 3 3-1.4 3-3-1.4-3-3-3z"
-            />
-          </svg>
-        </button>
-        <mat-error
-          *ngIf="passwordCtrl.invalid && (passwordCtrl.dirty || passwordCtrl.touched)"
-        >
-          Password must be at least 6 characters long
-        </mat-error>
-      </mat-form-field>
-
-      <div class="options">
-        <mat-checkbox>Remember me</mat-checkbox>
-        <a routerLink="/forgot-password" class="forgot-link">Forgot Password?</a>
+    <div class="auth-body">
+      
+      <div class="text-center">
+        <h2>Welcome Back</h2>
+        <p class="subtitle">Access your CS labs, projects, and grades.</p>
       </div>
 
-      <button
-        mat-raised-button
-        color="primary"
-        class="login-btn"
-        type="submit"
-        [disabled]="form.invalid || isSubmitting"
-      >
-        Login
+      <div *ngIf="errorMessage" class="error-alert">
+        {{ errorMessage }}
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" class="auth-form">
+        
+        <label>
+          <span class="label-text">Email Address</span>
+          <div class="input-wrapper">
+            <span class="material-symbols-outlined icon">mail</span>
+            <input 
+              type="email" 
+              formControlName="email"
+              placeholder="student@university.edu"
+              [class.error]="emailCtrl.invalid && (emailCtrl.dirty || emailCtrl.touched)"
+            >
+          </div>
+          <span class="error-text" *ngIf="emailCtrl.invalid && (emailCtrl.dirty || emailCtrl.touched)">
+            Valid email is required
+          </span>
+        </label>
+
+        <label>
+          <div class="label-row">
+            <span class="label-text">Password</span>
+            <a routerLink="/forgot-password" class="forgot-link">Forgot Password?</a>
+          </div>
+          <div class="input-wrapper">
+            <span class="material-symbols-outlined icon">lock</span>
+            <input 
+              [type]="hidePassword ? 'password' : 'text'" 
+              formControlName="password"
+              placeholder="Enter your password"
+              [class.error]="passwordCtrl.invalid && (passwordCtrl.dirty || passwordCtrl.touched)"
+            >
+            <button type="button" class="toggle-pass" (click)="hidePassword = !hidePassword">
+                <span class="material-symbols-outlined">{{ hidePassword ? 'visibility_off' : 'visibility' }}</span>
+            </button>
+          </div>
+          <span class="error-text" *ngIf="passwordCtrl.invalid && (passwordCtrl.dirty || passwordCtrl.touched)">
+            Password is too short
+          </span>
+        </label>
+
+        <button type="submit" class="submit-btn" [disabled]="form.invalid || isSubmitting">
+          <span *ngIf="!isSubmitting">Sign In</span>
+          <span *ngIf="!isSubmitting" class="material-symbols-outlined arrow">arrow_forward</span>
+          <span *ngIf="isSubmitting">Signing in...</span>
+        </button>
+
+      </form>
+
+      <div class="divider">
+        <span>OR</span>
+      </div>
+
+      <button type="button" class="google-btn" (click)="loginWithGoogle()">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path>
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"></path>
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"></path>
+        </svg>
+        Continue with Google
       </button>
-    </form>
 
-    <div *ngIf="isLoggedIn" class="redirecting-message">
-      Autentificare reușită! Redirecting...
     </div>
 
-    <div class="or-separator" style="margin: 18px 0">
-      <span>or</span>
+    <div class="auth-footer">
+      <p>Don't have an account? <a routerLink="/register">Register</a></p>
     </div>
 
-    <button
-      mat-stroked-button
-      color="accent"
-      (click)="loginWithGoogle()"
-      class="login-btn google-btn"
-      style="margin-bottom: 10px"
-    >
-      <fa-icon [icon]="faGoogle" style="margin-right: 12px; color: #DB4437"></fa-icon>
-      Continue with Google
-    </button>
-
-    <button
-      mat-stroked-button
-      color="primary"
-      (click)="loginWithFacebook()"
-      class="login-btn facebook-btn"
-    >
-      <fa-icon [icon]="faFacebook" style="margin-right: 12px; color: #1877f3"></fa-icon>
-      Continue with Facebook
-    </button>
-
-    <p>Don’t have an Account ? <a routerLink="/register">Register</a></p>
   </div>
 
-  <div class="illustration">
-    <img src="/auth/login_page.svg" alt="Workout illustration" />
+  <p class="copyright">© 2025 Gheorghe Asachi Technical University of Iaşi.</p>
 
-  </div>
-</main>
+</div>

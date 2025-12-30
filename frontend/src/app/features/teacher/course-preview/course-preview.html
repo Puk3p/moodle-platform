@@ -43,7 +43,32 @@
     <div class="content-grid">
       
       <div class="modules-column">
-        
+
+        <div class="module-card quizzes-section" *ngIf="previewData.quizzes && previewData.quizzes.length > 0">
+          <div class="module-header special-header">
+            <div class="header-text">
+              <h3><i class="fa-solid fa-clipboard-question"></i> Tests & Quizzes</h3>
+              <span class="date-range">Available Assessments</span>
+            </div>
+          </div>
+          <div class="module-items">
+            <div class="item-row" *ngFor="let quiz of previewData.quizzes">
+              <div class="item-icon purple">
+                <i class="fa-solid fa-clipboard-question"></i>
+              </div>
+              <div class="item-info">
+                <p class="item-title">{{ quiz.title }}</p>
+                <div class="item-meta urgent">
+                  <span class="pulse-dot"></span> {{ quiz.meta }}
+                </div>
+              </div>
+              <button class="start-quiz-btn" (click)="handleQuizStart(quiz.id)">
+                Start Attempt <i class="fa-solid fa-arrow-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div class="module-card" *ngFor="let module of previewData.modules" 
              [class.current-week]="module.status === 'current'"
              [class.locked]="module.status === 'locked'">
@@ -65,13 +90,11 @@
           </div>
 
           <div class="module-items" *ngIf="module.status !== 'locked'">
-            <div class="item-row" *ngFor="let item of module.items">
+            
+            <div class="item-row" *ngFor="let item of module.items" (click)="handleItemClick(item)">
               
-              <div class="item-icon" 
-                   [class.blue]="item.type.includes('pdf') || item.type.includes('doc')" 
-                   [class.purple]="item.type.includes('video')" 
-                   [class.orange]="item.isAssignment">
-                <i class="fa-solid" [ngClass]="getItemIcon(item.type)"></i>
+              <div class="item-icon" [ngClass]="getItemColorClass(item)">
+                <i class="fa-solid" [ngClass]="getItemIcon(item)"></i>
               </div>
 
               <div class="item-info">
@@ -82,8 +105,10 @@
                   <span class="pulse-dot"></span> {{ item.meta }}
                 </div>
               </div>
+              
               <i class="fa-solid fa-chevron-right arrow"></i>
             </div>
+
           </div>
 
           <div class="module-items locked-msg" *ngIf="module.status === 'locked'">
@@ -94,7 +119,6 @@
       </div>
 
       <div class="widgets-column">
-        
         <div class="widget-card">
           <div class="widget-header">
             <i class="fa-solid fa-bullhorn"></i>
@@ -108,7 +132,6 @@
               <p class="ann-body">{{ ann.body }}</p>
               <span class="ann-time">{{ ann.timeAgo }}</span>
             </div>
-            
             <p *ngIf="previewData.announcements.length === 0" style="font-size: 12px; color: #9ca3af;">No announcements.</p>
           </div>
           <button class="widget-footer-btn">View All Announcements</button>
@@ -132,7 +155,6 @@
             <p *ngIf="previewData.deadlines.length === 0" style="font-size: 12px; color: #9ca3af;">No upcoming deadlines.</p>
           </div>
         </div>
-
       </div>
 
     </div>

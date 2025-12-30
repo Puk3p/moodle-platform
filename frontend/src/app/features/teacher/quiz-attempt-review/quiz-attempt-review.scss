@@ -134,10 +134,68 @@ $text-gray: #6b7280;
     }
 
     .q-body {
-        padding: 1.5rem;
-        
-        .q-text { font-size: 1.1rem; color: $text-dark; margin-bottom: 1.5rem; line-height: 1.5; }
+    padding: 1.5rem;
+    
+    .q-text { 
+        font-size: 1.15rem; 
+        font-weight: 500;
+        color: #1f2937; 
+        margin-bottom: 1.5rem; 
+        line-height: 1.6;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 1rem;
     }
+}
+
+
+.review-code-block {
+    margin-top: 1rem;
+    
+    .answer-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #6b7280;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    
+    ::ng-deep .CodeMirror {
+        height: auto !important;
+        min-height: 100px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-family: 'Fira Code', monospace;
+        font-size: 14px;
+        background-color: #263238 !important; 
+    }
+}
+
+
+.review-text-block {
+    .answer-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #6b7280;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .text-response {
+        padding: 1rem;
+        background: #fff;
+        border: 1px solid #d1d5db;
+        border-left: 4px solid #3b82f6; 
+        border-radius: 6px;
+        color: #374151;
+        font-family: 'Inter', sans-serif;
+        font-size: 1rem;
+        line-height: 1.5;
+        white-space: pre-wrap; 
+    }
+}
 }
 
 

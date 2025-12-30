@@ -7,8 +7,10 @@ import moodlev2.infrastructure.mapper.QuizEngineMapper;
 import moodlev2.infrastructure.persistence.jpa.*;
 import moodlev2.infrastructure.persistence.jpa.entity.*;
 import moodlev2.web.quiz.dto.*;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -27,12 +29,23 @@ public class QuizEngineService {
     private final QuizEngineMapper mapper;
 
     @Transactional
-    public StudentQuizViewDto startAttempt(Long quizId, String userEmail) {
+    public StudentQuizViewDto startAttempt(Long quizId, String userEmail, String providedPassword) {
         UserEntity user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
         QuizEntity quiz = quizRepository.findById(quizId)
                 .orElseThrow(() -> new NotFoundException("Quiz not found"));
+
+        String dbPassword = quiz.getPassword();
+
+        if (dbPassword != null && !dbPassword.isBlank()) {
+            if (providedPassword == null || providedPassword.isBlank()) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Password is required");
+            }
+            if (!dbPassword.trim().equals(providedPassword.trim())) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid quiz password");
+            }
+        }
 
         QuizAttemptEntity attempt = new QuizAttemptEntity();
         attempt.setUser(user);
@@ -43,7 +56,7 @@ public class QuizEngineService {
 
         attemptRepository.save(attempt);
 
-        return mapper.toStudentView(quiz);
+        return mapper.toStudentView(quiz, attempt.getId());
     }
 
     @Transactional
@@ -73,20 +86,33 @@ public class QuizEngineService {
             QuizQuestionEntity question = questionMap.get(ans.questionId());
             if (question == null) continue;
 
-            QuizOptionEntity selectedOption = question.getOptions().stream()
-                    .filter(opt -> opt.getId().equals(ans.selectedOptionId()))
-                    .findFirst()
-                    .orElse(null);
-
             QuizResponseEntity responseEntity = new QuizResponseEntity();
             responseEntity.setAttempt(attempt);
             responseEntity.setQuestion(question);
-            responseEntity.setSelectedOption(selectedOption);
-            attempt.getResponses().add(responseEntity);
 
-            if (selectedOption != null && selectedOption.isCorrect()) {
-                totalScore = totalScore.add(BigDecimal.valueOf(question.getPoints()));
+            if (ans.selectedOptionId() != null) {
+                QuizOptionEntity selectedOption = question.getOptions().stream()
+                        .filter(opt -> opt.getId().equals(ans.selectedOptionId()))
+                        .findFirst()
+                        .orElse(null);
+
+                responseEntity.setSelectedOption(selectedOption);
+
+                if (selectedOption != null && selectedOption.isCorrect()) {
+                    totalScore = totalScore.add(BigDecimal.valueOf(question.getPoints()));
+                }
             }
+            else if (ans.textAnswer() != null) {
+                responseEntity.setTextResponse(ans.textAnswer());
+            }
+            else if (ans.orderedOptionIds() != null && !ans.orderedOptionIds().isEmpty()) {
+                String orderStr = ans.orderedOptionIds().stream()
+                        .map(String::valueOf)
+                        .collect(Collectors.joining(","));
+                responseEntity.setTextResponse(orderStr);
+            }
+
+            attempt.getResponses().add(responseEntity);
         }
 
         attempt.setCompletedAt(Instant.now());
@@ -136,6 +162,7 @@ public class QuizEngineService {
         int passingScoreThreshold = attempt.getQuiz().getPassingScore() != null
                 ? attempt.getQuiz().getPassingScore()
                 : 50;
+
         boolean passed = percentage >= passingScoreThreshold;
 
         return new QuizAttemptListDto(
@@ -213,8 +240,16 @@ public class QuizEngineService {
         Long selectedOptionId = (response != null && response.getSelectedOption() != null)
                 ? response.getSelectedOption().getId() : null;
 
-        boolean isFullCorrect = (selectedOptionId != null) &&
-                q.getOptions().stream().anyMatch(o -> o.getId().equals(selectedOptionId) && o.isCorrect());
+        String studentTextResponse = (response != null) ? response.getTextResponse() : null;
+
+        boolean isFullCorrect = false;
+
+        if (selectedOptionId != null) {
+            isFullCorrect = q.getOptions().stream()
+                    .anyMatch(o -> o.getId().equals(selectedOptionId) && o.isCorrect());
+        } else if (studentTextResponse != null) {
+            isFullCorrect = !studentTextResponse.trim().isEmpty();
+        }
 
         List<OptionReviewDto> options = q.getOptions().stream().map(o -> new OptionReviewDto(
                 o.getId(),
@@ -230,6 +265,7 @@ public class QuizEngineService {
                 isFullCorrect ? BigDecimal.valueOf(q.getPoints()) : BigDecimal.ZERO,
                 BigDecimal.valueOf(q.getPoints()),
                 isFullCorrect,
+                studentTextResponse,
                 options,
                 null
         );

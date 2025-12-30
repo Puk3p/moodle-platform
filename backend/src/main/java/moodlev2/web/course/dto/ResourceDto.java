@@ -6,5 +6,6 @@ public record ResourceDto(
         String category,
         String type,
         String size,
-        String date
+        String date,
+        boolean isVisible
 ) {}

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -19,10 +20,18 @@ public class CoursePreviewMapper {
                                   List<CalendarEventEntity> events) {
 
         List<ModulePreviewDto> moduleDtos = course.getModules().stream()
-                .map(this::mapModule)
+                .map(this::mapModuleWithoutQuizzes)
                 .toList();
 
-        // --- FIX: Extragem numele instructorului din UserEntity ---
+        List<ModuleItemPreviewDto> allQuizzes = new ArrayList<>();
+
+        if (course.getQuizzes() != null) {
+            allQuizzes = course.getQuizzes().stream()
+                    .filter(q -> "PUBLISHED".equalsIgnoreCase(q.getStatus()))
+                    .map(this::mapQuizToItem)
+                    .toList();
+        }
+
         String instructorName = "Unknown Instructor";
         if (course.getTeacher() != null) {
             instructorName = course.getTeacher().getFirstName() + " " + course.getTeacher().getLastName();
@@ -32,14 +41,15 @@ public class CoursePreviewMapper {
                 course.getCode(),
                 course.getName(),
                 course.getTerm(),
-                instructorName, // <--- Folosim variabila calculată
+                instructorName,
                 moduleDtos,
                 announcements.stream().map(this::mapAnnouncement).toList(),
-                events.stream().map(this::mapDeadline).toList()
+                events.stream().map(this::mapDeadline).toList(),
+                allQuizzes
         );
     }
 
-    private ModulePreviewDto mapModule(CourseModuleEntity module) {
+    private ModulePreviewDto mapModuleWithoutQuizzes(CourseModuleEntity module) {
         LocalDate now = LocalDate.now();
         String status = "locked";
 
@@ -58,13 +68,23 @@ public class CoursePreviewMapper {
 
         String unlockDate = (module.getStartDate() != null) ? module.getStartDate().format(dateFormatter) : "";
 
+        List<ModuleItemPreviewDto> resourceItems = new ArrayList<>();
+        if (module.getItems() != null) {
+            resourceItems.addAll(
+                    module.getItems().stream()
+                            .filter(ModuleItemEntity::isVisible)
+                            .map(this::mapItem)
+                            .toList()
+            );
+        }
+
         return new ModulePreviewDto(
                 module.getId(),
                 module.getTitle(),
                 dateRange,
                 status,
                 unlockDate,
-                module.getItems().stream().map(this::mapItem).toList()
+                resourceItems
         );
     }
 
@@ -80,12 +100,39 @@ public class CoursePreviewMapper {
             meta = fType + fSize;
         }
 
+        String effectiveType = (item.getFileType() != null && !item.getFileType().isEmpty())
+                ? item.getFileType()
+                : item.getType();
+
         return new ModuleItemPreviewDto(
                 item.getId(),
                 item.getTitle(),
-                item.getType(),
+                effectiveType,
                 meta,
-                isAssignment
+                isAssignment,
+                item.getUrl(),
+                false
+        );
+    }
+
+    private ModuleItemPreviewDto mapQuizToItem(QuizEntity quiz) {
+        StringBuilder metaBuilder = new StringBuilder();
+        metaBuilder.append(quiz.getQuestionsCount() != null ? quiz.getQuestionsCount() : 0).append(" Questions");
+
+        if (quiz.getDurationMinutes() != null && quiz.getDurationMinutes() > 0) {
+            metaBuilder.append(" • ").append(quiz.getDurationMinutes()).append(" min");
+        }
+
+        boolean hasPassword = quiz.getPassword() != null && !quiz.getPassword().isEmpty();
+
+        return new ModuleItemPreviewDto(
+                quiz.getId(),
+                quiz.getTitle(),
+                "quiz",
+                metaBuilder.toString(),
+                true,
+                null,
+                hasPassword
         );
     }
 

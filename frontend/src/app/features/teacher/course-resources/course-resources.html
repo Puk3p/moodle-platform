@@ -1,4 +1,4 @@
-<div class="resources-page">
+<div class="resources-page" (click)="onPageClick()">
 
   <div class="page-nav">
     <a routerLink="/manage-courses" class="back-link">
@@ -18,15 +18,7 @@
       <h1>Course Resources</h1>
       <p class="subtitle">Manage and organize learning materials for <strong>{{ courseCode }}</strong>.</p>
     </div>
-    <div class="header-actions">
-      <button class="btn-secondary" disabled title="Coming Soon">
-        <i class="fa-solid fa-folder-plus"></i> Create Folder
-      </button>
-      <button class="btn-primary" disabled title="Coming Soon">
-        <i class="fa-solid fa-cloud-arrow-up"></i> Upload Resource
-      </button>
     </div>
-  </div>
 
   <div class="filter-bar">
     <div class="search-wrapper">
@@ -53,31 +45,47 @@
   </div>
 
   <div class="resources-grid" *ngIf="!isLoading">
-    
-    <div class="resource-card" *ngFor="let res of filteredResources">
-      
-      <div class="card-top">
-        <div class="icon-box" [ngClass]="getResourceColorClass(res.type)">
-          <i class="fa-solid" [ngClass]="getResourceIcon(res.type)"></i>
+
+    <div class="resource-card-wrapper" *ngFor="let res of filteredResources">
+        <div class="resource-card" (click)="onResourceClick(res)" [class.opacity-50]="!res.isVisible">
+
+          <div class="card-top">
+            <div class="icon-box" [ngClass]="getResourceColorClass(res)">
+              <i class="fa-solid" [ngClass]="getResourceIcon(res)"></i>
+            </div>
+
+            <button class="menu-btn" (click)="toggleMenu($event, res.id)">
+              <i class="fa-solid fa-ellipsis-vertical"></i>
+            </button>
+          </div>
+
+          <div class="card-content">
+            <h3 [title]="res.name">
+                {{ res.name }}
+                <i *ngIf="!res.isVisible" class="fa-solid fa-eye-slash ml-2 text-gray-400 text-xs" title="Hidden from students"></i>
+            </h3>
+            <p class="category">{{ res.category }}</p>
+          </div>
+
+          <div class="card-footer">
+            <div class="meta-badge">
+              <span class="size">{{ res.size }}</span>
+              <span class="dot"></span>
+              <span class="date">{{ res.date }}</span>
+            </div>
+          </div>
+
         </div>
-        <button class="menu-btn">
-          <i class="fa-solid fa-ellipsis-vertical"></i>
-        </button>
-      </div>
 
-      <div class="card-content">
-        <h3 [title]="res.name">{{ res.name }}</h3>
-        <p class="category">{{ res.category }}</p>
-      </div>
-
-      <div class="card-footer">
-        <div class="meta-badge">
-          <span class="size">{{ res.size }}</span>
-          <span class="dot"></span>
-          <span class="date">{{ res.date }}</span>
+        <div class="dropdown-menu" *ngIf="activeMenuResourceId === res.id">
+            <button (click)="onToggleVisibility($event, res)">
+                <i class="fa-solid" [class.fa-eye]="!res.isVisible" [class.fa-eye-slash]="res.isVisible"></i>
+                {{ res.isVisible ? 'Hide from students' : 'Show to students' }}
+            </button>
+            <button class="danger" (click)="onDeleteResource($event, res.id)">
+                <i class="fa-solid fa-trash"></i> Delete
+            </button>
         </div>
-      </div>
-
     </div>
 
     <div *ngIf="resources.length === 0" class="col-span-full text-center text-gray-400 py-10">

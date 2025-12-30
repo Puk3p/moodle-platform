@@ -6,6 +6,7 @@ export interface CoursePreview {
   modules: PreviewModule[];
   announcements: PreviewAnnouncement[];
   deadlines: PreviewDeadline[];
+  quizzes: PreviewItem[];
 }
 
 export interface PreviewModule {

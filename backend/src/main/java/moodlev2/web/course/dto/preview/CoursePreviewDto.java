@@ -9,5 +9,6 @@ public record CoursePreviewDto(
         String instructorName,
         List<ModulePreviewDto> modules,
         List<AnnouncementPreviewDto> announcements,
-        List<DeadlinePreviewDto> deadlines
+        List<DeadlinePreviewDto> deadlines,
+        List<ModuleItemPreviewDto> quizzes
 ) {}

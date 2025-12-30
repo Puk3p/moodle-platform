@@ -29,4 +29,18 @@ export class ResourcesService {
   uploadResource(formData: FormData): Observable<void> {
     return this.http.post<void>(this.baseUrl, formData);
   }
+
+  downloadFile(filename: string): Observable<Blob> {
+    const url = `${this.baseUrl}/download/${filename}`;
+    return this.http.get(url, { responseType: 'blob' });
+  }
+
+
+  toggleVisibility(fileId: string, isVisible: boolean): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/${fileId}/visibility`, { isVisible });
+  }
+
+  deleteResource(fileId: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${fileId}`);
+  }
 }

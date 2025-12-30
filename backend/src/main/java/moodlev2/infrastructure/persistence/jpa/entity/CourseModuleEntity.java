@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
-import java.time.LocalDate; // <--- IMPORT NOU
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,6 +30,9 @@ public class CourseModuleEntity {
 
     @Column(name = "end_date")
     private LocalDate endDate;
+
+    @OneToMany(mappedBy = "module", cascade = CascadeType.ALL)
+    private List<QuizEntity> quizzes = new ArrayList<>();
 
     @OneToMany(mappedBy = "module", cascade = CascadeType.ALL)
     @OrderBy("sortOrder ASC")

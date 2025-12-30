@@ -286,3 +286,21 @@ $app-border: rgba(148, 163, 184, 0.45);
     width: 160px;
   }
 }
+
+
+.shell-main {
+  /* ... stilurile tale existente (flex, margin-left pt sidebar etc) ... */
+  transition: margin-left 0.3s ease;
+
+  &.full-screen {
+    margin-left: 0 !important; /* Reseteaza spatiul lasat pentru sidebar */
+    width: 100vw;
+    height: 100vh;
+    padding: 0;
+    
+    .content {
+      padding: 0; /* Scoate padding-ul din jurul router-outlet daca exista */
+      height: 100%;
+    }
+  }
+}

@@ -1,0 +1,175 @@
+<div class="quiz-container" *ngIf="!isLoading && questions.length > 0; else loadingTpl">
+  
+  <header class="quiz-header">
+    <div class="header-left">
+      <h1>{{ quizTitle }}</h1>
+      <p class="subtitle">Attempt in progress</p>
+    </div>
+
+    <div class="header-right">
+      <div class="timer-box">
+        <span class="timer-label">Time Remaining</span>
+        <span class="timer-value" [class.warning]="timeRemaining < 300">{{ formatTime(timeRemaining) }}</span>
+      </div>
+      <div class="separator"></div>
+      
+      <button class="flag-btn" (click)="toggleFlag(currentQuestionIndex)" [class.flagged]="currentQuestion?.isFlagged">
+        <span class="material-symbols-outlined">{{ currentQuestion?.isFlagged ? 'flag_filled' : 'flag' }}</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="quiz-layout">
+    
+    <main class="question-area">
+      <div class="question-card">
+        
+        <div class="q-header">
+          <div class="q-meta">
+            <h3>Question {{ currentQuestionIndex + 1 }}</h3>
+            <span class="type-badge">{{ currentQuestion?.type?.replace('_', ' ') }}</span>
+          </div>
+          <span class="points-badge">{{ currentQuestion?.points }} points</span>
+        </div>
+
+        <div class="q-content">
+          <div *ngIf="currentQuestion?.imageUrl" class="q-image">
+            <img [src]="currentQuestion.imageUrl" alt="Question Image">
+          </div>
+          <p class="q-text">{{ currentQuestion?.text }}</p>
+        </div>
+
+        <div class="answer-area" [ngSwitch]="currentQuestion.type">
+
+          <div *ngSwitchCase="'MCQ_SINGLE'" class="options-list">
+            <ng-container *ngTemplateOutlet="singleChoiceTpl"></ng-container>
+          </div>
+          <div *ngSwitchCase="'SINGLE_CHOICE'" class="options-list">
+            <ng-container *ngTemplateOutlet="singleChoiceTpl"></ng-container>
+          </div>
+          <div *ngSwitchCase="'TRUE_FALSE'" class="options-list">
+            <ng-container *ngTemplateOutlet="singleChoiceTpl"></ng-container>
+          </div>
+
+          <div *ngSwitchCase="'CODE'" class="code-wrapper">
+            <label class="input-label">Write your code below:</label>
+            <div class="code-editor-container">
+              <ngx-codemirror
+                [(ngModel)]="currentQuestion.textAnswer"
+                [options]="codeMirrorOptions"
+                (ngModelChange)="onTextChange()">
+              </ngx-codemirror>
+            </div>
+          </div>
+
+          <div *ngSwitchCase="'FREE_TEXT'" class="text-wrapper">
+            <label class="input-label">Your Answer:</label>
+            <textarea 
+              class="text-input" 
+              [(ngModel)]="currentQuestion.textAnswer" 
+              (input)="onTextChange()"
+              placeholder="Type your answer here..."></textarea>
+          </div>
+
+          <div *ngSwitchCase="'DRAG_DROP'" class="drag-drop-list">
+            <p class="hint"><i class="fa-solid fa-arrows-up-down"></i> Drag and drop items to reorder them correctly.</p>
+            
+            <div class="draggable-item" 
+                 *ngFor="let option of currentQuestion.options; let i = index"
+                 draggable="true"
+                 (dragstart)="onDragStart($event, i)"
+                 (dragover)="onDragOver($event)"
+                 (drop)="onDrop($event, i)">
+              
+              <div class="drag-handle">
+                <i class="fa-solid fa-grip-vertical"></i>
+              </div>
+              <div class="drag-content">
+                <span class="drag-text">{{ option.text }}</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        </div>
+
+      <div class="nav-buttons">
+        <button class="btn-prev" (click)="prevQuestion()" [disabled]="currentQuestionIndex === 0">
+          Previous
+        </button>
+        
+        <button class="btn-next" (click)="nextQuestion()" *ngIf="currentQuestionIndex < questions.length - 1">
+          Next Question
+        </button>
+
+        <button class="btn-finish" (click)="finishAttempt()" *ngIf="currentQuestionIndex === questions.length - 1">
+          Finish Attempt
+        </button>
+      </div>
+    </main>
+
+    <aside class="quiz-navigator">
+      <div class="nav-content">
+        <h2 class="nav-title">Question Navigator</h2>
+        <div class="grid-nav">
+          <button *ngFor="let q of questions; let i = index" 
+                  class="nav-item"
+                  [class.active]="i === currentQuestionIndex"
+                  [class.answered]="isAnswered(q)"
+                  (click)="goToQuestion(i)">
+            {{ i + 1 }}
+            <span *ngIf="q.isFlagged" class="flag-dot"></span>
+          </button>
+        </div>
+        
+        <div class="legend">
+          <div class="legend-item"><span class="dot active"></span> Current</div>
+          <div class="legend-item"><span class="dot answered"></span> Answered</div>
+          <div class="legend-item"><span class="dot unans"></span> Unanswered</div>
+          <div class="legend-item"><span class="dot flag"></span> Flagged</div>
+        </div>
+      </div>
+      <div class="nav-footer">
+        <button class="btn-submit-all" (click)="finishAttempt()">Finish Attempt...</button>
+      </div>
+    </aside>
+
+  </div>
+</div>
+
+<ng-template #singleChoiceTpl>
+  <label *ngFor="let option of currentQuestion.options" 
+         class="option-card" 
+         [class.selected]="currentQuestion.selectedOptionId === option.id">
+    
+    <input type="radio" 
+           [name]="'q_' + currentQuestion.id" 
+           [value]="option.id" 
+           [(ngModel)]="currentQuestion.selectedOptionId"
+           (change)="onOptionSelect()">
+    
+    <div class="option-content">
+      <div class="option-marker">{{ getOptionLabel(option) }}</div>
+      <span class="option-text">{{ option.text }}</span>
+    </div>
+    
+    <div class="active-border"></div>
+  </label>
+</ng-template>
+
+<ng-template #loadingTpl>
+  <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh;">
+    <ng-container *ngIf="!errorMessage">
+        <i class="fa-solid fa-spinner fa-spin" style="font-size: 40px; color: #ff5100; margin-bottom: 20px;"></i>
+        <p style="font-size: 1.2rem; color: #6b7280;">Loading Quiz...</p>
+    </ng-container>
+    
+    <div *ngIf="errorMessage" style="text-align: center;">
+        <i class="fa-solid fa-triangle-exclamation" style="font-size: 40px; color: #ef4444; margin-bottom: 20px;"></i>
+        <p style="font-size: 1.2rem; color: #374151; margin-bottom: 20px;">{{ errorMessage }}</p>
+        <button (click)="finishAttempt(true)" style="padding: 10px 20px; background: #374151; color: white; border: none; border-radius: 6px; cursor: pointer;">
+            Close Window
+        </button>
+    </div>
+  </div>
+</ng-template>

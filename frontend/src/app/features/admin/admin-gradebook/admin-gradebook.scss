@@ -1,0 +1,165 @@
+$primary: #ff5100;
+$border: #e7deda; 
+$text-main: #181310;
+$text-sec: #8d6d5e;
+$bg-page: #f8f6f5;
+
+:host {
+  display: block;
+  font-family: 'Inter', sans-serif;
+  background-color: $bg-page;
+  min-height: 100vh;
+}
+
+.admin-container {
+  padding: 2rem;
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+
+.header-section {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  margin-bottom: 2rem;
+
+  .title-block {
+    .breadcrumbs {
+      font-size: 0.85rem; color: $text-sec; margin-bottom: 0.5rem;
+      a { text-decoration: none; color: inherit; &:hover { color: $primary; } }
+      .sep { margin: 0 0.5rem; }
+      .current { color: $text-main; font-weight: 500; }
+    }
+    h1 { font-size: 2rem; font-weight: 700; color: $text-main; margin: 0; letter-spacing: -0.02em; }
+    p { color: $text-sec; font-size: 1rem; margin-top: 0.25rem; }
+  }
+
+  .back-btn {
+    display: flex; align-items: center; gap: 0.5rem;
+    background: white; border: 1px solid $border;
+    padding: 0.6rem 1.2rem; border-radius: 12px;
+    font-size: 0.9rem; font-weight: 600; color: $text-main; cursor: pointer;
+    transition: all 0.2s;
+    &:hover { background: #f0ebe9; }
+  }
+}
+
+
+.main-card {
+  background: white; border: 1px solid $border;
+  border-radius: 16px; overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+
+.filters-bar {
+  padding: 1.25rem; border-bottom: 1px solid $border;
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;
+
+  .search-input {
+    position: relative; flex: 1; max-width: 400px;
+    .icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: $text-sec; }
+    input {
+      width: 100%; padding: 0.75rem 1rem 0.75rem 2.8rem;
+      border: 1px solid $border; border-radius: 12px;
+      font-size: 0.9rem; outline: none; transition: all 0.2s;
+      &:focus { border-color: $primary; box-shadow: 0 0 0 3px rgba($primary, 0.1); }
+    }
+  }
+
+  .dropdowns-group {
+    display: flex; gap: 0.75rem;
+    .select-wrapper select {
+      padding: 0.75rem 2rem 0.75rem 1rem;
+      background-color: #f8f6f5; border: 1px solid $border; border-radius: 12px;
+      font-size: 0.9rem; font-weight: 500; color: $text-main; cursor: pointer; outline: none;
+      &:hover { background-color: #f0ebe9; }
+      &:focus { border-color: $primary; }
+    }
+  }
+}
+
+
+.table-responsive { overflow-x: auto; }
+
+table {
+  width: 100%; border-collapse: collapse; text-align: left;
+  thead {
+    background: #faf9f8; border-bottom: 1px solid $border;
+    th {
+      padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; 
+      color: $text-sec; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+  }
+  tbody tr {
+    border-bottom: 1px solid $border; transition: background 0.1s;
+    &:last-child { border-bottom: none; }
+    &:hover { background: #fffbf8; }
+  }
+  td { padding: 1rem 1.5rem; vertical-align: middle; font-size: 0.9rem; }
+}
+
+
+.course-info {
+  display: flex; flex-direction: column;
+  .code { font-weight: 600; color: $text-main; }
+  .name { font-size: 0.8rem; color: $text-sec; }
+}
+
+.user-info {
+  display: flex; align-items: center; gap: 0.75rem;
+  .avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; font-weight: 700;
+  }
+  .student-name { font-weight: 500; color: $text-main; }
+}
+
+
+.bg-blue-100 { background-color: #dbeafe; color: #1d4ed8; }
+.bg-purple-100 { background-color: #f3e8ff; color: #7e22ce; }
+.bg-teal-100 { background-color: #ccfbf1; color: #0f766e; }
+
+.text-dark { color: $text-main; font-weight: 500; }
+.text-secondary { color: $text-sec; font-size: 0.85rem; }
+
+.badge-score {
+  display: inline-block; padding: 4px 10px; border-radius: 8px;
+  font-size: 0.75rem; font-weight: 700;
+  border: 1px solid transparent;
+}
+
+
+.bg-emerald-50 { background-color: #ecfdf5; color: #047857; border-color: #d1fae5 !important; }
+.bg-orange-50 { background-color: #fff7ed; color: #c2410c; border-color: #ffedd5 !important; }
+.bg-red-50 { background-color: #fef2f2; color: #b91c1c; border-color: #fee2e2 !important; }
+
+.actions {
+  display: flex; justify-content: flex-end; gap: 0.5rem;
+  .btn-icon {
+    width: 32px; height: 32px; border-radius: 8px; border: none; background: transparent;
+    display: flex; align-items: center; justify-content: center; color: $text-sec; cursor: pointer;
+    &:hover { background: #fff7ed; color: $primary; }
+  }
+}
+
+.text-right { text-align: right; }
+.empty-state { text-align: center; padding: 3rem; color: $text-sec; font-style: italic; }
+
+
+.table-footer {
+  padding: 1rem 1.5rem; border-top: 1px solid $border;
+  display: flex; justify-content: space-between; align-items: center;
+  p { font-size: 0.875rem; color: $text-sec; .bold { font-weight: 600; color: $text-main; } }
+
+  .pagination {
+    display: flex; gap: 0.5rem;
+    button {
+      padding: 0.4rem 0.8rem; border: 1px solid transparent; background: transparent;
+      border-radius: 8px; font-size: 0.875rem; color: $text-sec; cursor: pointer;
+      &:hover { background: #f0ebe9; }
+      &.active { background: $primary; color: white; }
+      &:disabled { opacity: 0.5; cursor: not-allowed; }
+    }
+  }
+}

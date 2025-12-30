@@ -25,6 +25,7 @@ public class CourseController {
     private final GetEnrolledStudentsService getEnrolledStudentsService;
     private final UpdateCourseService updateCourseService;
     private final GetSimpleCoursesService getSimpleCoursesService;
+    private final GetCourseCreateService getCourseCreateService;
 
     @GetMapping("/my-dashboard")
     public DashboardHomeResponse getMyDashboard(Authentication authentication) {
@@ -71,5 +72,10 @@ public class CourseController {
     @GetMapping("/list")
     public List<SimpleDto> getCoursesForDropdown() {
         return getSimpleCoursesService.getCoursesForDropdown();
+    }
+
+    @PostMapping("/create")
+    public void createCourse(@RequestBody CreateCourseDto dto) {
+        getCourseCreateService.createCourse(dto);
     }
 }

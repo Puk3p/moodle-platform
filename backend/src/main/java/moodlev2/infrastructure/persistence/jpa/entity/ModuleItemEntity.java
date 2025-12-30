@@ -6,7 +6,7 @@ import lombok.Setter;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
-import java.time.LocalDateTime; // <--- IMPORT NOU
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "module_items")
@@ -36,9 +36,14 @@ public class ModuleItemEntity {
     @Column(name = "is_assignment")
     private Boolean isAssignment = false;
 
+    @Column(name = "is_visible", nullable = false)
+    private boolean isVisible = true;
+
     @Column(name = "due_date")
     private LocalDateTime dueDate;
 
     @Column(name = "created_at")
     private Instant createdAt;
+
+
 }
