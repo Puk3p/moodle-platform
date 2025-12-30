@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CoursesService } from '../../../core/services/courses.service';
+import { ResourcesService } from '../../../core/services/resources.service';
 import { Resource } from '../../../core/models/resource.model';
+import { API_BASE_URL } from '../../../core/config/api-endpoints';
 
 @Component({
   selector: 'app-course-resources',
@@ -15,19 +17,22 @@ import { Resource } from '../../../core/models/resource.model';
 export class CourseResourcesComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private coursesService = inject(CoursesService);
+  private resourcesService = inject(ResourcesService);
 
   courseCode = '';
   searchTerm = '';
   activeFilter = 'All';
 
-  resources: Resource[] = []; 
+  resources: Resource[] = [];
   isLoading = true;
+
+  // Track the ID of the resource whose menu is currently open
+  activeMenuResourceId: number | null = null;
 
   ngOnInit() {
     this.courseCode = this.route.snapshot.paramMap.get('code') || '';
-    
-    if(this.courseCode) {
-        this.loadResources();
+    if (this.courseCode) {
+      this.loadResources();
     }
   }
 
@@ -45,31 +50,139 @@ export class CourseResourcesComponent implements OnInit {
     });
   }
 
-  getResourceIcon(type: string): string {
-    const t = type ? type.toLowerCase() : '';
+  // --- Menu Logic ---
+
+  toggleMenu(event: Event, resourceId: number) {
+    event.stopPropagation(); // Prevent opening the resource
+    if (this.activeMenuResourceId === resourceId) {
+      this.activeMenuResourceId = null;
+    } else {
+      this.activeMenuResourceId = resourceId;
+    }
+  }
+
+  closeMenu() {
+    this.activeMenuResourceId = null;
+  }
+
+  onToggleVisibility(event: Event, resource: Resource) {
+    event.stopPropagation();
+    this.closeMenu();
+
+    // Optimistic update
+    const originalVisibility = resource.isVisible;
+    resource.isVisible = !resource.isVisible;
+
+    // Call service (convert ID to string)
+    this.resourcesService.toggleVisibility(String(resource.id), resource.isVisible).subscribe({
+        error: () => {
+            // Revert on error
+            resource.isVisible = originalVisibility;
+            alert('Failed to update visibility');
+        }
+    });
+  }
+
+  onDeleteResource(event: Event, resourceId: number) {
+    event.stopPropagation();
+    this.closeMenu();
+
+    if (confirm('Are you sure you want to delete this resource?')) {
+        // Call service (convert ID to string)
+        this.resourcesService.deleteResource(String(resourceId)).subscribe({
+            next: () => {
+                // Remove from list locally
+                this.resources = this.resources.filter(r => r.id !== resourceId);
+            },
+            error: (err) => {
+                console.error('Delete failed', err);
+                alert('Failed to delete resource');
+            }
+        });
+    }
+  }
+
+  // Close menu when clicking anywhere else on the page
+  onPageClick() {
+      if (this.activeMenuResourceId !== null) {
+          this.closeMenu();
+      }
+  }
+
+  // --- Existing Helper Methods ---
+  private getDetectionString(res: any): string {
+    const name = res.name ? res.name.toLowerCase() : '';
+    const type = res.type ? res.type.toLowerCase() : '';
+    return type + ' ' + name;
+  }
+
+  getResourceIcon(resource: Resource): string {
+    const t = this.getDetectionString(resource);
     if (t.includes('pdf')) return 'fa-file-pdf';
-    if (t.includes('ppt')) return 'fa-file-powerpoint';
+    if (t.includes('ppt') || t.includes('powerpoint')) return 'fa-file-powerpoint';
     if (t.includes('doc') || t.includes('word')) return 'fa-file-word';
-    if (t.includes('zip') || t.includes('rar')) return 'fa-file-zipper';
+    if (t.includes('xls') || t.includes('excel') || t.includes('sheet')) return 'fa-file-excel';
+    if (t.includes('zip') || t.includes('rar') || t.includes('7z')) return 'fa-file-zipper';
     if (t.includes('video') || t.includes('mp4')) return 'fa-circle-play';
-    if (t.includes('link') || t.includes('url')) return 'fa-link';
+    if (t.includes('link') || t.includes('url') || t.includes('http')) return 'fa-link';
+    if (t.includes('image') || t.includes('jpg') || t.includes('png')) return 'fa-file-image';
+    if (t.includes('code') || t.includes('java') || t.includes('py')) return 'fa-file-code';
     return 'fa-file';
   }
 
-  getResourceColorClass(type: string): string {
-    const t = type ? type.toLowerCase() : '';
+  getResourceColorClass(resource: Resource): string {
+    const t = this.getDetectionString(resource);
     if (t.includes('pdf')) return 'type-pdf';
-    if (t.includes('ppt')) return 'type-pptx';
-    if (t.includes('doc')) return 'type-docx';
-    if (t.includes('zip')) return 'type-zip';
-    if (t.includes('video')) return 'type-video';
-    if (t.includes('link')) return 'type-link';
+    if (t.includes('ppt') || t.includes('powerpoint')) return 'type-pptx';
+    if (t.includes('doc') || t.includes('word')) return 'type-docx';
+    if (t.includes('xls') || t.includes('excel')) return 'type-xlsx';
+    if (t.includes('zip') || t.includes('rar')) return 'type-zip';
+    if (t.includes('video') || t.includes('mp4')) return 'type-video';
+    if (t.includes('link') || t.includes('url')) return 'type-link';
+    if (t.includes('image')) return 'type-image';
+    if (t.includes('code')) return 'type-code';
     return 'type-file';
   }
-  
+
+  onResourceClick(resource: any) {
+    // Check if clicking on menu button area (handled by stopPropagation, but good for safety)
+    if (this.activeMenuResourceId === resource.id) return;
+
+    const url = resource.url;
+    if (!url) return;
+
+    const t = this.getDetectionString(resource);
+
+    if (t.includes('link') || url.startsWith('http')) {
+        window.open(url, '_blank');
+        return;
+    }
+
+    const fullStaticUrl = `${API_BASE_URL}${url}`;
+    if (t.includes('video') || t.includes('mp4') || t.includes('image') || t.includes('png') || t.includes('jpg')) {
+        window.open(fullStaticUrl, '_blank');
+        return;
+    }
+
+    const filename = url.split('/').pop();
+    if (filename) {
+        this.resourcesService.downloadFile(filename).subscribe({
+            next: (blob) => {
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = filename;
+                link.click();
+                window.URL.revokeObjectURL(downloadUrl);
+            },
+            error: (err) => console.error('Download failed', err)
+        });
+    }
+  }
+
   get filteredResources() {
       if (!this.searchTerm) return this.resources;
-      return this.resources.filter(r => 
+      return this.resources.filter(r =>
           r.name.toLowerCase().includes(this.searchTerm.toLowerCase())
       );
   }

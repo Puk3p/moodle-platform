@@ -1,6 +1,6 @@
 package moodlev2.infrastructure.config;
 
-import jakarta.servlet.http.HttpServletResponse; // <--- IMPORT NOU
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import moodlev2.infrastructure.security.OAuth2LoginSuccessHandler;
 import moodlev2.infrastructure.security.JwtAuthenticationFilter;
@@ -42,6 +42,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/oauth2/**").permitAll()
                         .requestMatchers("/login/oauth2/**").permitAll()
+
+                        .requestMatchers("/uploads/**").permitAll()
+
+                        .requestMatchers("/api/users/teachers").hasAnyRole("TEACHER", "ADMIN")
+                        .requestMatchers("/api/courses/create").hasAnyRole("TEACHER", "ADMIN")
 
                         .requestMatchers("/api/courses/**").authenticated()
                         .requestMatchers("/api/calendar/**").authenticated()

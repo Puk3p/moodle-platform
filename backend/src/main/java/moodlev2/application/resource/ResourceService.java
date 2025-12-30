@@ -61,14 +61,28 @@ public class ResourceService {
             if (dto.getFile() != null && !dto.getFile().isEmpty()) {
                 String filePath = fileStorageService.storeFile(dto.getFile());
                 item.setUrl(filePath);
-                item.setFileType(dto.getType().toLowerCase());
+
+                String originalFilename = dto.getFile().getOriginalFilename();
+                String extension = getFileExtension(originalFilename);
+
+                item.setFileType(extension);
+
                 item.setFileSize(formatFileSize(dto.getFile().getSize()));
+            } else {
+                item.setFileType("file");
             }
         }
 
-        // TODO: Mapare desc daca o sa adaugam vrdata campurile in entitate
-
         moduleItemRepository.save(item);
+    }
+
+    private String getFileExtension(String filename) {
+        if (filename == null) return "file";
+        int lastDotIndex = filename.lastIndexOf(".");
+        if (lastDotIndex > 0) {
+            return filename.substring(lastDotIndex + 1).toLowerCase();
+        }
+        return "file";
     }
 
     private String formatFileSize(long bytes) {
@@ -76,5 +90,26 @@ public class ResourceService {
         int exp = (int) (Math.log(bytes) / Math.log(1024));
         String pre = "KMGTPE".charAt(exp-1) + "";
         return String.format("%.1f %sB", bytes / Math.pow(1024, exp), pre);
+    }
+
+    @Transactional
+    public void toggleVisibility(Long resourceId, boolean isVisible) {
+        ModuleItemEntity item = moduleItemRepository.findById(resourceId)
+                .orElseThrow(() -> new NotFoundException("Resource not found"));
+
+        item.setVisible(isVisible);
+        moduleItemRepository.save(item);
+    }
+
+    @Transactional
+    public void deleteResource(Long resourceId) {
+        ModuleItemEntity item = moduleItemRepository.findById(resourceId)
+                .orElseThrow(() -> new NotFoundException("Resource not found"));
+
+        if (item.getFileType() != null && !"link".equalsIgnoreCase(item.getFileType())) {
+            fileStorageService.deleteFile(item.getUrl());
+        }
+
+        moduleItemRepository.delete(item);
     }
 }

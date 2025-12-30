@@ -3,6 +3,7 @@ package moodlev2.web.quiz.dto;
 import java.util.List;
 
 public record StudentQuizViewDto(
+        Long attemptId,
         Long quizId,
         String title,
         Integer timeLimitMinutes,
@@ -12,6 +13,7 @@ public record StudentQuizViewDto(
             Long id,
             String text,
             Integer points,
+            String type,
             List<StudentOptionDto> options
     ) {}
 

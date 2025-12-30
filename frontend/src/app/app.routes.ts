@@ -10,6 +10,7 @@ import { CoursePreviewComponent } from './features/teacher/course-preview/course
 import { UploadResourceComponent } from './features/teacher/upload-resource/upload-resource'; 
 import { QuizResultsComponent } from './features/teacher/quiz-results/quiz-results';
 import { QuizAttemptReviewComponent } from './features/teacher/quiz-attempt-review/quiz-attempt-review';
+import { TakeQuizComponent } from './features/quiz/take-quiz/take-quiz';
 
 export const routes: Routes = [
   {
@@ -79,6 +80,21 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'create-announcement',
+    loadComponent: () => import('./features/teacher/create-announcement/create-announcement').then(m => m.CreateAnnouncementComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'gradebook',
+    loadComponent: () => import('./features/admin/admin-gradebook/admin-gradebook').then(m => m.AdminGradebookComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'students',
+    loadComponent: () => import('./features/admin/admin-students/admin-students').then(m => m.AdminStudentsComponent),
+    canActivate: [authGuard] 
+  },
+  {
     path: 'manage-courses/:code/edit',
     component: EditCourseComponent,
     canActivate: [authGuard]
@@ -106,6 +122,11 @@ export const routes: Routes = [
   {
     path: 'teacher/quizzes/attempts/:attemptId/review', 
     component: QuizAttemptReviewComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'take-quiz/:quizId',
+    component: TakeQuizComponent,
     canActivate: [authGuard]
   },
   {

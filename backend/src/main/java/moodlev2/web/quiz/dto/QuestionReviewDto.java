@@ -10,6 +10,7 @@ public record QuestionReviewDto(
         BigDecimal pointsAwarded,
         BigDecimal maxPoints,
         boolean isCorrect,
+        String studentAnswer,
         List<OptionReviewDto> options,
-        String feedback // Optional
+        String feedback
 ) {}

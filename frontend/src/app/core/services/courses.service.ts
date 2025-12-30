@@ -47,4 +47,11 @@ export class CoursesService {
     return this.http.get<TeacherDashboardResponse>(`${API_BASE_URL}/api/teacher/dashboard`);
   }
 
+  getAllTeachers(): Observable<any[]> {
+    return this.http.get<any[]>(`${API_BASE_URL}/api/users/teachers`); 
+  }
+
+  createCourse(courseData: any): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/create`, courseData);
+  }
 }

@@ -1,8 +1,8 @@
 package moodlev2.application.quiz;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import moodlev2.common.exception.NotFoundException;
-import moodlev2.infrastructure.mapper.QuizEngineMapper;
 import moodlev2.infrastructure.persistence.jpa.*;
 import moodlev2.infrastructure.persistence.jpa.entity.*;
 import moodlev2.web.quiz.dto.CreateQuizDto;
@@ -16,16 +16,19 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class QuizManagementService {
 
     private final QuizRepository quizRepository;
     private final CourseRepository courseRepository;
     private final CourseModuleRepository moduleRepository;
-    private final QuizEngineMapper mapper;
     private final QuestionRepository questionRepository;
     private final ClassRepository classRepository;
+
     @Transactional
     public void createQuiz(CreateQuizDto dto) {
+        log.info("Creating quiz: {}", dto.title());
+
         CourseEntity course = courseRepository.findById(dto.courseId())
                 .orElseThrow(() -> new NotFoundException("Course not found"));
 
@@ -67,22 +70,38 @@ public class QuizManagementService {
                     }
                 }
             }
-        } else if ("RANDOM".equalsIgnoreCase(dto.generationType())) {
+        }
+        else if ("RANDOM".equalsIgnoreCase(dto.generationType())) {
             if (dto.randomRules() != null) {
                 int sortOrder = 1;
                 for (CreateQuizDto.RandomRuleDto rule : dto.randomRules()) {
+                    log.info("Processing Random Rule -> Category ID: {}, Difficulty: {}, Count: {}",
+                            rule.categoryId(), rule.difficulty(), rule.count());
+
                     List<QuestionEntity> candidates;
 
-                    if ("ANY".equalsIgnoreCase(rule.difficulty())) {
-                        candidates = questionRepository.findByCategoryId(rule.categoryId());
+                    if (rule.categoryId() == 0) {
+                        candidates = questionRepository.findAll();
                     } else {
-                        candidates = questionRepository.findByCategoryId(rule.categoryId()).stream()
+                        candidates = questionRepository.findByCategoryId(rule.categoryId());
+                    }
+
+                    if (rule.difficulty() != null && !"ANY".equalsIgnoreCase(rule.difficulty())) {
+                        candidates = candidates.stream()
                                 .filter(q -> q.getDifficulty().name().equalsIgnoreCase(rule.difficulty()))
                                 .collect(Collectors.toList());
                     }
 
+                    if (candidates.isEmpty()) {
+                        log.warn("No questions found for rule: Category={}, Difficulty={}", rule.categoryId(), rule.difficulty());
+                        continue;
+                    }
+
                     Collections.shuffle(candidates);
-                    List<QuestionEntity> selected = candidates.stream().limit(rule.count()).toList();
+                    int questionsToTake = Math.min(rule.count(), candidates.size());
+                    List<QuestionEntity> selected = candidates.subList(0, questionsToTake);
+
+                    log.info("Found {} candidates, selected {} questions.", candidates.size(), selected.size());
 
                     for (QuestionEntity q : selected) {
                         questionsToAdd.add(convertBankQuestionToQuizQuestion(q, quiz, sortOrder++));
@@ -91,10 +110,15 @@ public class QuizManagementService {
             }
         }
 
+        if (questionsToAdd.isEmpty()) {
+            throw new RuntimeException("Could not create quiz: No questions selected or generated. Please check your Question Bank or Rules.");
+        }
+
         quiz.setQuestions(questionsToAdd);
         quiz.setQuestionsCount(questionsToAdd.size());
 
         quizRepository.save(quiz);
+        log.info("Quiz created successfully with {} questions.", questionsToAdd.size());
     }
 
     private QuizQuestionEntity convertBankQuestionToQuizQuestion(QuestionEntity bankQ, QuizEntity quiz, int order) {
@@ -132,7 +156,6 @@ public class QuizManagementService {
         quiz.setDescription(dto.description());
         quiz.setDurationMinutes(dto.timeLimitMinutes());
         quiz.setPassingScore(dto.passingScore());
-
 
         quizRepository.save(quiz);
     }

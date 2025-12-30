@@ -85,6 +85,7 @@ CREATE TABLE module_items (
                               created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                               is_assignment BOOLEAN DEFAULT FALSE,
                               due_date      TIMESTAMP NULL,
+                              is_visible    BOOLEAN NOT NULL DEFAULT TRUE,
 
                               CONSTRAINT fk_item_module FOREIGN KEY (module_id) REFERENCES course_modules(id) ON DELETE CASCADE
 );
@@ -237,6 +238,7 @@ CREATE TABLE quiz_responses (
                                 attempt_id  BIGINT NOT NULL,
                                 question_id BIGINT NOT NULL,
                                 selected_option_id BIGINT,
+                                text_response      TEXT,
 
                                 CONSTRAINT fk_response_attempt FOREIGN KEY (attempt_id) REFERENCES quiz_attempts(id) ON DELETE CASCADE,
                                 CONSTRAINT fk_response_question FOREIGN KEY (question_id) REFERENCES quiz_questions(id) ON DELETE CASCADE,

@@ -1,0 +1,119 @@
+<div class="admin-container">
+  
+  <div class="header-section">
+    <div class="title-block">
+      <nav class="breadcrumbs">
+        <a href="#">Teacher Tools</a>
+        <span class="sep">/</span>
+        <span class="current">Gradebook (Admin)</span>
+      </nav>
+      <h1>Gradebook (Admin)</h1>
+      <p>Overview of all submitted grades and quiz results across the platform.</p>
+    </div>
+    
+    <button class="back-btn" (click)="goBack()">
+      <fa-icon [icon]="faChevronLeft"></fa-icon> Back to Teacher Tools
+    </button>
+  </div>
+
+  <div class="main-card">
+    
+    <div class="filters-bar">
+      <div class="search-input">
+        <fa-icon [icon]="faSearch" class="icon"></fa-icon>
+        <input type="text" placeholder="Search grades, students, courses..." [(ngModel)]="searchTerm" (input)="filterData()">
+      </div>
+
+      <div class="dropdowns-group">
+        <div class="select-wrapper">
+          <select [(ngModel)]="selectedTerm">
+            <option>All Terms</option>
+            <option *ngFor="let t of terms" [value]="t">{{ t }}</option>
+          </select>
+        </div>
+        
+        <div class="select-wrapper">
+          <select [(ngModel)]="selectedCourse" (change)="filterData()">
+            <option>All Courses</option>
+            <option *ngFor="let c of coursesList" [value]="c">{{ c }}</option>
+          </select>
+        </div>
+
+        <div class="select-wrapper">
+          <select [(ngModel)]="selectedTeacher" (change)="filterData()">
+            <option>All Teachers</option>
+            <option *ngFor="let t of teachersList" [value]="t">{{ t }}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Course</th>
+            <th>Student</th>
+            <th>Item</th>
+            <th>Submitted At</th>
+            <th>Score</th>
+            <th>Teacher</th>
+            <th class="text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let g of filteredGrades" class="hover-row">
+            <td>
+              <div class="course-info">
+                <span class="code">{{ g.courseCode }}</span>
+                <span class="name">{{ g.courseName }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="user-info">
+                <div class="avatar" [ngClass]="getAvatarColor(g.studentName)">
+                    {{ getInitials(g.studentName) }}
+                </div>
+                <span class="student-name">{{ g.studentName }}</span>
+              </div>
+            </td>
+            <td class="text-dark">{{ g.itemName }}</td>
+            <td class="text-secondary">{{ g.submittedAt }}</td>
+            <td>
+              <span class="badge-score" [ngClass]="getScoreColorClass(g.scoreValue)">
+                {{ g.scoreLabel }}
+              </span>
+            </td>
+            <td class="text-dark">{{ g.teacherName }}</td>
+            <td class="text-right">
+              <div class="actions">
+                <button class="btn-icon" title="View Details">
+                  <fa-icon [icon]="faEye"></fa-icon>
+                </button>
+                <button class="btn-icon" title="Edit Grade">
+                  <fa-icon [icon]="faPen"></fa-icon>
+                </button>
+              </div>
+            </td>
+          </tr>
+          
+          <tr *ngIf="filteredGrades.length === 0 && !isLoading">
+            <td colspan="7" class="empty-state">No grades found.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="table-footer">
+      <p>Showing <span class="bold">{{ filteredGrades.length }}</span> results</p>
+      <div class="pagination">
+        <button disabled>Previous</button>
+        <button class="active">1</button>
+        <button>2</button>
+        <button>3</button>
+        <button>Next</button>
+      </div>
+    </div>
+
+  </div>
+</div>

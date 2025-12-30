@@ -99,7 +99,7 @@ public class GetTeacherDashboardService {
                 studentsCount,
                 modulesCount,
                 course.getTerm(),
-                "Published",
+                (course.getStatus() != null ? course.getStatus() : "Draft"),
                 avgGrade,
                 pending,
                 isStarted

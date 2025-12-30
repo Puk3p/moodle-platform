@@ -18,16 +18,23 @@ public class QuizController {
     private final QuizManagementService managementService;
     private final QuizEngineService engineService;
 
+    public record StartQuizRequest(String password) {}
+
 
     @PostMapping("/create")
     public void createQuiz(@RequestBody CreateQuizDto dto) {
         managementService.createQuiz(dto);
     }
 
-
     @PostMapping("/{quizId}/start")
-    public StudentQuizViewDto startQuiz(@PathVariable Long quizId, Authentication auth) {
-        return engineService.startAttempt(quizId, auth.getName());
+    public StudentQuizViewDto startQuiz(
+            @PathVariable Long quizId,
+            @RequestBody(required = false) StartQuizRequest request,
+            Authentication auth) {
+
+        String password = (request != null) ? request.password() : null;
+
+        return engineService.startAttempt(quizId, auth.getName(), password);
     }
 
     @PostMapping("/submit")
@@ -44,6 +51,4 @@ public class QuizController {
     public void updateQuiz(@PathVariable Long id, @RequestBody CreateQuizDto dto) {
         managementService.updateQuiz(id, dto);
     }
-
-
 }

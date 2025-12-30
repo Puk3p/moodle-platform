@@ -214,7 +214,7 @@ export class ManageQuizzesComponent implements OnInit {
     const defaultCat = this.categories.length > 0 ? this.categories[0].id : '';
     this.quizData.randomRules.push({ 
         categoryId: defaultCat, 
-        difficulty: 'EASY', 
+        difficulty: 'ANY', 
         count: 1 
     });
   }

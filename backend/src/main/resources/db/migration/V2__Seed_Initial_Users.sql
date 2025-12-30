@@ -53,18 +53,19 @@ VALUES (1, 'Module 2 · Linked Lists', 'Singly and doubly linked lists.', 2, DAT
 
 
 -- 7. Itemi Module
-INSERT INTO module_items (module_id, title, type, file_type, file_size, url, sort_order, created_at)
+INSERT INTO module_items (module_id, title, type, file_type, file_size, url, sort_order, created_at, is_visible)
 VALUES
-    (1, 'Course_Syllabus_Fall2024.pdf', 'resource', 'pdf', '2.4 MB', '/files/syllabus.pdf', 1, '2026-10-24 10:00:00'),
-    (1, 'Lecture 1 · Slides.pptx', 'resource', 'pptx', '12.8 MB', '/files/lec1.pptx', 2, '2026-10-25 14:30:00'),
-    (1, 'Lecture 1 · Recording', 'lecture', 'video', NULL, 'https://youtube.com/fake-link', 3, NOW());
+    (1, 'Course_Syllabus_Fall2024.pdf', 'resource', 'pdf', '2.4 MB', '/files/syllabus.pdf', 1, '2026-10-24 10:00:00', TRUE),
+    (1, 'Lecture 1 · Slides.pptx', 'resource', 'pptx', '12.8 MB', '/files/lec1.pptx', 2, '2026-10-25 14:30:00', TRUE),
+    (1, 'Lecture 1 · Recording', 'lecture', 'video', NULL, 'https://youtube.com/fake-link', 3, NOW(), TRUE);
 
 
-INSERT INTO module_items (module_id, title, type, file_type, file_size, url, sort_order, created_at, is_assignment, due_date)
+INSERT INTO module_items (module_id, title, type, file_type, file_size, url, sort_order, created_at, is_assignment, due_date, is_visible)
 VALUES
-    (2, 'Data Structures VisuAlgo', 'resource', 'link', 'URL', 'https://visualgo.net', 1, '2026-10-26 09:15:00', FALSE, NULL),
-    (2, 'Lab 1 · Arrays Implementation', 'lab', 'zip', '5.8 MB', '/files/lab1.zip', 2, NOW(), TRUE, DATE_ADD(CURRENT_DATE, INTERVAL 2 DAY)),
-    (2, 'Project_Starter_Code.zip', 'resource', 'zip', '14.2 MB', '/files/project.zip', 3, '2026-11-01 16:00:00', FALSE, NULL);
+    (2, 'Data Structures VisuAlgo', 'resource', 'link', 'URL', 'https://visualgo.net', 1, '2026-10-26 09:15:00', FALSE, NULL, TRUE),
+    (2, 'Lab 1 · Arrays Implementation', 'lab', 'zip', '5.8 MB', '/files/lab1.zip', 2, NOW(), TRUE, DATE_ADD(CURRENT_DATE, INTERVAL 2 DAY), TRUE),
+    (2, 'Project_Starter_Code.zip', 'resource', 'zip', '14.2 MB', '/files/project.zip', 3, '2026-11-01 16:00:00', FALSE, NULL, TRUE),
+    (2, 'Hidden Instructor Notes.docx', 'resource', 'docx', '1.2 MB', '/files/notes.docx', 4, NOW(), FALSE, NULL, FALSE);
 
 
 -- 8. Calendar

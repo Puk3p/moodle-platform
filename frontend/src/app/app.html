@@ -1,5 +1,6 @@
 <div *ngIf="authService.isLoggedIn(); else loggedOutLayout" class="app-shell">
-  <aside class="sidebar">
+  
+  <aside class="sidebar" *ngIf="!isQuizRoute">
     <div class="sidebar-top">
       <div class="sidebar-logo">
         <div class="sidebar-logo-icon">
@@ -89,8 +90,9 @@
     </div>
   </aside>
 
-  <div class="shell-main">
-    <header class="topbar">
+  <div class="shell-main" [ngClass]="{'full-screen': isQuizRoute}">
+    
+    <header class="topbar" *ngIf="!isQuizRoute">
       <div class="search-wrapper">
         <i class="fa-solid fa-magnifying-glass"></i>
         <input type="text" placeholder="Search courses, assignments..." />

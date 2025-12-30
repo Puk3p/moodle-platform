@@ -20,7 +20,7 @@
         </div>
       </div>
 
-      <button class="create-btn" disabled title="Coming soon">
+      <button class="create-btn" (click)="openCreateModal()">
         <i class="fa-solid fa-plus"></i>
         <span>Create Course</span>
       </button>
@@ -31,12 +31,12 @@
     <div class="course-card" *ngFor="let course of courses" [class.draft]="course.status === 'Draft'">
       
       <div class="card-top">
-        <span class="status-badge" [class.published]="course.status === 'Published'" [class.draft-badge]="course.status === 'Draft'">
+        <span class="status-badge" [class.published]="course.status.toLowerCase() === 'published'" [class.draft-badge]="course.status.toLowerCase() === 'draft'">
           <span class="dot"></span>
           {{ course.status }}
         </span>
         <button class="icon-btn-ghost">
-          <i class="fa-solid" [class.fa-eye]="course.status === 'Published'" [class.fa-eye-slash]="course.status === 'Draft'"></i>
+          <i class="fa-solid" [class.fa-eye]="course.status.toLowerCase() === 'published'" [class.fa-eye-slash]="course.status.toLowerCase() === 'draft'"></i>
         </button>
       </div>
 
@@ -108,4 +108,71 @@
     </div>
   </div>
 
+</div>
+
+<div class="modal-overlay" *ngIf="isModalOpen" (click)="closeModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    
+    <div class="modal-header">
+      <h2>Create New Course</h2>
+      <button class="close-icon" (click)="closeModal()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      
+      <div class="form-row">
+        <div class="form-group small">
+            <label>Code <span class="req">*</span></label>
+            <input type="text" [(ngModel)]="newCourse.code" placeholder="CS101" maxlength="10">
+        </div>
+        <div class="form-group large">
+            <label>Course Title <span class="req">*</span></label>
+            <input type="text" [(ngModel)]="newCourse.title" placeholder="Introduction to Programming">
+        </div>
+      </div>
+
+      <div class="form-row">
+          <div class="form-group half">
+            <label>Term</label>
+            <select [(ngModel)]="newCourse.term">
+              <option>Fall 2024</option>
+              <option>Spring 2025</option>
+              <option>Summer 2025</option>
+            </select>
+          </div>
+
+          <div class="form-group half">
+            <label>Instructor <span class="req">*</span></label>
+            <select [(ngModel)]="newCourse.teacherId" [class.placeholder]="!newCourse.teacherId">
+              <option [ngValue]="null" disabled selected>Select Teacher...</option>
+              
+              <option *ngFor="let t of teachersList" [ngValue]="t.id">
+                {{ t.name }}
+              </option>
+              
+            </select>
+          </div>
+      </div>
+
+      <div class="form-group">
+        <label>Description</label>
+        <textarea rows="3" [(ngModel)]="newCourse.description" placeholder="Short description of the course..."></textarea>
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="closeModal()">Cancel</button>
+      
+      <button class="btn-submit" 
+              (click)="submitCourse()" 
+              [disabled]="!newCourse.code || !newCourse.title || !newCourse.teacherId || isCreating">
+        <span *ngIf="isCreating">Creating...</span>
+        <span *ngIf="!isCreating">Create Course</span>
+      </button>
+    </div>
+
+  </div>
 </div>
