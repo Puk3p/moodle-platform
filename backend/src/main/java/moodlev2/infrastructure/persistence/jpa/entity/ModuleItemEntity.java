@@ -42,8 +42,15 @@ public class ModuleItemEntity {
     @Column(name = "due_date")
     private LocalDateTime dueDate;
 
+    @Column(name = "max_grade")
+    private Integer maxGrade;
+
+    @Column(name = "submission_type")
+    private String submissionType;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
     @Column(name = "created_at")
     private Instant createdAt;
-
-
 }

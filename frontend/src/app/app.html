@@ -106,7 +106,7 @@
         <div class="profile">
           <div class="avatar"></div>
           <div class="profile-text">
-            <div class="name">{{ authService.currentUser()?.firstName }} {{ authService.currentUser()?.lastName }}</div>
+            <div class="name">{{ authService.currentUserValue?.firstName }} {{ authService.currentUserValue?.lastName }}</div>
             <div class="subtitle">{{ authService.hasRole('TEACHER') ? 'Teacher' : 'Student' }}</div>
           </div>
         </div>

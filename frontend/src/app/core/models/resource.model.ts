@@ -2,7 +2,11 @@ export interface ResourceFile {
   id: string;
   title: string;
   sizeLabel: string;
-  type: 'pdf' | 'doc' | 'zip' | 'slides' | 'link' | 'video';
+  
+  
+  type: string; 
+  url: string; 
+  isVisible?: boolean; 
 }
 
 export interface CourseResources {
@@ -15,6 +19,8 @@ export interface ResourcesPageResponse {
   courses: CourseResources[];
 }
 
+
+
 export interface Resource {
   id: number;
   name: string;
@@ -22,7 +28,6 @@ export interface Resource {
   type: string;
   size: string;
   date: string;
-
   isVisible: boolean;
   url: string;
 }

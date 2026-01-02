@@ -205,12 +205,12 @@ $border: #e5e7eb;
     font-size: 24px;
     border: 1px solid transparent;
 
-    &.type-pdf { background: #fef2f2; color: #ef4444; border-color: #fee2e2; } // Red
-    &.type-pptx { background: #fff7ed; color: #f97316; border-color: #ffedd5; } // Orange
-    &.type-docx { background: #eff6ff; color: #3b82f6; border-color: #dbeafe; } // Blue
-    &.type-zip { background: #f3f4f6; color: #4b5563; border-color: #e5e7eb; } // Gray
-    &.type-link { background: #ecfdf5; color: #10b981; border-color: #d1fae5; } // Green
-    &.type-video { background: #f5f3ff; color: #8b5cf6; border-color: #ede9fe; } // Purple
+    &.type-pdf { background: #fef2f2; color: #ef4444; border-color: #fee2e2; } 
+    &.type-pptx { background: #fff7ed; color: #f97316; border-color: #ffedd5; } 
+    &.type-docx { background: #eff6ff; color: #3b82f6; border-color: #dbeafe; } 
+    &.type-zip { background: #f3f4f6; color: #4b5563; border-color: #e5e7eb; } 
+    &.type-link { background: #ecfdf5; color: #10b981; border-color: #d1fae5; } 
+    &.type-video { background: #f5f3ff; color: #8b5cf6; border-color: #ede9fe; } 
   }
 
   .card-content {
@@ -269,17 +269,17 @@ $border: #e5e7eb;
   gap: 24px;
 }
 
-// Wrapper for positioning the absolute menu relative to the card
+
 .resource-card-wrapper {
     position: relative;
 }
 
 .resource-card {
-  // ... existing styles ...
-  &.opacity-50 { opacity: 0.6; } // Visual cue for hidden resources
+  
+  &.opacity-50 { opacity: 0.6; } 
 }
 
-// Menu Button styling update
+
 .menu-btn {
     width: 28px;
     height: 28px;
@@ -299,10 +299,10 @@ $border: #e5e7eb;
     }
 }
 
-// Dropdown Menu Styles
+
 .dropdown-menu {
     position: absolute;
-    top: 40px; // Just below the menu button
+    top: 40px; 
     right: 12px;
     background: white;
     border: 1px solid $border;
@@ -329,7 +329,7 @@ $border: #e5e7eb;
         
         i { 
             margin-right: 10px; 
-            width: 16px; // Fixed width for alignment
+            width: 16px; 
             text-align: center;
             color: $text-gray;
         }
@@ -350,4 +350,51 @@ $border: #e5e7eb;
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-5px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+.assignment-badge {
+    position: absolute;
+    top: 1rem;
+    right: 3rem; 
+    background-color: #fff7ed;
+    color: #ff5100;
+    border: 1px solid #ffccaa;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+
+.dropdown-menu {
+    
+
+    button.primary-action {
+        color: #ff5100;
+        font-weight: 600;
+        background-color: #fff7ed;
+        
+        &:hover {
+            background-color: #ff5100;
+            color: white;
+        }
+    }
+}
+
+.btn-upload {
+    background: #ff5100;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+    &:hover { background: #e04600; }
 }

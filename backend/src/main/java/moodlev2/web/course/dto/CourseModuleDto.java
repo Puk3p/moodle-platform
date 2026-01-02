@@ -5,5 +5,6 @@ import java.util.List;
 public record CourseModuleDto(
         String title,
         String description,
-        List<CourseModuleItemDto> items
+        List<CourseModuleItemDto> items,
+        String status
 ) {}

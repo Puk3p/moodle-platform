@@ -36,7 +36,7 @@
           <div *ngIf="currentQuestion?.imageUrl" class="q-image">
             <img [src]="currentQuestion.imageUrl" alt="Question Image">
           </div>
-          <p class="q-text">{{ currentQuestion?.text }}</p>
+          <p class="q-text" *ngIf="currentQuestion.type !== 'DRAG_DROP'">{{ currentQuestion?.text }}</p>
         </div>
 
         <div class="answer-area" [ngSwitch]="currentQuestion.type">
@@ -49,6 +49,13 @@
           </div>
           <div *ngSwitchCase="'TRUE_FALSE'" class="options-list">
             <ng-container *ngTemplateOutlet="singleChoiceTpl"></ng-container>
+          </div>
+
+          <div *ngSwitchCase="'MULTI_CHOICE'" class="options-list">
+             <ng-container *ngTemplateOutlet="multiChoiceTpl"></ng-container>
+          </div>
+          <div *ngSwitchCase="'MCQ_MULTI'" class="options-list">
+             <ng-container *ngTemplateOutlet="multiChoiceTpl"></ng-container>
           </div>
 
           <div *ngSwitchCase="'CODE'" class="code-wrapper">
@@ -71,23 +78,48 @@
               placeholder="Type your answer here..."></textarea>
           </div>
 
-          <div *ngSwitchCase="'DRAG_DROP'" class="drag-drop-list">
-            <p class="hint"><i class="fa-solid fa-arrows-up-down"></i> Drag and drop items to reorder them correctly.</p>
+          <div *ngSwitchCase="'DRAG_DROP'" class="drag-drop-container" cdkDropListGroup>
             
-            <div class="draggable-item" 
-                 *ngFor="let option of currentQuestion.options; let i = index"
-                 draggable="true"
-                 (dragstart)="onDragStart($event, i)"
-                 (dragover)="onDragOver($event)"
-                 (drop)="onDrop($event, i)">
-              
-              <div class="drag-handle">
-                <i class="fa-solid fa-grip-vertical"></i>
-              </div>
-              <div class="drag-content">
-                <span class="drag-text">{{ option.text }}</span>
-              </div>
+            <div class="sentence-area">
+                <ng-container *ngFor="let segment of textSegments">
+                    
+                    <span *ngIf="segment.type === 'text'" class="text-segment">{{ segment.content }}</span>
+                    
+                    <div *ngIf="segment.type === 'blank'"
+                         class="blank-zone"
+                         cdkDropList
+                         [cdkDropListData]="blanksData[segment.index!]"
+                         [id]="'blank-' + segment.index"
+                         (cdkDropListDropped)="drop($event)">
+                         
+                         <div class="drag-chip" 
+                              *ngFor="let item of blanksData[segment.index!]" 
+                              cdkDrag>
+                             {{ item.text }}
+                         </div>
+                         
+                         <span class="placeholder" *ngIf="blanksData[segment.index!].length === 0">Drop here</span>
+                    </div>
+
+                </ng-container>
             </div>
+
+            <div class="options-pool">
+                <p class="pool-label">Available Options:</p>
+                <div class="pool-list"
+                     cdkDropList
+                     [cdkDropListData]="poolData"
+                     id="pool-list"
+                     (cdkDropListDropped)="drop($event)">
+                     
+                     <div class="drag-chip pool-item" 
+                          *ngFor="let option of poolData" 
+                          cdkDrag>
+                         {{ option.text }}
+                     </div>
+                </div>
+            </div>
+
           </div>
 
         </div>
@@ -150,6 +182,26 @@
     
     <div class="option-content">
       <div class="option-marker">{{ getOptionLabel(option) }}</div>
+      <span class="option-text">{{ option.text }}</span>
+    </div>
+    
+    <div class="active-border"></div>
+  </label>
+</ng-template>
+
+<ng-template #multiChoiceTpl>
+  <label *ngFor="let option of currentQuestion.options" 
+         class="option-card" 
+         [class.selected]="isOptionSelected(option.id)">
+    
+    <input type="checkbox" 
+           [name]="'q_' + currentQuestion.id" 
+           [value]="option.id" 
+           [checked]="isOptionSelected(option.id)"
+           (change)="onMultiOptionSelect(option.id, $event)">
+    
+    <div class="option-content">
+      <div class="option-marker square">{{ getOptionLabel(option) }}</div>
       <span class="option-text">{{ option.text }}</span>
     </div>
     

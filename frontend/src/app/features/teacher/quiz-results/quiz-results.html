@@ -110,29 +110,47 @@
                 <td><span class="group-badge">{{ attempt.groupName }}</span></td>
                 
                 <td class="text-muted">
-                    {{ attempt.submittedAt | date:'mediumDate' }} <br> 
-                    <small>{{ attempt.submittedAt | date:'shortTime' }}</small>
+                    <ng-container *ngIf="attempt.submittedAt === 'MISSING'">
+                         <span class="status-pill missing">Missing</span>
+                    </ng-container>
+
+                    <ng-container *ngIf="attempt.submittedAt === 'In Progress'">
+                         <span class="status-pill in-progress">In Progress</span>
+                    </ng-container>
+
+                    <ng-container *ngIf="attempt.submittedAt !== 'MISSING' && attempt.submittedAt !== 'In Progress'">
+                        {{ attempt.submittedAt | date:'mediumDate' }} <br> 
+                        <small>{{ attempt.submittedAt | date:'shortTime' }}</small>
+                    </ng-container>
                 </td>
                 
                 <td>
-                    <div class="score-col">
+                    <div class="score-col" *ngIf="attempt.submittedAt !== 'MISSING'">
                         <span class="score-percent" [class.text-danger]="!attempt.passed" [class.text-success]="attempt.passed">
                             {{ (attempt.score / (attempt.maxScore || 100)) | percent }}
                         </span>
                         <span class="score-points">{{ attempt.score }}/{{ attempt.maxScore }} pts</span>
                     </div>
+                    <div *ngIf="attempt.submittedAt === 'MISSING'">
+                        <span class="text-gray-400">-</span>
+                    </div>
                 </td>
                 
                 <td>
-                    <span class="status-pill" [class.passed]="attempt.passed" [class.failed]="!attempt.passed">
-                        {{ attempt.passed ? 'Passed' : 'Failed' }}
-                    </span>
+                    <ng-container *ngIf="attempt.submittedAt !== 'MISSING' && attempt.submittedAt !== 'In Progress'">
+                        <span class="status-pill" [class.passed]="attempt.passed" [class.failed]="!attempt.passed">
+                            {{ attempt.passed ? 'Passed' : 'Failed' }}
+                        </span>
+                    </ng-container>
+                    <span *ngIf="attempt.submittedAt === 'MISSING'" class="text-sm text-gray-400">Not taken</span>
+                    <span *ngIf="attempt.submittedAt === 'In Progress'" class="text-sm text-yellow-600">Pending</span>
                 </td>
                 
                 <td class="text-right">
-                    <button class="btn-action" [routerLink]="['/teacher/quizzes/attempts', attempt.attemptId, 'review']">
+                    <button *ngIf="attempt.attemptId" class="btn-action" [routerLink]="['/teacher/quizzes/attempts', attempt.attemptId, 'review']">
                         <fa-icon [icon]="faChevronRight"></fa-icon>
                     </button>
+                    <span *ngIf="!attempt.attemptId" class="text-xs text-gray-300 mr-2">No data</span>
                 </td>
             </tr>
             
@@ -153,5 +171,4 @@
     </div>
 
   </div>
-
 </div>

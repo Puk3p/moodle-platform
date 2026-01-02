@@ -10,5 +10,6 @@ public record AuthResponse(
         String email,
         String firstName,
         String lastName,
-        Set<Role> roles
+        Set<Role> roles,
+        boolean requiresTwoFa
 ) {}

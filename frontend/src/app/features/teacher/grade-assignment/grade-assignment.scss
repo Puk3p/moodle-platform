@@ -1,0 +1,183 @@
+$primary: #ff5100;
+$primary-hover: #ea4c00;
+$bg-light: #f8f6f5;
+$border: #e5e7eb;
+$text-main: #181310;
+$text-muted: #6b7280;
+
+:host {
+  display: block;
+  background-color: $bg-light;
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+  color: $text-main;
+}
+
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  padding-bottom: 5rem;
+}
+
+
+.page-header {
+  margin-bottom: 2rem;
+
+  .breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: $text-muted;
+    margin-bottom: 1.5rem;
+    i { font-size: 0.7rem; }
+    .active { color: $text-main; font-weight: 600; }
+  }
+
+  .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1rem;
+
+    h1 { font-size: 1.8rem; font-weight: 800; margin: 0 0 0.5rem 0; letter-spacing: -0.02em; }
+
+    .student-badge {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        background: #e5e7eb; padding: 0.25rem 0.75rem; border-radius: 6px;
+        font-weight: 600; font-size: 0.9rem; color: $text-main;
+        .email { color: $primary; }
+        .sep { color: $text-muted; }
+    }
+
+    .back-btn {
+      display: flex; align-items: center; gap: 0.5rem; background: white; border: 1px solid $border;
+      padding: 0.75rem 1.25rem; border-radius: 0.75rem; font-weight: 700; font-size: 0.875rem; cursor: pointer;
+      &:hover { background: #f9fafb; transform: translateX(-2px); transition: all 0.2s; }
+    }
+  }
+}
+
+
+.grade-card {
+  background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); overflow: hidden; border: 1px solid rgba(0,0,0,0.03);
+}
+
+.card-header {
+  background: #f9fafb; padding: 1.5rem 2rem; border-bottom: 1px solid $border; display: flex; justify-content: space-between; align-items: center;
+  
+  .course-tag { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: $primary; margin-bottom: 0.25rem; }
+  h3 { font-size: 1.2rem; font-weight: 700; margin: 0; }
+  .submitted-date { margin: 0.25rem 0 0 0; color: $text-muted; font-size: 0.875rem; }
+  
+  .points-badge { background: #e5e7eb; padding: 0.5rem 1rem; border-radius: 0.5rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 0.875rem; }
+}
+
+.card-body {
+    display: flex;
+    min-height: 500px;
+    
+    @media (max-width: 768px) { flex-direction: column; }
+}
+
+
+.work-column {
+    flex: 3;
+    padding: 2rem;
+    border-right: 1px solid $border;
+
+    .section-title { font-weight: 700; font-size: 1rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
+
+    .file-item {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 1rem; background: #f9fafb; border: 1px solid $border; border-radius: 0.75rem; margin-bottom: 0.75rem;
+        transition: all 0.2s;
+        &:hover { background: #f3f4f6; border-color: darken($border, 5%); }
+
+        .file-info {
+            display: flex; align-items: center; gap: 1rem;
+            .file-icon { width: 2.5rem; height: 2.5rem; background: white; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; color: $primary; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+            .name { font-weight: 600; font-size: 0.9rem; display: block; }
+            .meta { font-size: 0.75rem; color: $text-muted; }
+        }
+        .download-btn { width: 2.5rem; height: 2.5rem; display: flex; align-items: center; justify-content: center; border-radius: 0.5rem; color: $text-muted; &:hover { background: white; color: $primary; } }
+    }
+
+    .text-response {
+        margin-top: 2rem;
+        background: #f9fafb; border: 1px solid $border; border-radius: 0.75rem; padding: 1.5rem;
+        h5 { margin: 0 0 0.5rem 0; font-size: 0.9rem; font-weight: 700; }
+        p { margin: 0; font-size: 0.95rem; line-height: 1.6; color: #374151; white-space: pre-wrap; }
+    }
+}
+
+
+.grading-column {
+    flex: 2;
+    background: rgba(249, 250, 251, 0.5);
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+
+    form { height: 100%; display: flex; flex-direction: column; }
+
+    .grade-input-group {
+        margin-bottom: 1.5rem;
+        .label-row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; label { font-weight: 700; font-size: 0.9rem; } }
+        .status-pill { font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 999px; background: #e5e7eb; color: $text-muted; &.graded { background: #dcfce7; color: #15803d; } }
+        
+        .input-wrapper {
+            position: relative;
+            input { width: 100%; font-size: 1.2rem; font-weight: 700; padding: 0.75rem 1rem; padding-right: 4rem; border: 1px solid $border; border-radius: 0.75rem; &:focus { outline: none; border-color: $primary; ring: 2px solid rgba($primary, 0.2); } }
+            .suffix { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: $text-muted; font-weight: 600; }
+        }
+    }
+
+    .divider { border: 0; border-top: 1px solid $border; margin: 1.5rem 0; }
+
+    .feedback-group {
+        flex: 1; display: flex; flex-direction: column;
+        label { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.5rem; }
+        textarea { flex: 1; width: 100%; padding: 1rem; border: 1px solid $border; border-radius: 0.75rem; font-family: inherit; font-size: 0.9rem; resize: none; &:focus { outline: none; border-color: $primary; } }
+    }
+
+    .actions {
+        margin-top: 2rem; display: flex; justify-content: space-between; align-items: center;
+        .btn-cancel { background: none; border: none; font-weight: 700; color: $text-muted; cursor: pointer; &:hover { color: $text-main; } }
+        .btn-save { background: $primary; color: white; border: none; padding: 0.75rem 2rem; border-radius: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; transition: all 0.2s; &:hover { background: $primary-hover; transform: translateY(-1px); } }
+    }
+}
+
+.loading-screen { text-align: center; padding: 4rem; color: $text-muted; i { margin-right: 0.5rem; } }
+.instructor-resource {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    .label {
+        color: #6b7280;
+        font-weight: 500;
+    }
+
+    .resource-link {
+        color: #ff5100; 
+        font-weight: 600;
+        text-decoration: none;
+        background-color: #fff7ed;
+        padding: 0.2rem 0.6rem;
+        border-radius: 6px;
+        transition: background 0.2s;
+
+        &:hover {
+            background-color: #ff5100;
+            color: white;
+        }
+
+        i { margin-right: 4px; }
+    }
+}

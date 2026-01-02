@@ -18,7 +18,10 @@
       <h1>Course Resources</h1>
       <p class="subtitle">Manage and organize learning materials for <strong>{{ courseCode }}</strong>.</p>
     </div>
-    </div>
+    <a routerLink="/upload-resource" [queryParams]="{code: courseCode}" class="btn-upload">
+        <i class="fa-solid fa-cloud-arrow-up"></i> Upload New
+    </a>
+  </div>
 
   <div class="filter-bar">
     <div class="search-wrapper">
@@ -28,11 +31,9 @@
 
     <div class="filter-chips">
       <button class="chip active">All</button>
-      <button class="chip">PDFs</button>
+      <button class="chip">Assignments</button> <button class="chip">PDFs</button>
       <button class="chip">Documents</button>
       <button class="chip">Videos</button>
-      <button class="chip">Links</button>
-      <button class="chip">Archives</button>
     </div>
 
     <div class="count-label">
@@ -52,6 +53,10 @@
           <div class="card-top">
             <div class="icon-box" [ngClass]="getResourceColorClass(res)">
               <i class="fa-solid" [ngClass]="getResourceIcon(res)"></i>
+            </div>
+
+            <div *ngIf="res.type === 'assignment'" class="assignment-badge">
+                <i class="fa-solid fa-pen-to-square"></i> Assignment
             </div>
 
             <button class="menu-btn" (click)="toggleMenu($event, res.id)">
@@ -78,10 +83,16 @@
         </div>
 
         <div class="dropdown-menu" *ngIf="activeMenuResourceId === res.id">
+            
+            <button *ngIf="res.type === 'assignment'" (click)="onViewSubmissions($event, res.id)" class="primary-action">
+                <i class="fa-solid fa-users-viewfinder"></i> View Submissions
+            </button>
+
             <button (click)="onToggleVisibility($event, res)">
                 <i class="fa-solid" [class.fa-eye]="!res.isVisible" [class.fa-eye-slash]="res.isVisible"></i>
                 {{ res.isVisible ? 'Hide from students' : 'Show to students' }}
             </button>
+            
             <button class="danger" (click)="onDeleteResource($event, res.id)">
                 <i class="fa-solid fa-trash"></i> Delete
             </button>

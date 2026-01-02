@@ -47,6 +47,15 @@ CREATE TABLE courses (
                          CONSTRAINT fk_course_teacher FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
+-- 4.1 CURSURI - CLASE (PENTRU A ALATURA CURSURILE CU CLASELE)
+CREATE TABLE course_classes (
+                                course_id BIGINT NOT NULL,
+                                class_id BIGINT NOT NULL,
+                                PRIMARY KEY (course_id, class_id),
+                                CONSTRAINT fk_cc_course FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+                                CONSTRAINT fk_cc_class FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
+);
+
 -- 5. INSCRIERI
 CREATE TABLE enrollments (
                              id        BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -72,7 +81,7 @@ CREATE TABLE course_modules (
                                 CONSTRAINT fk_module_course FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
 );
 
--- 7. ITEMI MODULE
+-- 7. ITEMI MODULE (MODIFICAT: Am adaugat campuri pentru Assignment)
 CREATE TABLE module_items (
                               id            BIGINT AUTO_INCREMENT PRIMARY KEY,
                               module_id     BIGINT NOT NULL,
@@ -83,9 +92,15 @@ CREATE TABLE module_items (
                               url           VARCHAR(500),
                               sort_order    INT NOT NULL DEFAULT 0,
                               created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
                               is_assignment BOOLEAN DEFAULT FALSE,
                               due_date      TIMESTAMP NULL,
                               is_visible    BOOLEAN NOT NULL DEFAULT TRUE,
+
+    -- CAMPURI NOI PENTRU ASSIGNMENT:
+                              max_grade       INT DEFAULT 100,
+                              submission_type VARCHAR(20) DEFAULT 'Both', -- 'File', 'Text', 'Both'
+                              description     TEXT,
 
                               CONSTRAINT fk_item_module FOREIGN KEY (module_id) REFERENCES course_modules(id) ON DELETE CASCADE
 );
@@ -155,7 +170,7 @@ CREATE TABLE user_sessions (
 );
 
 -- ---------------------------------------------------------
--- C. SISTEM DE QUIZ (INSTANȚE CONCRETE ÎN CURS)
+-- C. SISTEM DE QUIZ
 -- ---------------------------------------------------------
 
 -- 13. QUIZZES
@@ -165,19 +180,16 @@ CREATE TABLE quizzes (
                          module_id           BIGINT NULL,
                          title               VARCHAR(255) NOT NULL,
                          description         TEXT,
-                         status              VARCHAR(20) DEFAULT 'DRAFT',     -- 'PUBLISHED', 'DRAFT'
+                         status              VARCHAR(20) DEFAULT 'DRAFT',
                          questions_count     INT DEFAULT 0,
                          duration_minutes    INT DEFAULT 30,
-                         max_attempts        INT DEFAULT 1,                   -- 0 = Unlimited
+                         max_attempts        INT DEFAULT 1,
                          passing_score       INT DEFAULT 50,
-
-    -- COLONE NOI PENTRU CERINTELE AVANSATE:
-                         shuffle_options     BOOLEAN DEFAULT FALSE,           -- 4) Shuffle optiuni
-                         access_password     VARCHAR(50) DEFAULT NULL,        -- 7) Parola acces
-                         available_from      TIMESTAMP NULL,                  -- 6) Pornire automata (start)
-                         available_to        TIMESTAMP NULL,                  -- 6) Oprire automata (deadline)
-                         generation_type     VARCHAR(20) DEFAULT 'MANUAL',    -- 'MANUAL' sau 'RANDOM' (2)
-
+                         shuffle_options     BOOLEAN DEFAULT FALSE,
+                         access_password     VARCHAR(50) DEFAULT NULL,
+                         available_from      TIMESTAMP NULL,
+                         available_to        TIMESTAMP NULL,
+                         generation_type     VARCHAR(20) DEFAULT 'MANUAL',
                          created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                          updated_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
@@ -185,8 +197,7 @@ CREATE TABLE quizzes (
                          CONSTRAINT fk_quizzes_module FOREIGN KEY (module_id) REFERENCES course_modules(id) ON DELETE SET NULL
 );
 
-
--- 13.1 QUIZ ASSIGNED CLASSES (Pentru restrictionarea accesului la anumite clase)
+-- 13.1 QUIZ ASSIGNED CLASSES
 CREATE TABLE quiz_assigned_classes (
                                        quiz_id  BIGINT NOT NULL,
                                        class_id BIGINT NOT NULL,
@@ -195,7 +206,7 @@ CREATE TABLE quiz_assigned_classes (
                                        CONSTRAINT fk_qac_class FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
 );
 
--- 14. QUIZ QUESTIONS (Intrebarile specifice testului)
+-- 14. QUIZ QUESTIONS
 CREATE TABLE quiz_questions (
                                 id          BIGINT AUTO_INCREMENT PRIMARY KEY,
                                 quiz_id     BIGINT NOT NULL,
@@ -239,6 +250,7 @@ CREATE TABLE quiz_responses (
                                 question_id BIGINT NOT NULL,
                                 selected_option_id BIGINT,
                                 text_response      TEXT,
+                                score              DECIMAL(5,2) DEFAULT 0.00,
 
                                 CONSTRAINT fk_response_attempt FOREIGN KEY (attempt_id) REFERENCES quiz_attempts(id) ON DELETE CASCADE,
                                 CONSTRAINT fk_response_question FOREIGN KEY (question_id) REFERENCES quiz_questions(id) ON DELETE CASCADE,
@@ -246,10 +258,10 @@ CREATE TABLE quiz_responses (
 );
 
 -- ---------------------------------------------------------
--- D. BANCA DE INTREBARI (QUESTION BANK - REUSABLE)
+-- D. BANCA DE INTREBARI
 -- ---------------------------------------------------------
 
--- 18. CATEGORIES (Ierarhica)
+-- 18. CATEGORIES
 CREATE TABLE categories (
                             id BIGINT AUTO_INCREMENT PRIMARY KEY,
                             name VARCHAR(255) NOT NULL,
@@ -264,13 +276,13 @@ CREATE TABLE tags (
                       name VARCHAR(50) NOT NULL UNIQUE
 );
 
--- 20. BANK QUESTIONS (Intrebarile generale din banca)
+-- 20. BANK QUESTIONS
 CREATE TABLE questions (
                            id BIGINT AUTO_INCREMENT PRIMARY KEY,
                            category_id BIGINT,
                            text TEXT NOT NULL,
-                           type VARCHAR(50) NOT NULL, -- 'CODE', 'MULTI_CHOICE', 'TRUE_FALSE', 'DRAG_DROP'
-                           difficulty VARCHAR(20) NOT NULL, -- 'EASY', 'MEDIUM', 'HARD'
+                           type VARCHAR(50) NOT NULL,
+                           difficulty VARCHAR(20) NOT NULL,
                            usage_count INT DEFAULT 0,
                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                            image_url VARCHAR(500) DEFAULT NULL,
@@ -278,7 +290,7 @@ CREATE TABLE questions (
                            CONSTRAINT fk_bank_question_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
 );
 
--- 21. QUESTION TAGS (Many-to-Many)
+-- 21. QUESTION TAGS
 CREATE TABLE question_tags (
                                question_id BIGINT NOT NULL,
                                tag_id BIGINT NOT NULL,
@@ -296,4 +308,27 @@ CREATE TABLE question_bank_options (
                                        sort_order INT DEFAULT 0,
 
                                        CONSTRAINT fk_bank_opt_question FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
+);
+
+-- ---------------------------------------------------------
+-- E. ASSIGNMENT SUBMISSIONS (NOU)
+-- ---------------------------------------------------------
+
+-- 23. SUBMISII TEME
+CREATE TABLE assignment_submissions (
+                                        id            BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                        assignment_id BIGINT NOT NULL,
+                                        student_id    BIGINT NOT NULL,
+
+                                        text_response TEXT,
+                                        file_url      VARCHAR(500),
+                                        file_name     VARCHAR(255),
+
+                                        submitted_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+                                        grade         INT,
+                                        feedback      TEXT,
+
+                                        CONSTRAINT fk_sub_assignment FOREIGN KEY (assignment_id) REFERENCES module_items(id) ON DELETE CASCADE,
+                                        CONSTRAINT fk_sub_student FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
 );

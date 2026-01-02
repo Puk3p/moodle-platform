@@ -115,45 +115,51 @@ export class CoursePreviewComponent implements OnInit {
 
   
   handleItemClick(item: any) {
+    const typeStr = this.getDetectionString(item);
+
     
-    if (this.getDetectionString(item).includes('quiz') || item.type === 'quiz') {
-        this.handleQuizStart(item.id);
-        return;
+    if (typeStr.includes('quiz') || item.type === 'quiz') {
+      this.handleQuizStart(item.id);
+      return;
+    }
+
+    
+    
+    if (item.isAssignment || typeStr.includes('assignment')) {
+      
+      
+      this.router.navigate(['/courses', this.courseCode, 'assignment', item.id]);
+      return;
     }
 
     
     const url = item.url;
     if (!url) return;
 
-    const type = this.getDetectionString(item);
-
-    
-    if (type.includes('link') || url.startsWith('http')) {
-        window.open(url, '_blank');
-        return;
+    if (typeStr.includes('link') || url.startsWith('http')) {
+      window.open(url, '_blank');
+      return;
     }
 
-    
     let fullPath = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
-    if (type.includes('video') || type.includes('mp4') || type.includes('image')) {
-        window.open(fullPath, '_blank');
-        return;
+    if (typeStr.includes('video') || typeStr.includes('mp4') || typeStr.includes('image')) {
+      window.open(fullPath, '_blank');
+      return;
     }
 
-    
     const filename = url.split('/').pop();
     if (filename) {
-        this.resourcesService.downloadFile(filename).subscribe({
-            next: (blob: Blob) => { 
-                const downloadUrl = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = downloadUrl;
-                link.download = filename;
-                link.click();
-                window.URL.revokeObjectURL(downloadUrl);
-            },
-            error: (err: any) => console.error('Download failed', err) 
-        });
+      this.resourcesService.downloadFile(filename).subscribe({
+        next: (blob: Blob) => {
+          const downloadUrl = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = downloadUrl;
+          link.download = filename;
+          link.click();
+          window.URL.revokeObjectURL(downloadUrl);
+        },
+        error: (err: any) => console.error('Download failed', err)
+      });
     }
   }
 

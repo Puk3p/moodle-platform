@@ -4,6 +4,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import moodlev2.application.auth.interfaces.ILoginService;
 import moodlev2.domain.auth.ports.TokenServicePort;
+import moodlev2.domain.user.Role;
 import moodlev2.domain.user.User;
 import moodlev2.domain.user.ports.PasswordHasherPort;
 import moodlev2.domain.user.ports.UserRepositoryPort;
@@ -12,9 +13,11 @@ import moodlev2.infrastructure.persistence.jpa.UserSessionRepository;
 import moodlev2.infrastructure.persistence.jpa.entity.UserSessionEntity;
 import moodlev2.web.auth.dto.AuthResponse;
 import moodlev2.web.auth.dto.LoginRequest;
+import moodlev2.web.auth.dto.VerifyTwoFaLoginRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
@@ -22,10 +25,12 @@ import java.util.Set;
 @Service
 public class LoginService implements ILoginService {
     private static final Duration ACCESS_TOKEN_VALIDITY = Duration.ofHours(1);
+    private static final Duration TEMP_TOKEN_VALIDITY = Duration.ofMinutes(5); 
 
     private final UserRepositoryPort userRepository;
     private final PasswordHasherPort passwordHasher;
     private final TokenServicePort tokenService;
+    private final TwoFactorService twoFactorService; 
 
     private final UserSessionRepository userSessionRepository;
     private final SpringDataUserRepository jpaUserRepository;
@@ -54,6 +59,60 @@ public class LoginService implements ILoginService {
             throw new IllegalArgumentException("Invalid password");
         }
 
+        
+        if (user.isTwoFaEnabled()) {
+            
+            
+            User tempUser = new User();
+            tempUser.setId(user.getId());
+            tempUser.setEmail(user.getEmail());
+            tempUser.setFirstName(user.getFirstName());
+            tempUser.setLastName(user.getLastName());
+            tempUser.setRoles(Set.of(Role.STUDENT));
+
+            String tempToken = tokenService.generateToken(
+                    tempUser,
+                    TEMP_TOKEN_VALIDITY,
+                    Set.of("auth:pre-2fa") 
+            );
+
+            
+            return new AuthResponse(
+                    tempToken,
+                    null, null, null, null, null,
+                    true 
+            );
+        }
+
+        
+        return finalizeLogin(user, ipAddress, userAgent);
+    }
+
+    @Transactional
+    public AuthResponse verifyTwoFaLogin(VerifyTwoFaLoginRequest request, String ipAddress, String userAgent) {
+        
+        TokenServicePort.TokenPayload payload;
+        try {
+            payload = tokenService.parse(request.tempToken());
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid or expired login session.");
+        }
+
+        
+        User user = userRepository.findById(payload.userId())
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        
+        boolean isValid = twoFactorService.verifyCode(user.getEmail(), request.code());
+        if (!isValid) {
+            throw new IllegalArgumentException("Invalid 2FA Code");
+        }
+
+        
+        return finalizeLogin(user, ipAddress, userAgent);
+    }
+
+    private AuthResponse finalizeLogin(User user, String ipAddress, String userAgent) {
         String accessToken = tokenService.generateToken(
                 user,
                 ACCESS_TOKEN_VALIDITY,
@@ -68,7 +127,8 @@ public class LoginService implements ILoginService {
                 user.getEmail(),
                 user.getFirstName(),
                 user.getLastName(),
-                user.getRoles()
+                user.getRoles(),
+                false 
         );
     }
 
@@ -81,7 +141,6 @@ public class LoginService implements ILoginService {
         session.setIpAddress(ipAddress);
         session.setDeviceName(parseUserAgent(userAgent));
 
-
         String signature = accessToken.length() > 15
                 ? accessToken.substring(accessToken.length() - 15)
                 : accessToken;
@@ -93,20 +152,12 @@ public class LoginService implements ILoginService {
 
     private String parseUserAgent(String ua) {
         if (ua == null) return "Unknown Device";
-
-        String os = "Unknown OS";
-        if (ua.contains("Windows")) os = "Windows";
-        else if (ua.contains("Mac")) os = "macOS";
-        else if (ua.contains("Linux")) os = "Linux";
-        else if (ua.contains("Android")) os = "Android";
-        else if (ua.contains("iPhone") || ua.contains("iPad")) os = "iOS";
-
-        String browser = "Unknown Browser";
-        if (ua.contains("Chrome") && !ua.contains("Edg")) browser = "Chrome";
-        else if (ua.contains("Firefox")) browser = "Firefox";
-        else if (ua.contains("Safari") && !ua.contains("Chrome")) browser = "Safari";
-        else if (ua.contains("Edg")) browser = "Edge";
-
-        return os + " · " + browser;
+        
+        if (ua.contains("Windows")) return "Windows";
+        if (ua.contains("Mac")) return "macOS";
+        if (ua.contains("Linux")) return "Linux";
+        if (ua.contains("Android")) return "Android";
+        if (ua.contains("iPhone") || ua.contains("iPad")) return "iOS";
+        return "Unknown Device";
     }
 }

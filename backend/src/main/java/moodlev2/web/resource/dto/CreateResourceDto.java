@@ -14,4 +14,8 @@ public class CreateResourceDto {
     private Boolean isVisible;
     private String externalUrl;
     private MultipartFile file;
+
+    private String dueDate;
+    private Integer maxGrade;
+    private String submissionType;
 }

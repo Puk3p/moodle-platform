@@ -1,206 +1,210 @@
 <div class="course-page" *ngIf="data; else loader">
-  <div class="course-layout">
-    <main class="course-main">
-      <header class="course-header">
-        <div class="title-block">
-          <div class="back-link" routerLink="/courses">
-            <fa-icon [icon]="faArrowLeft"></fa-icon>
-            <span>Back to My Courses</span>
-          </div>
+  
+  <div class="page-nav">
+    <div class="breadcrumbs">
+      <a routerLink="/courses">My Courses</a>
+      <span class="sep">/</span>
+      <span class="current">{{ data.courseCode }}</span>
+      <span class="sep">/</span>
+      <span class="current bold">Home</span>
+    </div>
+    <a routerLink="/courses" class="back-link">
+      <fa-icon [icon]="faArrowLeft"></fa-icon> Back to My Courses
+    </a>
+  </div>
 
-          <div class="title-row">
-            <h1>{{ data.fullTitle }}</h1>
-            <span class="term-pill">{{ data.termLabel }}</span>
-          </div>
-          <p class="subtitle">
-            {{ data.courseCode }} · {{ data.instructor }}
-          </p>
-        </div>
+  <div class="header-section">
+    <div class="title-block">
+      <h1>{{ data.fullTitle }}</h1>
+      <span class="status-badge published"><span class="dot"></span> Active</span>
+    </div>
+    
+    <div class="meta-row">
+      <span>{{ data.termLabel }}</span>
+      <span class="dot-sep"></span>
+      <span>{{ data.instructor }}</span>
+    </div>
+  </div>
 
-        <div class="header-actions">
-          <button class="btn-outline">
-            <fa-icon [icon]="faFileAlt"></fa-icon>
-            <span>View syllabus</span>
-          </button>
-          <button class="btn-primary">
-            <fa-icon [icon]="faPlay"></fa-icon>
-            <span>Continue where I left off</span>
-          </button>
-        </div>
-      </header>
+  <div class="content-grid">
+    
+    <div class="modules-column">
 
-      <section class="current-module-card" *ngIf="data.currentModule">
-        <div class="card-header">
-          <h3>Current Module: {{ data.currentModule.title }}</h3>
-          <p class="due">{{ data.currentModule.dueLabel }}</p>
-        </div>
-
-        <div class="progress-wrapper">
-          <div class="labels">
-            <span>Progress</span>
-            <span>{{ data.currentModule.progress }}%</span>
-          </div>
-          <div class="track">
-            <div class="fill" [style.width.%]="data.currentModule.progress"></div>
+      <div class="module-card quizzes-section" *ngIf="data.quizzes && data.quizzes.length > 0">
+        <div class="module-header special-header">
+          <div class="header-text">
+            <h3><fa-icon [icon]="faClipboardQuestion"></fa-icon> Tests & Quizzes</h3>
+            <span class="date-range">Available Assessments</span>
           </div>
         </div>
-      </section>
-
-      <section class="modules-section">
-        <div
-          class="module-item"
-          *ngFor="let module of data.modules; let i = index"
-        >
-          <details [open]="i === 0">
-            <summary>
-              <span class="module-title">{{ module.title }}</span>
-              <fa-icon
-                [icon]="faChevronDown"
-                class="chevron-icon"
-              ></fa-icon>
-            </summary>
-
-            <div class="module-body">
-              <p class="module-desc">
-                {{ module.description }}
-              </p>
-
-              <div class="module-columns">
-                <div class="module-column">
-                  <h4>Lectures & Resources</h4>
-                  <div
-                    class="module-link"
-                    *ngFor="let item of module.items | moduleType:'lecture'"
-                  >
-                    <div class="icon-pill orange">
-                      <fa-icon [icon]="getIconForType(item.type)"></fa-icon>
-                    </div>
-                    <span>{{ item.label }}</span>
-                  </div>
-                  <div
-                    class="module-link"
-                    *ngFor="let item of module.items | moduleType:'resource'"
-                  >
-                    <div class="icon-pill gray">
-                        <fa-icon [icon]="getIconForType(item.type)"></fa-icon>
-                    </div>
-                    <span>{{ item.label }}</span>
-                  </div>
-                   <div
-                   class="module-link"
-                   *ngFor="let item of module.items | moduleType:'pdf'"
-                 >
-                   <div class="icon-pill orange">
-                     <fa-icon [icon]="getIconForType(item.type)"></fa-icon>
-                   </div>
-                   <span>{{ item.label }}</span>
-                 </div>
-                 <div
-                   class="module-link"
-                   *ngFor="let item of module.items | moduleType:'video'"
-                 >
-                   <div class="icon-pill orange">
-                     <fa-icon [icon]="getIconForType(item.type)"></fa-icon>
-                   </div>
-                   <span>{{ item.label }}</span>
-                 </div>
-                </div>
-
-                <div class="module-column">
-                  <h4>Labs & Tests</h4>
-                  <div
-                    class="module-link"
-                    *ngFor="let item of module.items | moduleType:'lab'"
-                  >
-                    <div class="icon-pill orange">
-                      <fa-icon [icon]="getIconForType(item.type)"></fa-icon>
-                    </div>
-                    <span>{{ item.label }}</span>
-                  </div>
-                  <div
-                    class="module-link"
-                    *ngFor="let item of module.items | moduleType:'quiz'"
-                  >
-                    <div class="icon-pill orange">
-                      <fa-icon [icon]="getIconForType(item.type)"></fa-icon>
-                    </div>
-                    <span>{{ item.label }}</span>
-                  </div>
-                </div>
-
-                <div class="module-column">
-                  <h4>Assignments</h4>
-                  <div
-                    class="module-link"
-                    *ngFor="let item of module.items | moduleType:'assignment'"
-                  >
-                    <div class="icon-pill orange">
-                      <fa-icon [icon]="getIconForType(item.type)"></fa-icon>
-                    </div>
-                    <span>{{ item.label }}</span>
-                  </div>
-                </div>
+        <div class="module-items">
+          <div class="item-row" *ngFor="let quiz of data.quizzes">
+            <div class="item-icon purple">
+              <fa-icon [icon]="faClipboardQuestion"></fa-icon>
+            </div>
+            
+            <div class="item-info">
+              <p class="item-title">{{ quiz.label }}</p>
+              
+              <div class="item-meta urgent" *ngIf="quiz.canAttempt">
+                <span class="pulse-dot"></span> Active
+              </div>
+              <div class="item-meta text-gray" *ngIf="!quiz.canAttempt">
+                 Attempt limit reached
               </div>
             </div>
-          </details>
-        </div>
-      </section>
-    </main>
 
-    <aside class="course-right">
-      <section class="widget">
-        <h2>Upcoming Deadlines</h2>
-        <div class="widget-card">
-          <div class="widget-item" *ngFor="let d of data.deadlines">
-            <div class="icon-box orange">
-                <fa-icon [icon]="getIconForType(d.type)"></fa-icon>
+            <button class="start-quiz-btn" *ngIf="quiz.canAttempt" (click)="handleQuizStart(quiz.id)">
+              Start Attempt <fa-icon [icon]="faArrowRight"></fa-icon>
+            </button>
+
+            <div class="locked-badge" *ngIf="!quiz.canAttempt">
+               <fa-icon [icon]="faLock"></fa-icon> Finished
             </div>
-            <div class="info-box">
-              <p class="title">{{ d.title }}</p>
-              <p class="sub">{{ d.context }}</p>
-              <p class="accent">{{ d.due }}</p>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="module-card" *ngFor="let module of data.modules"
+           [class.current-week]="module.status === 'current'"
+           [class.locked]="module.status === 'locked'">
+        
+        <div class="week-badge" *ngIf="module.status === 'current'">Current Week</div>
+
+        <div class="module-header">
+          <div class="header-text">
+            <h3>{{ module.title }}</h3>
+            <span class="date-range">{{ module.description }}</span>
+          </div>
+          
+          <div class="status-icon completed" *ngIf="module.status === 'completed'">
+            <fa-icon [icon]="faTableCellsLarge"></fa-icon> 
+          </div>
+        </div>
+
+        <div class="module-items" *ngIf="module.status !== 'locked'">
+          
+          <div class="item-row" *ngFor="let item of module.items" 
+               (click)="item.canAttempt !== false ? handleItemClick(item) : null" 
+               [class.disabled-row]="item.canAttempt === false">
+            
+            <div class="item-icon" [ngClass]="getIconColorClass(item)">
+              <fa-icon [icon]="getIconForType(item.type)"></fa-icon>
+            </div>
+
+            <div class="item-info">
+              <p class="item-title">{{ item.label }}</p>
+              
+              <div class="item-meta" *ngIf="!item.isAssignment && item.canAttempt !== false">{{ item.type | titlecase }}</div>
+              
+              <div class="item-meta urgent" *ngIf="item.isAssignment">
+                <span class="pulse-dot"></span> Assignment
+              </div>
+
+              <div class="item-meta text-gray" *ngIf="item.type === 'quiz' && item.canAttempt === false">
+                <fa-icon [icon]="faLock" style="font-size: 10px; margin-right: 4px;"></fa-icon> Completed
+              </div>
+            </div>
+            
+            <fa-icon [icon]="faChevronDown" class="arrow" style="transform: rotate(-90deg);" *ngIf="item.canAttempt !== false"></fa-icon>
+          </div>
+
+        </div>
+
+        <div class="module-items locked-msg" *ngIf="module.status === 'locked'">
+            <p><fa-icon [icon]="faPlay" style="margin-right: 8px;"></fa-icon> Content is currently locked.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="widgets-column">
+      
+      <div class="widget-card">
+        <div class="widget-header">
+          <fa-icon [icon]="faPlay"></fa-icon> 
+          <span>Latest Announcements</span>
+        </div>
+        <div class="widget-body">
+          <div class="announcement-item" *ngFor="let ann of data.announcements">
+            <div class="ann-title">
+              <span class="dot"></span> {{ ann.title }}
+            </div>
+            <p class="ann-body">{{ ann.body }}</p>
+            <span class="ann-time">{{ ann.meta }}</span>
+          </div>
+          <p *ngIf="data.announcements.length === 0" style="font-size: 12px; color: #9ca3af;">No announcements.</p>
+        </div>
+      </div>
+
+      <div class="widget-card">
+        <div class="widget-header">
+          <fa-icon [icon]="faTableCellsLarge"></fa-icon>
+          <span>Upcoming Deadlines</span>
+        </div>
+        <div class="widget-body gap-small">
+          <div class="deadline-item" *ngFor="let d of data.deadlines">
+            <div class="d-icon text-red">
+              <fa-icon [icon]="getIconForType(d.type)"></fa-icon>
+            </div>
+            <div class="d-info">
+              <p class="d-title">{{ d.title }}</p>
+              <p class="d-due text-red">{{ d.due }}</p>
             </div>
           </div>
+          <p *ngIf="data.deadlines.length === 0" style="font-size: 12px; color: #9ca3af;">No upcoming deadlines.</p>
         </div>
-      </section>
+      </div>
 
-      <section class="widget">
-        <h2>Course Stats</h2>
-        <div class="widget-card">
-          <div class="stat-row">
-            <span>Overall Progress</span>
-            <span class="value">{{ data.stats.overallProgress }}%</span>
-          </div>
-          <div class="stat-row">
-            <span>Completed Labs</span>
-            <span class="value"
-              >{{ data.stats.completedLabs }} / {{ data.stats.totalLabs }}</span
-            >
-          </div>
-          <div class="stat-row">
-            <span>Average Grade</span>
-            <span class="value">{{ data.stats.averageGrade }}</span>
-          </div>
+      <div class="widget-card">
+        <div class="widget-header">
+            <fa-icon [icon]="faTableCellsLarge"></fa-icon>
+            <span>Course Stats</span>
         </div>
-      </section>
+        <div class="widget-body">
+            <div class="stat-row">
+                <span>Overall Progress</span>
+                <span class="value">{{ data.stats.overallProgress }}%</span>
+            </div>
+            <div class="stat-row">
+                <span>Completed Labs</span>
+                <span class="value">{{ data.stats.completedLabs }} / {{ data.stats.totalLabs }}</span>
+            </div>
+            <div class="stat-row">
+                <span>Average Grade</span>
+                <span class="value">{{ data.stats.averageGrade }}</span>
+            </div>
+        </div>
+      </div>
 
-      <section class="widget">
-        <h2>Announcements</h2>
-        <div class="widget-card announcements">
-          <div class="announcement" *ngFor="let a of data.announcements">
-            <p class="a-title">{{ a.title }}</p>
-            <p class="a-body">{{ a.body }}</p>
-            <p class="a-meta">{{ a.meta }}</p>
-            <hr *ngIf="!a.isLast" />
-          </div>
-        </div>
-      </section>
-    </aside>
+    </div>
+
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showErrorModal" (click)="closeErrorModal()">
+  <div class="modal-card error-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3 class="error-title">
+        <fa-icon [icon]="faCircleExclamation"></fa-icon> {{ errorTitle }}
+      </h3>
+      <button class="close-btn" (click)="closeErrorModal()">
+        <fa-icon [icon]="faXmark"></fa-icon>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p>{{ errorMessage }}</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeErrorModal()">Close</button>
+    </div>
   </div>
 </div>
 
 <ng-template #loader>
     <div style="display: flex; justify-content: center; align-items: center; height: 100vh; color: #6b7280;">
+        <fa-icon [icon]="faTableCellsLarge" animation="spin" style="font-size: 24px; margin-right: 10px;"></fa-icon>
         Loading course details...
     </div>
 </ng-template>

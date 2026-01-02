@@ -1,4 +1,4 @@
-import { Injectable, Resource, inject } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { API_BASE_URL } from '../config/api-endpoints';
 import { CoursesPageResponse } from '../models/courses-page.response';
@@ -9,6 +9,12 @@ import { Observable } from 'rxjs';
 import { CourseEdit } from '../models/course-edit.model';
 import { EnrolledStudentsResponse } from '../models/enrolled-students.model';
 import { TeacherDashboardResponse } from '../models/teacher.model';
+
+
+export interface SimpleClassDto {
+  id: number;
+  name: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class CoursesService {
@@ -53,5 +59,10 @@ export class CoursesService {
 
   createCourse(courseData: any): Observable<void> {
     return this.http.post<void>(`${this.baseUrl}/create`, courseData);
+  }
+
+  
+  getAvailableClasses(): Observable<SimpleClassDto[]> {
+    return this.http.get<SimpleClassDto[]>(`${API_BASE_URL}/api/classes/list`);
   }
 }

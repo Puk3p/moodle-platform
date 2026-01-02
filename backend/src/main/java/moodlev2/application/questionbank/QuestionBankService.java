@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import moodlev2.infrastructure.persistence.jpa.CategoryRepository;
 import moodlev2.infrastructure.persistence.jpa.QuestionRepository;
 import moodlev2.infrastructure.persistence.jpa.entity.*;
-import moodlev2.infrastructure.service.FileStorageService;
+import moodlev2.application.resource.FileStorageService;
 import moodlev2.web.questionbank.dto.CategoryDto;
 import moodlev2.web.questionbank.dto.CreateCategoryRequest;
 import moodlev2.web.questionbank.dto.CreateQuestionRequest;
@@ -103,6 +103,7 @@ public class QuestionBankService {
         String res = sb.toString().trim();
         if (res.equals("True False")) return "True / False";
         if (res.equals("Drag Drop")) return "Drag & Drop";
+        if (res.equals("Free Text")) return "Free Text / Essay";
         return res;
     }
 

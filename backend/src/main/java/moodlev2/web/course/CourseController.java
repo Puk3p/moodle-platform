@@ -40,8 +40,10 @@ public class CourseController {
     }
 
     @GetMapping("/{id}")
-    public CourseDetailsResponse getCourseDetails(@PathVariable String id) {
-        return getCourseDetailsUseCase.getCourseDetails(id);
+    public CourseDetailsResponse getCourseDetails(@PathVariable String id, Authentication authentication) {
+        String email = (authentication != null) ? authentication.getName() : "anonymous";
+
+        return getCourseDetailsUseCase.getCourseDetails(id, email);
     }
 
     @GetMapping("/{code}/preview")
