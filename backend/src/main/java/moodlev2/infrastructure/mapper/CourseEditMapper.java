@@ -1,5 +1,6 @@
 package moodlev2.infrastructure.mapper;
 
+import moodlev2.infrastructure.persistence.jpa.entity.ClassEntity;
 import moodlev2.infrastructure.persistence.jpa.entity.CourseEntity;
 import moodlev2.infrastructure.persistence.jpa.entity.CourseModuleEntity;
 import moodlev2.web.course.dto.edit.CourseEditDto;
@@ -7,21 +8,23 @@ import moodlev2.web.course.dto.edit.ModuleEditDto;
 import moodlev2.web.course.dto.edit.ModuleStatsDto;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class CourseEditMapper {
 
     public CourseEditDto toDto(CourseEntity course) {
-        List<Long> groupIds = List.of(1L, 2L); // Mockup
+        List<Long> groupIds = course.getAssignedClasses().stream()
+                .map(ClassEntity::getId)
+                .collect(Collectors.toList());
 
         return new CourseEditDto(
                 course.getId(),
                 course.getCode(),
                 course.getName(),
                 course.getTerm(),
-                "Published",
+                course.getStatus() != null ? course.getStatus() : "Draft",
                 course.getDescription(),
                 course.getModules().stream().map(this::mapModule).toList(),
                 groupIds
@@ -29,9 +32,12 @@ public class CourseEditMapper {
     }
 
     private ModuleEditDto mapModule(CourseModuleEntity module) {
-        long lectures = module.getItems().stream().filter(i -> "lecture".equals(i.getType()) || "resource".equals(i.getType())).count();
-        long labs = module.getItems().stream().filter(i -> "lab".equals(i.getType())).count();
-        long quizzes = module.getItems().stream().filter(i -> "quiz".equals(i.getType())).count();
+        long lectures = module.getItems().stream()
+                .filter(i -> "lecture".equals(i.getType()) || "resource".equals(i.getType())).count();
+        long labs = module.getItems().stream()
+                .filter(i -> "lab".equals(i.getType()) || "assignment".equals(i.getType())).count();
+        long quizzes = module.getItems().stream()
+                .filter(i -> "quiz".equals(i.getType())).count();
 
         String startDate = (module.getStartDate() != null) ? module.getStartDate().toString() : "";
         String endDate = (module.getEndDate() != null) ? module.getEndDate().toString() : "";

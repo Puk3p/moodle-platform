@@ -1,4 +1,4 @@
-package moodlev2.infrastructure.service;
+package moodlev2.application.resource;
 
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;

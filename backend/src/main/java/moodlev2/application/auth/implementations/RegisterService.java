@@ -67,7 +67,8 @@ public class RegisterService implements IRegisterService {
                 saved.getEmail(),
                 saved.getFirstName(),
                 saved.getLastName(),
-                saved.getRoles()
+                saved.getRoles(),
+                false
         );
     }
 }

@@ -67,7 +67,7 @@
           type="button"
           class="file-card"
           *ngFor="let file of course.files"
-          (click)="onOpenFile(file.id)"
+          (click)="onOpenFile(file)" 
         >
           <div class="file-icon" [ngClass]="file.type">
             <span class="icon-text">
@@ -93,5 +93,9 @@
         </button>
       </div>
     </section>
+    
+    <div *ngIf="filteredCourses().length === 0" class="no-results">
+        <p>No resources found matching your criteria.</p>
+    </div>
   </section>
 </div>

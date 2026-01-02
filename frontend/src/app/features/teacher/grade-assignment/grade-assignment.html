@@ -1,0 +1,138 @@
+<div class="page-container" *ngIf="data; else loading">
+  
+  <div class="page-header">
+    <nav class="breadcrumbs">
+      <span>Teacher Tools</span>
+      <i class="fa-solid fa-chevron-right"></i>
+      <span>Gradebook</span>
+      <i class="fa-solid fa-chevron-right"></i>
+      <span>{{ data.assignmentTitle }}</span>
+      <i class="fa-solid fa-chevron-right"></i>
+      <span class="active">{{ data.studentName }}</span>
+    </nav>
+
+    <div class="header-content">
+      <div class="title-group">
+        <h1>Grade Submission: {{ data.assignmentTitle }}</h1>
+        <div class="student-badge">
+          <i class="fa-solid fa-user"></i>
+          <span>{{ data.studentName }}</span>
+          <span class="sep">·</span>
+          <span class="email">{{ data.studentEmail }}</span>
+        </div>
+      </div>
+      
+      <button class="back-btn" (click)="goBack()">
+        <i class="fa-solid fa-arrow-left"></i> Back to Gradebook
+      </button>
+    </div>
+  </div>
+
+  <div class="grade-card">
+    
+    <div class="card-header">
+      <div class="info">
+        <div class="course-tag">
+          <i class="fa-solid fa-graduation-cap"></i> {{ data.courseCode }}
+        </div>
+        <h3>{{ data.assignmentTitle }}</h3>
+        
+        <div *ngIf="data.assignmentResourceUrl" class="instructor-resource">
+            <span class="label">Reference Material:</span>
+            <a [href]="getFileUrl(data.assignmentResourceUrl)" target="_blank" class="resource-link">
+                <i class="fa-solid fa-paperclip"></i> Download Assignment File
+            </a>
+        </div>
+        <p class="submitted-date">
+            <i class="fa-regular fa-calendar"></i> 
+            Submitted: {{ data.submittedAt ? (data.submittedAt | date:'medium') : 'Not submitted yet' }}
+        </p>
+      </div>
+      
+      <div class="points-badge">
+        <i class="fa-solid fa-award"></i>
+        <span>Total Points: {{ data.maxGrade }}</span>
+      </div>
+    </div>
+
+    <div class="card-body">
+      
+      <div class="work-column">
+        <div class="section-title">
+          <i class="fa-regular fa-folder-open"></i> Student Files
+        </div>
+
+        <div class="file-list">
+            <div class="file-item" *ngFor="let fileUrl of filesList">
+                <div class="file-info">
+                    <div class="file-icon">
+                        <i class="fa-solid fa-file"></i>
+                    </div>
+                    <div class="file-details">
+                        <span class="name">{{ getFileName(fileUrl) }}</span>
+                        <span class="meta">View to download</span>
+                    </div>
+                </div>
+                <a [href]="getFileUrl(fileUrl)" target="_blank" class="download-btn">
+                    <i class="fa-solid fa-download"></i>
+                </a>
+            </div>
+
+            <div class="text-response" *ngIf="data.textResponse">
+                <h5>Online Text Submission:</h5>
+                <p>{{ data.textResponse }}</p>
+            </div>
+            
+            <div *ngIf="filesList.length === 0 && !data.textResponse" class="no-work">
+                No files or text submitted.
+            </div>
+        </div>
+      </div>
+
+      <div class="grading-column">
+        <form [formGroup]="gradeForm" (ngSubmit)="onSubmit()">
+            
+            <div class="grade-input-group">
+                <div class="label-row">
+                    <label><i class="fa-solid fa-check-to-slot"></i> Grade</label>
+                    <span class="status-pill" [class.graded]="data.currentGrade !== null">
+                        {{ data.currentGrade !== null ? 'Graded' : 'Not Graded' }}
+                    </span>
+                </div>
+                <div class="input-wrapper">
+                    <input type="number" formControlName="grade" [max]="data.maxGrade" min="0">
+                    <span class="suffix">/ {{ data.maxGrade }}</span>
+                </div>
+            </div>
+
+            <hr class="divider">
+
+            <div class="feedback-group">
+                <label><i class="fa-regular fa-comment-dots"></i> Feedback Comments</label>
+                <textarea 
+                    formControlName="feedback" 
+                    rows="8" 
+                    placeholder="Write feedback for the student..."
+                ></textarea>
+            </div>
+
+            <div class="actions">
+                <button type="button" class="btn-cancel" (click)="goBack()">Cancel</button>
+                <button type="submit" class="btn-save" [disabled]="isSaving || gradeForm.invalid">
+                    <i class="fa-solid fa-check-circle" *ngIf="!isSaving"></i>
+                    <span>{{ isSaving ? 'Saving...' : 'Save Grade' }}</span>
+                </button>
+            </div>
+
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<ng-template #loading>
+    <div class="loading-screen">
+        <i class="fa-solid fa-spinner fa-spin"></i> Loading submission...
+    </div>
+</ng-template>

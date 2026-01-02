@@ -7,7 +7,9 @@ import lombok.Setter;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "courses")
@@ -49,6 +51,14 @@ public class CourseEntity {
     private List<QuizEntity> quizzes = new ArrayList<>();
     @Column(name = "created_at")
     private Instant createdAt;
+
+    @ManyToMany
+    @JoinTable(
+            name = "course_classes",
+            joinColumns = @JoinColumn(name = "course_id"),
+            inverseJoinColumns = @JoinColumn(name = "class_id")
+    )
+    private Set<ClassEntity> assignedClasses = new HashSet<>();
 
     @PrePersist
     protected void onCreate() {

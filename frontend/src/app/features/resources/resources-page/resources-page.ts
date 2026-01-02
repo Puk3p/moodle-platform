@@ -1,7 +1,7 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CourseResources } from '../../../core/models/resource.model';
+import { CourseResources, ResourceFile } from '../../../core/models/resource.model';
 import { ResourcesService } from '../../../core/services/resources.service';
 
 @Component({
@@ -77,7 +77,37 @@ export class ResourcesPageComponent {
     this.searchText.set(value);
   }
 
-  onOpenFile(fileId: string) {
-    console.log('Opening file:', fileId);;
+  
+  onOpenFile(file: ResourceFile) {
+    if (!file.url) {
+        console.error('No URL for file:', file.title);
+        return;
+    }
+
+    
+    if (file.type === 'link' || file.url.startsWith('http')) {
+      window.open(file.url, '_blank');
+      return;
+    }
+
+    
+    const filename = file.url.split('/').pop(); 
+    if (filename) {
+      this.resourcesService.downloadFile(filename).subscribe({
+        next: (blob) => {
+          const downloadUrl = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = downloadUrl;
+          
+          const friendlyName = filename.length > 37 ? filename.substring(37) : filename;
+          link.download = friendlyName; 
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(downloadUrl);
+        },
+        error: (err) => console.error('Download failed', err)
+      });
+    }
   }
 }

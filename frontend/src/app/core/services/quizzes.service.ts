@@ -57,4 +57,8 @@ export class QuizzesService {
   submitQuiz(submission: QuizSubmission): Observable<QuizResult> {
     return this.http.post<QuizResult>(`${this.adminUrl}/submit`, submission);
   }
+
+  updateQuestionScore(attemptId: string, questionId: number, score: number): Observable<void> {
+    return this.http.patch<void>(`${this.teacherUrl}/attempts/${attemptId}/questions/${questionId}/score`, score);
+  }
 }

@@ -1,14 +1,26 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
+import { Router } from '@angular/router'; 
+import { jwtDecode } from 'jwt-decode';
+
 import { User } from '../models/user.model';
 import { Role } from '../models/role.enum';
 import { RegisterRequest } from '../models/auth/register.request';
-import { AuthResponse } from '../models/auth/auth.response';
-import { API_BASE_URL, AUTH_ENDPOINTS } from '../config/api-endpoints';
 import { LoginRequest } from '../models/auth/login.request';
-import { jwtDecode } from 'jwt-decode';
+import { API_BASE_URL, AUTH_ENDPOINTS } from '../config/api-endpoints';
 
+
+export interface AuthResponse {
+  token?: string;
+  accessToken?: string;
+  userId?: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  roles?: Role[];
+  requiresTwoFa?: boolean;
+}
 
 export interface TwoFactorSetup {
   secret: string;
@@ -29,35 +41,17 @@ export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
-  private apiUrl = '/api/auth';
-
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient, 
+    private router: Router 
+  ) {
     const token = this.getToken();
     if (token) {
         this.decodeAndSetUser(token);
     }
   }
 
-  private decodeAndSetUser(token: string): void {
-      try {
-        const decoded: any = jwtDecode(token);
-        const user: User = {
-            userId: decoded.sub ?? decoded.userId ?? '',
-            email: decoded.email ?? '',
-            firstName: decoded.firstName ?? '',
-            lastName: decoded.lastName ?? '',
-            roles: decoded.roles ?? [],
-        };
-        this.currentUserSubject.next(user);
-      } catch (e) {
-          console.error('Err decode', e);
-      }
-  }
-
-  currentUser(): User | null {
-    return this.currentUserSubject.value;
-  }
-
+  
   register(data: RegisterRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(AUTH_ENDPOINTS.register, data).pipe(
       tap(response => {
@@ -66,20 +60,38 @@ export class AuthService {
     );
   }
 
+  
   login(credentials: LoginRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(AUTH_ENDPOINTS.login, credentials).pipe(
       tap(response => {
-        this.handleAuthResponse(response);
+        
+        if (!response.requiresTwoFa) {
+            this.handleAuthResponse(response);
+        }
       })
     );
   }
 
-
-  logout(): void {
-    this.removeToken();
-    this.currentUserSubject.next(null);
+  
+  verifyTwoFaLogin(tempToken: string, code: string): Observable<AuthResponse> {
+    return this.http
+      .post<AuthResponse>(`${API_BASE_URL}/api/auth/login/verify-2fa`, { tempToken, code })
+      .pipe(tap(res => this.handleAuthResponse(res)));
   }
 
+  
+  logout(): void {
+    
+    this.removeToken();
+    
+    
+    this.currentUserSubject.next(null);
+    
+    
+    this.router.navigate(['/login']);
+  }
+
+  
   private saveToken(token: string): void {
     localStorage.setItem('token', token);
   }
@@ -100,7 +112,7 @@ export class AuthService {
     return this.isLoggedIn();
   }
 
-
+  
   get currentUserValue(): User | null {
     return this.currentUserSubject.value;
   }
@@ -113,6 +125,7 @@ export class AuthService {
     return user.roles.some(r => r.toString() === role.toString());
   }
 
+  
   decodeToken(token: string): any {
     try {
       return jwtDecode(token);
@@ -135,42 +148,47 @@ export class AuthService {
     }
   }
 
+  
   private handleAuthResponse(response: AuthResponse): void {
+    if (response.requiresTwoFa) {
+        return;
+    }
+
     const token = response.token ?? response.accessToken;
     if (token) {
       this.saveToken(token);
+      this.decodeAndSetUser(token);
     }
-
-    const user: User = {
-      userId: response.userId ?? '',
-      email: response.email,
-      firstName: response.firstName ?? '',
-      lastName: response.lastName ?? '',
-      roles: response.roles ?? [],
-    };
-
-    this.currentUserSubject.next(user);
   }
 
+  private decodeAndSetUser(token: string): void {
+      try {
+        const decoded: any = jwtDecode(token);
+        const user: User = {
+            userId: decoded.sub ?? decoded.userId ?? '',
+            email: decoded.email ?? '',
+            firstName: decoded.firstName ?? '',
+            lastName: decoded.lastName ?? '',
+            roles: decoded.roles ?? [],
+        };
+        this.currentUserSubject.next(user);
+      } catch (e) {
+          console.error('Err decode', e);
+      }
+  }
+
+  
   handleOAuthCallback(): void {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
 
     if (token) {
       this.saveToken(token);
-
-      const decoded: any = this.decodeToken(token);
-
-      this.currentUserSubject.next({
-        userId: decoded.sub ?? '',
-        email: decoded.email ?? '',
-        firstName: decoded.firstName ?? '',
-        lastName: decoded.lastName ?? '',
-        roles: decoded.roles ?? []
-      });
+      this.decodeAndSetUser(token);
     }
   }
 
+  
   setup2fa(): Observable<TwoFactorSetup> {
     return this.http.post<TwoFactorSetup>(`${API_BASE_URL}/api/auth/2fa/setup`, {});
   }
@@ -182,5 +200,4 @@ export class AuthService {
   changePassword(request: ChangePasswordRequest): Observable<void> {
     return this.http.post<void>(`${API_BASE_URL}/api/users/change-password`, request);
   }
-
 }

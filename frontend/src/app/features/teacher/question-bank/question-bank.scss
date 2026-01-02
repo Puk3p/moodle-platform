@@ -554,6 +554,13 @@ $red-bg: #fef2f2; $red-text: #b91c1c;
   
   fa-icon { margin-top: 2px; }
   p { margin: 0; line-height: 1.4; }
+
+  &.blue {
+      background-color: #eff6ff;
+      border-color: #dbeafe;
+      color: #1e40af;
+      fa-icon { color: #3b82f6; }
+  }
 }
 
 .drag-list {

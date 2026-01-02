@@ -4,7 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import moodlev2.application.resource.GetResourcesService;
 import moodlev2.application.resource.ResourceService;
-import moodlev2.infrastructure.service.FileStorageService;
+import moodlev2.application.resource.FileStorageService;
 import moodlev2.web.resource.dto.CreateResourceDto;
 import moodlev2.web.resource.dto.ResourcesPageResponse;
 import moodlev2.web.resource.dto.UploadOptionsDto;

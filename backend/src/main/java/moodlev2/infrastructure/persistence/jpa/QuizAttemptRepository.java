@@ -11,4 +11,8 @@ public interface QuizAttemptRepository extends JpaRepository<QuizAttemptEntity, 
     Optional<QuizAttemptEntity> findTopByUserEmailAndQuizIdOrderByStartedAtDesc(String email, Long quizId);
 
     List<QuizAttemptEntity> findByQuizIdOrderByCompletedAtDesc(Long quizId);
+
+    int countByQuizIdAndUserId(Long quizId, Long studentId);
+
+    Optional<QuizAttemptEntity> findByQuizIdAndUserIdAndStatus(Long quizId, Long userId, String status);
 }

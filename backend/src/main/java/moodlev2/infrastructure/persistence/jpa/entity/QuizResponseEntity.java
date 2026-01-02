@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "quiz_responses")
 @Getter @Setter @NoArgsConstructor
@@ -26,4 +28,7 @@ public class QuizResponseEntity {
 
     @Column(name = "text_response", columnDefinition = "TEXT")
     private String textResponse;
+
+    @Column(name = "score")
+    private BigDecimal score = BigDecimal.ZERO;
 }

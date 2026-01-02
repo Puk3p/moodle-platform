@@ -162,6 +162,7 @@
               <option value="TRUE_FALSE">True / False</option>
               <option value="CODE">Code Snippet</option>
               <option value="DRAG_DROP">Drag & Drop</option>
+              <option value="FREE_TEXT">Free Text / Essay</option>
             </select>
             <fa-icon [icon]="faChevronDown" class="sel-icon"></fa-icon>
           </div>
@@ -219,6 +220,15 @@
           </div>
 
       </ng-container>
+
+      <div class="info-box blue" *ngIf="newQuestion.type === 'FREE_TEXT'">
+        <fa-icon [icon]="faInfoCircle"></fa-icon>
+        <p>
+          <strong>Free Text Question:</strong> Students will be provided with a text area to write their answer. 
+          <br>
+          <span style="font-size: 0.8rem; opacity: 0.8;">(Note: This type requires manual grading by the teacher).</span>
+        </p>
+      </div>
 
       <div class="info-box" *ngIf="isDragDrop">
         <fa-icon [icon]="faInfoCircle"></fa-icon>

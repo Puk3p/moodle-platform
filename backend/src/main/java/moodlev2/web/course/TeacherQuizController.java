@@ -8,11 +8,9 @@ import moodlev2.web.quiz.dto.QuizAttemptListDto;
 import moodlev2.web.quiz.dto.QuizAttemptReviewDto;
 import moodlev2.web.quiz.dto.QuizResultsResponse;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -41,5 +39,13 @@ public class TeacherQuizController {
     @GetMapping("/attempts/{attemptId}/review")
     public QuizAttemptReviewDto getAttemptReview(@PathVariable Long attemptId) {
         return quizEngineService.getAttemptReview(attemptId);
+    }
+
+    @PatchMapping("/attempts/{attemptId}/questions/{questionId}/score")
+    public void updateScore(
+            @PathVariable Long attemptId,
+            @PathVariable Long questionId,
+            @RequestBody BigDecimal score) {
+        quizEngineService.updateQuestionScore(attemptId, questionId, score);
     }
 }

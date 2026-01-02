@@ -4,5 +4,6 @@ public record ResourceFileDto(
         String id,
         String title,
         String sizeLabel,
-        String type
+        String type,
+        String url
 ) {}

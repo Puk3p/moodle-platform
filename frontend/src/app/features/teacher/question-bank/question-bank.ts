@@ -7,7 +7,7 @@ import {
   faChevronRight, faChevronLeft, faChevronDown, faFilter,
   faCode, faListCheck, faCheckDouble, faGripVertical, faPen, faTrash,
   faXmark, faCloudArrowUp, faImage, faCheckCircle, faCircle, faTrashCan, 
-  faInfoCircle
+  faInfoCircle, faAlignLeft
 } from '@fortawesome/free-solid-svg-icons';
 import { Category, Question } from '../../../core/models/question-bank.model';
 import { QuestionBankService } from '../../../core/services/question-bank.service';
@@ -38,6 +38,7 @@ export class QuestionBankComponent implements OnInit {
   faImage = faImage; faTrashCan = faTrashCan; 
   faCheckCircle = faCheckCircle; faCircle = faCircle;
   faInfoCircle = faInfoCircle; faGripVertical = faGripVertical;
+  faAlignLeft = faAlignLeft;
 
   categories: Category[] = [];
   questions: Question[] = [];
@@ -48,7 +49,6 @@ export class QuestionBankComponent implements OnInit {
   isModalOpen = false; 
   isCategoryModalOpen = false; 
   isCreating = false; 
-
   isEditMode = false;
   editingQuestionId: string | null = null;
 
@@ -70,10 +70,8 @@ export class QuestionBankComponent implements OnInit {
   ];
 
   dragPool: string[] = []; 
-
   newCategoryName = '';
   newCategoryParentId = '';
-
   selectedLanguage: string = 'C';
 
   codeTemplates: any = {
@@ -87,12 +85,15 @@ export class QuestionBankComponent implements OnInit {
     this.loadQuestions();
   }
 
+
   onTypeChange() {
     if (this.newQuestion.type === 'TRUE_FALSE') {
       this.options = [
         { text: 'True', isCorrect: true }, 
         { text: 'False', isCorrect: false }
       ];
+    } else if (this.newQuestion.type === 'FREE_TEXT' || this.newQuestion.type === 'CODE') {
+       this.options = [];
     } else if (this.newQuestion.type === 'SINGLE_CHOICE' || this.newQuestion.type === 'MULTI_CHOICE') {
        if (this.options.length < 2 || (this.options[0].text === 'True' && this.options[1].text === 'False')) {
           this.options = [
@@ -100,9 +101,6 @@ export class QuestionBankComponent implements OnInit {
             { text: '', isCorrect: false }
           ];
        }
-    } else if (this.newQuestion.type === 'CODE') {
-        this.selectedLanguage = 'C'; 
-        this.newQuestion.codeSnippet = this.codeTemplates['C'];
     } else if (this.newQuestion.type === 'DRAG_DROP') {
       if (!this.newQuestion.text) {
         this.newQuestion.text = 'The capital of France is {{1}} and the capital of Spain is {{2}}.';
@@ -132,12 +130,7 @@ export class QuestionBankComponent implements OnInit {
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
     } else {
-      transferArrayItem(
-        event.previousContainer.data,
-        event.container.data,
-        event.previousIndex,
-        event.currentIndex,
-      );
+      transferArrayItem(event.previousContainer.data, event.container.data, event.previousIndex, event.currentIndex);
     }
   }
 
@@ -180,12 +173,12 @@ export class QuestionBankComponent implements OnInit {
     if(!type) return faCode;
     const t = type.toUpperCase();
     if (t.includes('CODE')) return faCode;
+    if (t.includes('FREE')) return faAlignLeft;
     if (t.includes('MULTI') || t.includes('SINGLE')) return faListCheck;
     if (t.includes('TRUE')) return faCheckDouble;
     if (t.includes('DRAG')) return faGripVertical;
     return faCode;
   }
-
 
   onDeleteQuestion(q: any) {
     if(confirm('Are you sure you want to delete this question?')) {
@@ -235,7 +228,6 @@ export class QuestionBankComponent implements OnInit {
         this.updateDragDropPreview();
     }
   }
-
 
   openCreateModal() {
     const defaultCat = (this.selectedCategoryId !== '0') ? this.selectedCategoryId : '';
@@ -318,13 +310,15 @@ export class QuestionBankComponent implements OnInit {
         finalText = `${this.newQuestion.text}|||${this.newQuestion.codeSnippet}`;
     }
 
+    const optionsPayload = (this.isChoiceQuestion || this.isDragDrop) ? this.options : [];
+
     const payload = {
       text: finalText,
       type: this.newQuestion.type,
       difficulty: this.newQuestion.difficulty,
       categoryId: parseInt(this.newQuestion.categoryId),
       tags: this.newQuestion.tags.split(',').map(t => t.trim()).filter(t => t !== ''),
-      options: (this.isChoiceQuestion || this.isDragDrop) ? this.options : []
+      options: optionsPayload
     };
 
     const request$ = (this.isEditMode && this.editingQuestionId)

@@ -61,18 +61,39 @@
                       <fa-icon [icon]="q.isCorrect ? faCheck : faTimes"></fa-icon> 
                       {{ q.isCorrect ? 'Correct' : 'Incorrect' }}
                   </span>
-                  <span class="points-badge">{{ q.pointsAwarded }} / {{ q.maxPoints }}</span>
+                  
+                  <div class="score-edit-wrapper">
+                      
+                      <ng-container *ngIf="editingQuestionId !== q.questionId">
+                          <span class="points-badge">{{ q.pointsAwarded }} / {{ q.maxPoints }}</span>
+                          <button class="btn-icon-edit" (click)="startEditScore(q)" title="Edit Score">
+                              <fa-icon [icon]="faPen"></fa-icon>
+                          </button>
+                      </ng-container>
+
+                      <div class="edit-score-controls" *ngIf="editingQuestionId === q.questionId">
+                          <input type="number" [(ngModel)]="tempScore" [max]="q.maxPoints" min="0" class="score-input">
+                          <span class="max-pts">/ {{ q.maxPoints }}</span>
+                          
+                          <button class="btn-save-mini" (click)="saveScore(q)">
+                              <fa-icon [icon]="faCheck"></fa-icon>
+                          </button>
+                          <button class="btn-cancel-mini" (click)="cancelEdit()">
+                              <fa-icon [icon]="faTimes"></fa-icon>
+                          </button>
+                      </div>
+
+                  </div>
               </div>
           </div>
 
           <div class="q-body">
-              <p class="q-text">{{ getQuestionText(q.text) }}</p>
+              <p class="q-text" *ngIf="q.type !== 'DRAG_DROP'">{{ getQuestionText(q.text) }}</p>
 
               <div [ngSwitch]="q.type">
 
                   <div *ngSwitchCase="'CODE'" class="review-code-block">
-                      <p style="font-size: 0.85rem; font-weight: 600; color: #6b7280; margin-bottom: 8px; text-transform: uppercase;">Student Code:</p>
-                      
+                      <p class="review-label">Student Code:</p>
                       <div style="border: 1px solid #374151; border-radius: 8px; overflow: hidden;">
                           <ngx-codemirror
                             [ngModel]="q.studentAnswer || '// No code provided'"
@@ -82,19 +103,84 @@
                   </div>
 
                   <div *ngSwitchCase="'FREE_TEXT'" class="review-text-block">
-                      <p style="font-size: 0.85rem; font-weight: 600; color: #6b7280; margin-bottom: 8px; text-transform: uppercase;">Student Answer:</p>
-                      
+                      <p class="review-label">Student Answer:</p>
                       <div style="padding: 1rem; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; color: #1f2937; white-space: pre-wrap;">
                           {{ q.studentAnswer || 'No answer provided' }}
                       </div>
                   </div>
 
-                  <div *ngSwitchCase="'DRAG_DROP'" class="options-stack">
-                      <p style="font-size: 0.85rem; font-weight: 600; color: #6b7280; margin-bottom: 8px; text-transform: uppercase;">Submitted Order:</p>
+                  <div *ngSwitchCase="'DRAG_DROP'" class="review-drag-drop">
                       
-                      <div class="option-row" *ngFor="let opt of q.options" style="background: #f3f4f6;">
-                          <fa-icon [icon]="faGripVertical" style="color: #9ca3af; margin-right: 10px;"></fa-icon>
+                      <ng-container *ngIf="dragDropReviewMap[q.id] as ddData">
+                          <p class="review-label">Student's Response:</p>
+
+                          <div class="sentence-area">
+                              <ng-container *ngFor="let segment of ddData.textSegments">
+                                  <span *ngIf="segment.type === 'text'" class="text-segment">{{ segment.content }}</span>
+                                  <div *ngIf="segment.type === 'blank'" class="blank-zone filled">
+                                      <ng-container *ngIf="ddData.placedItems[segment.index] && ddData.placedItems[segment.index].length > 0; else emptyBlank">
+                                          <span class="drag-chip">{{ ddData.placedItems[segment.index][0].text }}</span>
+                                      </ng-container>
+                                      <ng-template #emptyBlank>
+                                          <span class="placeholder">(empty)</span>
+                                      </ng-template>
+                                  </div>
+                              </ng-container>
+                          </div>
+
+                          <div class="options-pool" *ngIf="ddData.poolItems.length > 0">
+                              <p class="pool-label">Unused Options:</p>
+                              <div class="pool-list">
+                                  <span class="drag-chip pool-item" *ngFor="let item of ddData.poolItems">
+                                      {{ item.text }}
+                                  </span>
+                              </div>
+                          </div>
+                      </ng-container>
+
+                      <div class="status-message mt-4" [class.correct]="q.isCorrect" [class.wrong]="!q.isCorrect">
+                          <fa-icon [icon]="q.isCorrect ? faCheck : faTimes"></fa-icon>
+                          {{ q.isCorrect ? 'Correct Answer' : 'Incorrect Answer' }}
+                      </div>
+                  </div>
+
+                  <div *ngSwitchCase="'MULTI_CHOICE'" class="options-stack">
+                      <div class="option-row" *ngFor="let opt of q.options"
+                           [class.selected-correct]="opt.isSelected && opt.isCorrectAnswer"
+                           [class.selected-wrong]="opt.isSelected && !opt.isCorrectAnswer"
+                           [class.correct-answer]="!opt.isSelected && opt.isCorrectAnswer"
+                           [class.neutral]="!opt.isSelected && !opt.isCorrectAnswer">
+                          
+                          <div class="checkbox-square" [class.checked]="opt.isSelected">
+                              <div class="check-mark" *ngIf="opt.isSelected"></div>
+                          </div>
+                          
                           <span class="opt-text">{{ opt.text }}</span>
+
+                          <fa-icon [icon]="faCheckCircle" class="icon-success" *ngIf="opt.isCorrectAnswer"></fa-icon>
+                          <fa-icon [icon]="faTimesCircle" class="icon-danger" *ngIf="opt.isSelected && !opt.isCorrectAnswer"></fa-icon>
+                          
+                          <span class="badge-correct-label" *ngIf="!opt.isSelected && opt.isCorrectAnswer">Correct Answer</span>
+                      </div>
+                  </div>
+                  
+                  <div *ngSwitchCase="'MCQ_MULTI'" class="options-stack">
+                      <div class="option-row" *ngFor="let opt of q.options"
+                           [class.selected-correct]="opt.isSelected && opt.isCorrectAnswer"
+                           [class.selected-wrong]="opt.isSelected && !opt.isCorrectAnswer"
+                           [class.correct-answer]="!opt.isSelected && opt.isCorrectAnswer"
+                           [class.neutral]="!opt.isSelected && !opt.isCorrectAnswer">
+                          
+                          <div class="checkbox-square" [class.checked]="opt.isSelected">
+                              <div class="check-mark" *ngIf="opt.isSelected"></div>
+                          </div>
+                          
+                          <span class="opt-text">{{ opt.text }}</span>
+
+                          <fa-icon [icon]="faCheckCircle" class="icon-success" *ngIf="opt.isCorrectAnswer"></fa-icon>
+                          <fa-icon [icon]="faTimesCircle" class="icon-danger" *ngIf="opt.isSelected && !opt.isCorrectAnswer"></fa-icon>
+                          
+                          <span class="badge-correct-label" *ngIf="!opt.isSelected && opt.isCorrectAnswer">Correct Answer</span>
                       </div>
                   </div>
 

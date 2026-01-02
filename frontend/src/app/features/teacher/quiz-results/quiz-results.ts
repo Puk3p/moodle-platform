@@ -29,6 +29,7 @@ export class QuizResultsComponent implements OnInit {
   faCalendar = faCalendar; faClock = faClock;
 
   quizId: string | null = null;
+  
   quizMetadata = {
       title: 'Loading...',
       courseName: '',
@@ -36,13 +37,11 @@ export class QuizResultsComponent implements OnInit {
       timeLimitMinutes: 0,
       isPublished: false
   };
-  attempts: any[] = [];
-  
-  
+
+  attempts: any[] = [];         
   filteredAttempts: any[] = []; 
   searchTerm: string = ''; 
   
-
   isLoading = true;
 
   
@@ -59,7 +58,6 @@ export class QuizResultsComponent implements OnInit {
 
   loadAttempts(id: string) {
     this.isLoading = true;
-    
     
     this.quizzesService.getQuizResults(id).subscribe({
       next: (data: any) => {
@@ -78,50 +76,75 @@ export class QuizResultsComponent implements OnInit {
         
         
         this.calculateStats();
+        
         this.isLoading = false;
       },
       error: (err: any) => {
-        console.error(err);
+        console.error('Error loading quiz results:', err);
         this.isLoading = false;
       }
     });
   }
 
   calculateStats() {
-    this.totalAttempts = this.attempts.length;
+    
+    
+    const validAttempts = this.attempts.filter(a => 
+        a.submittedAt !== 'MISSING' && a.submittedAt !== 'In Progress'
+    );
+    
+    
+    this.totalAttempts = validAttempts.length;
+    
     if (this.totalAttempts > 0) {
-        const totalScore = this.attempts.reduce((sum, a) => sum + a.score, 0);
+        
+        const totalScore = validAttempts.reduce((sum, a) => sum + (a.score || 0), 0);
         
         
-        const maxTotal = this.attempts.reduce((sum, a) => sum + (a.maxScore || 100), 0);
+        const totalMaxScore = validAttempts.reduce((sum, a) => sum + (a.maxScore || 100), 0);
         
         
-        
-        this.avgScore = Math.round((totalScore / maxTotal) * 100) || 0;
+        if (totalMaxScore > 0) {
+            this.avgScore = Math.round((totalScore / totalMaxScore) * 100);
+        } else {
+            this.avgScore = 0;
+        }
 
-        const passedCount = this.attempts.filter(a => a.passed).length;
+        
+        const passedCount = validAttempts.filter(a => a.passed).length;
         this.passRate = Math.round((passedCount / this.totalAttempts) * 100);
+    } else {
+        this.avgScore = 0;
+        this.passRate = 0;
     }
   }
 
-  
   filterData() {
     const term = this.searchTerm.toLowerCase();
-    this.filteredAttempts = this.attempts.filter(a => 
-      (a.studentName && a.studentName.toLowerCase().includes(term)) || 
-      (a.studentEmail && a.studentEmail.toLowerCase().includes(term))
-    );
+    
+    this.filteredAttempts = this.attempts.filter(a => {
+      const nameMatch = a.studentName && a.studentName.toLowerCase().includes(term);
+      const emailMatch = a.studentEmail && a.studentEmail.toLowerCase().includes(term);
+      return nameMatch || emailMatch;
+    });
   }
+
+  
 
   getInitials(name: string): string {
       if (!name) return '??';
       return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   }
   
-  
   getAvatarColor(name: string): string {
     if (!name) return 'bg-gray-100 text-gray-700';
-    const colors = ['bg-purple-100 text-purple-700', 'bg-blue-100 text-blue-700', 'bg-red-100 text-red-700', 'bg-yellow-100 text-yellow-700', 'bg-teal-100 text-teal-700'];
+    const colors = [
+        'bg-purple-100 text-purple-700', 
+        'bg-blue-100 text-blue-700', 
+        'bg-red-100 text-red-700', 
+        'bg-yellow-100 text-yellow-700', 
+        'bg-teal-100 text-teal-700'
+    ];
     const index = name.length % colors.length;
     return colors[index];
   }

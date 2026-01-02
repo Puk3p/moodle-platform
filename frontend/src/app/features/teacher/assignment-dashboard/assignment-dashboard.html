@@ -1,0 +1,67 @@
+<div class="page-container">
+  
+  <div class="header" *ngIf="data">
+    <div class="breadcrumbs">
+        <span>Manage Courses</span> / <span>{{ data.courseCode }}</span> / <span class="active">{{ data.title }}</span>
+    </div>
+    <h1>{{ data.title }} Submissions</h1>
+  </div>
+
+  <div class="table-card" *ngIf="!isLoading && data">
+    <table>
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Status</th>
+          <th>Submitted Date</th>
+          <th>Grade</th>
+          <th class="text-right">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let student of data.students">
+          <td>
+            <div class="student-info">
+              <div class="avatar">{{ student.studentName.charAt(0) }}</div>
+              <div>
+                <p class="name">{{ student.studentName }}</p>
+                <p class="email">{{ student.email }}</p>
+              </div>
+            </div>
+          </td>
+
+          <td>
+            <span class="badge" 
+                  [class.missing]="student.status === 'Missing'"
+                  [class.submitted]="student.status === 'Submitted'"
+                  [class.graded]="student.status === 'Graded'">
+              {{ student.status }}
+            </span>
+          </td>
+
+          <td>
+            <span *ngIf="student.submittedAt">{{ student.submittedAt | date:'medium' }}</span>
+            <span *ngIf="!student.submittedAt" class="text-muted">-</span>
+          </td>
+
+          <td>
+            <span class="grade-val" *ngIf="student.grade !== null">{{ student.grade }} pts</span>
+            <span *ngIf="student.grade === null">-</span>
+          </td>
+
+          <td class="text-right">
+            <button *ngIf="student.submissionId" 
+                    class="btn-grade" 
+                    (click)="gradeStudent(student.submissionId)">
+              <span class="material-symbols-outlined">edit_square</span>
+              {{ student.status === 'Graded' ? 'Edit Grade' : 'Grade' }}
+            </button>
+            
+            <span *ngIf="!student.submissionId" class="text-muted text-sm">No work</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>

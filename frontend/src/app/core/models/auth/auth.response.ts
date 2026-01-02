@@ -8,4 +8,5 @@ export interface AuthResponse {
   firstName?: string;
   lastName?: string;
   roles?: Role[];
+  requiresTwoFa?: boolean;
 }

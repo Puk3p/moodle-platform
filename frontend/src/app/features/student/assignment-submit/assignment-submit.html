@@ -1,0 +1,181 @@
+<div class="page-container">
+  
+  <div class="page-header">
+    <nav class="breadcrumbs">
+      <a class="link">My Courses</a>
+      <span class="sep">chevron_right</span>
+      <a class="link">{{ courseCode }}</a>
+      <span class="sep">chevron_right</span>
+      <span class="current">Assignment</span>
+    </nav>
+
+    <div class="header-content">
+      <div class="title-block">
+        <h1>Assignment: {{ assignmentData?.title }}</h1>
+        <div class="due-date" [class.overdue]="isOverdue">
+          <span class="material-symbols-outlined icon">schedule</span>
+          <span>Due: {{ assignmentData?.dueDate | date:'medium' }}</span>
+        </div>
+      </div>
+      <button class="back-btn" (click)="goBack()">
+        <span class="material-symbols-outlined">arrow_back</span>
+        Back to Course
+      </button>
+    </div>
+  </div>
+
+  <ng-template #loading>
+    <div class="loading-screen">
+      <span class="material-symbols-outlined spin">refresh</span> Loading assignment...
+    </div>
+  </ng-template>
+
+  <div class="content-wrapper" *ngIf="assignmentData; else loading">
+    
+    <div class="main-card">
+      
+      <div class="card-header">
+        <div class="info">
+          <h3>{{ courseCode }} · {{ assignmentData.title }}</h3>
+          <p>Please review the instructions below.</p>
+        </div>
+        <div class="points-badge">
+          <span class="material-symbols-outlined">military_tech</span>
+          <span>Max Points: {{ assignmentData.maxGrade }}</span>
+        </div>
+      </div>
+
+      <div class="card-body">
+        
+        <div class="instructions">
+          <h4>Instructions</h4>
+          <p class="desc">{{ assignmentData.description || 'No description provided.' }}</p>
+          
+          <div *ngIf="assignmentData.fileUrl" class="teacher-attachment">
+             <span class="material-symbols-outlined">attachment</span>
+             <a [href]="getFileUrl(assignmentData.fileUrl)" target="_blank">Download Attached Resource</a>
+          </div>
+        </div>
+
+        <hr class="divider" />
+
+        <div class="status-section">
+          <h4>Submission Status</h4>
+          <div class="status-grid">
+            
+            <div class="status-item">
+              <span class="label">Status</span>
+              <div class="value">
+                <span class="dot" 
+                      [class.green]="existingSubmission && !isLate" 
+                      [class.orange]="existingSubmission && isLate"
+                      [class.gray]="!existingSubmission"></span>
+                <span>{{ submissionStatus }}</span>
+              </div>
+            </div>
+
+            <div class="status-item">
+              <span class="label">Grading</span>
+              <div class="value">
+                <span>{{ gradingStatus }}</span>
+              </div>
+            </div>
+
+            <div class="status-item">
+              <span class="label">Time Remaining</span>
+              <div class="value" [class.text-red]="isLate && !existingSubmission">
+                <span class="material-symbols-outlined icon-small" *ngIf="isLate">warning</span>
+                <span>{{ timeRemainingLabel }}</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <form [formGroup]="submitForm" (ngSubmit)="onSubmit()">
+            
+            <div class="upload-section">
+              <div class="section-label">
+                <span>Your Submission Files</span>
+                <span class="hint">Accepted: PDF, ZIP, DOCX (Max 50MB)</span>
+              </div>
+
+              <div class="drop-zone" (click)="fileInput.click()">
+                <div class="drop-content">
+                  <div class="icon-circle">
+                    <span class="material-symbols-outlined">cloud_upload</span>
+                  </div>
+                  <p class="main-text"><span>Click to upload</span> or drag and drop</p>
+                  <p class="sub-text">You can upload multiple files</p>
+                </div>
+                <input #fileInput type="file" multiple (change)="onFileSelected($event)" hidden>
+              </div>
+
+              <div class="files-list" *ngIf="selectedFiles.length > 0">
+                <div class="file-item new-file" *ngFor="let file of selectedFiles; let i = index">
+                  <div class="file-info">
+                    <div class="file-icon">
+                      <span class="material-symbols-outlined">description</span>
+                    </div>
+                    <div class="file-meta">
+                      <span class="name">{{ file.name }}</span>
+                      <span class="size">{{ (file.size / 1024 / 1024) | number:'1.1-2' }} MB</span>
+                    </div>
+                  </div>
+                  <button type="button" class="delete-btn" (click)="removeFile(i)">
+                    <span class="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="files-list history" *ngIf="existingSubmission?.fileUrl">
+                  <div class="file-item submitted-file">
+                    <div class="file-info">
+                        <div class="file-icon green">
+                            <span class="material-symbols-outlined">check_circle</span>
+                        </div>
+                        <div class="file-meta">
+                            <span class="name">{{ existingSubmission.fileName || 'Submitted File' }}</span>
+                            <span class="size">Submitted on {{ existingSubmission.submittedAt | date:'medium' }}</span>
+                        </div>
+                    </div>
+                    <a class="view-btn" [href]="getFileUrl(existingSubmission.fileUrl)" target="_blank">
+                        <span class="material-symbols-outlined">visibility</span>
+                    </a>
+                  </div>
+              </div>
+
+            </div>
+
+            <div class="comments-section">
+              <label>Submission Comments / Online Text</label>
+              <textarea 
+                formControlName="textResponse" 
+                rows="4" 
+                placeholder="Add any notes for the instructor here..."
+                [readonly]="existingSubmission && existingSubmission.grade !== null"
+              ></textarea>
+            </div>
+
+            <div class="card-footer" *ngIf="!existingSubmission || (existingSubmission && existingSubmission.grade === null)">
+                <button type="button" class="btn-cancel" (click)="goBack()">Cancel</button>
+                <div class="right-actions">
+                    <button type="submit" class="btn-submit" [disabled]="isSubmitting">
+                        <span>{{ isSubmitting ? 'Uploading...' : 'Submit Assignment' }}</span>
+                        <span class="material-symbols-outlined" *ngIf="!isSubmitting">send</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="card-footer" *ngIf="existingSubmission?.grade !== null">
+                <div class="feedback-alert">
+                    <strong>Feedback:</strong> {{ existingSubmission.feedback || 'No feedback yet.' }}
+                </div>
+            </div>
+
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>

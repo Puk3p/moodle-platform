@@ -30,18 +30,29 @@ export const routes: Routes = [
     component: DashboardHomeComponent,
     canActivate: [authGuard]
   },
+  
   {
     path: 'courses',
     loadComponent: () => import('./features/courses/courses').then(m => m.CoursesComponent),
     canActivate: [authGuard]
   },
   {
+    
     path: 'courses/:id',
     loadComponent: () => import('./features/courses/course-page/course-page').then(m => m.CoursePageComponent),
+    canActivate: [authGuard]
   },
   {
+    
+    path: 'courses/:code/assignment/:id',
+    loadComponent: () => import('./features/student/assignment-submit/assignment-submit').then(m => m.AssignmentSubmitComponent),
+    canActivate: [authGuard]
+  },
+  
+  {
     path: 'calendar',
-    loadComponent: () => import('./features/calendar/calendar-page/calendar-page').then(m => m.CalendarPageComponent)
+    loadComponent: () => import('./features/calendar/calendar-page/calendar-page').then(m => m.CalendarPageComponent),
+    canActivate: [authGuard]
   },
   {
     path: 'grades',
@@ -59,6 +70,7 @@ export const routes: Routes = [
     loadComponent: () => import('./features/settings/settings-page/settings-page').then(m => m.SettingsPageComponent)
   },
 
+  
   {
     path: 'manage-courses',
     component: ManageCoursesComponent,
@@ -125,10 +137,24 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'assignments/submissions/:id/grade',
+    loadComponent: () => import('./features/teacher/grade-assignment/grade-assignment').then(m => m.GradeAssignmentComponent),
+    canActivate: [authGuard]
+  },
+  {
+    
+    path: 'manage-courses/:code/assignments/:id',
+    loadComponent: () => import('./features/teacher/assignment-dashboard/assignment-dashboard').then(m => m.AssignmentDashboardComponent),
+    canActivate: [authGuard]
+},
+  
+  {
     path: 'take-quiz/:quizId',
     component: TakeQuizComponent,
     canActivate: [authGuard]
   },
+
+  
   {
     path: '',
     redirectTo: 'login',

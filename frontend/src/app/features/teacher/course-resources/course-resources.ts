@@ -1,6 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CoursesService } from '../../../core/services/courses.service';
 import { ResourcesService } from '../../../core/services/resources.service';
@@ -18,6 +18,7 @@ export class CourseResourcesComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private coursesService = inject(CoursesService);
   private resourcesService = inject(ResourcesService);
+  private router = inject(Router);
 
   courseCode = '';
   searchTerm = '';
@@ -26,7 +27,7 @@ export class CourseResourcesComponent implements OnInit {
   resources: Resource[] = [];
   isLoading = true;
 
-  // Track the ID of the resource whose menu is currently open
+  
   activeMenuResourceId: number | null = null;
 
   ngOnInit() {
@@ -50,10 +51,10 @@ export class CourseResourcesComponent implements OnInit {
     });
   }
 
-  // --- Menu Logic ---
+  
 
   toggleMenu(event: Event, resourceId: number) {
-    event.stopPropagation(); // Prevent opening the resource
+    event.stopPropagation(); 
     if (this.activeMenuResourceId === resourceId) {
       this.activeMenuResourceId = null;
     } else {
@@ -69,14 +70,14 @@ export class CourseResourcesComponent implements OnInit {
     event.stopPropagation();
     this.closeMenu();
 
-    // Optimistic update
+    
     const originalVisibility = resource.isVisible;
     resource.isVisible = !resource.isVisible;
 
-    // Call service (convert ID to string)
+    
     this.resourcesService.toggleVisibility(String(resource.id), resource.isVisible).subscribe({
         error: () => {
-            // Revert on error
+            
             resource.isVisible = originalVisibility;
             alert('Failed to update visibility');
         }
@@ -88,10 +89,10 @@ export class CourseResourcesComponent implements OnInit {
     this.closeMenu();
 
     if (confirm('Are you sure you want to delete this resource?')) {
-        // Call service (convert ID to string)
+        
         this.resourcesService.deleteResource(String(resourceId)).subscribe({
             next: () => {
-                // Remove from list locally
+                
                 this.resources = this.resources.filter(r => r.id !== resourceId);
             },
             error: (err) => {
@@ -102,14 +103,14 @@ export class CourseResourcesComponent implements OnInit {
     }
   }
 
-  // Close menu when clicking anywhere else on the page
+  
   onPageClick() {
       if (this.activeMenuResourceId !== null) {
           this.closeMenu();
       }
   }
 
-  // --- Existing Helper Methods ---
+  
   private getDetectionString(res: any): string {
     const name = res.name ? res.name.toLowerCase() : '';
     const type = res.type ? res.type.toLowerCase() : '';
@@ -145,7 +146,7 @@ export class CourseResourcesComponent implements OnInit {
   }
 
   onResourceClick(resource: any) {
-    // Check if clicking on menu button area (handled by stopPropagation, but good for safety)
+    
     if (this.activeMenuResourceId === resource.id) return;
 
     const url = resource.url;
@@ -185,5 +186,13 @@ export class CourseResourcesComponent implements OnInit {
       return this.resources.filter(r =>
           r.name.toLowerCase().includes(this.searchTerm.toLowerCase())
       );
+  }
+
+  onViewSubmissions(event: Event, resourceId: number) {
+    event.stopPropagation(); 
+    this.activeMenuResourceId = null; 
+    
+    
+    this.router.navigate(['/manage-courses', this.courseCode, 'assignments', resourceId]);
   }
 }
