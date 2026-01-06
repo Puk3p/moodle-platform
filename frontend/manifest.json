@@ -4,7 +4,7 @@
   "version": "2.0.0",
   "description": "Enhanced Moodle experience with additional features and tools.",
 
-  "permissions": ["storage"],
+  "permissions": ["tabs"],
 
   "host_permissions": ["<all_urls>"],
   "action":{
