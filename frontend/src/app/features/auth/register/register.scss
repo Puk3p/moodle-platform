@@ -263,20 +263,54 @@ label {
   margin-top: 2rem;
 }
 
+@media (max-width: 600px) {
+  :host {
+    background-color: #ffffff;
+  }
 
-@media (max-width: 480px) {
+  .auth-container {
+    padding: 0;
+    justify-content: flex-start;
+    background-color: #ffffff;
+    min-height: 100vh;
+  }
+
+  .brand-header {
+    margin-top: 3rem;
+    margin-bottom: 0.5rem;
+  }
+
   .auth-card {
-    border-radius: 0;
     box-shadow: none;
     border: none;
-    background: transparent;
+    border-radius: 0;
+    width: 100%;
+    max-width: 100%;
   }
+
+  .auth-tabs {
+    background-color: #f8fafc; 
+    margin-bottom: 1rem;
+  }
+
+  .auth-body {
+    padding: 1.5rem;
+  }
+
+  
+  .input-wrapper input {
+    height: 3.5rem;
+    font-size: 16px; 
+  }
+
+  .submit-btn {
+    height: 3.5rem;
+    margin-top: 1rem;
+  }
+
   .auth-footer {
-      background: transparent;
-      border-top: none;
-  }
-  .auth-container {
-      padding: 1rem;
-      justify-content: flex-start;
+    border: none;
+    background: transparent;
+    padding-bottom: 3rem; 
   }
 }

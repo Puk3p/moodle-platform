@@ -328,20 +328,127 @@ label {
   color: #94a3b8;
   margin-top: 2rem;
 }
+@media (max-width: 600px) {
+  :host {
+    background-color: #ffffff; /* Fundal alb pe mobil */
+  }
 
-@media (max-width: 480px) {
+  .auth-container {
+    padding: 0;
+    justify-content: flex-start; /* Aliniere sus, nu la centru (pt tastatură) */
+    background-color: #ffffff;
+    min-height: 100vh;
+  }
+
+  .brand-header {
+    margin-top: 3rem; /* Spațiu mai mare pentru Notch/Cameră */
+    margin-bottom: 1rem;
+    
+    h1 {
+      font-size: 1.75rem; /* Titlu mai mare */
+    }
+  }
+
   .auth-card {
+    box-shadow: none; /* Fără umbră */
+    border: none;     /* Fără chenar */
     border-radius: 0;
-    box-shadow: none;
-    border: none;
+    width: 100%;
+    max-width: 100%;
     background: transparent;
   }
-  .auth-footer {
-      background: transparent;
-      border-top: none;
+
+  .auth-body {
+    padding: 1.5rem; /* Padding lateral confortabil */
+    gap: 1.25rem;
   }
+
+  /* Facem inputurile puțin mai înalte pentru degete */
+  .input-wrapper input {
+    height: 3.5rem; 
+    font-size: 16px; /* Previne zoom-ul automat pe iOS */
+  }
+
+  /* Butonul de login mai mare */
+  .submit-btn {
+    height: 3.5rem;
+    font-size: 1rem;
+  }
+
+  .google-btn {
+    height: 3.5rem;
+  }
+
+  .auth-footer {
+    border-top: none;
+    background: transparent;
+    padding-bottom: 2rem;
+  }
+}
+
+
+
+
+.copyright {
+  text-align: center;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+@media (max-width: 600px) {
+  :host {
+    background-color: #ffffff; 
+  }
+
   .auth-container {
-      padding: 1rem;
-      justify-content: flex-start;
+    padding: 0;
+    justify-content: flex-start; 
+    background-color: #ffffff;
+    min-height: 100vh;
+  }
+
+  .brand-header {
+    margin-top: 3rem; 
+    margin-bottom: 1rem;
+    
+    h1 {
+      font-size: 1.75rem; 
+    }
+  }
+
+  .auth-card {
+    box-shadow: none; 
+    border: none;    
+    border-radius: 0;
+    width: 100%;
+    max-width: 100%;
+    background: transparent;
+  }
+
+  .auth-body {
+    padding: 1.5rem; 
+    gap: 1.25rem;
+  }
+
+  .input-wrapper input {
+    height: 3.5rem; 
+    font-size: 16px; 
+  }
+
+  .submit-btn {
+    height: 3.5rem;
+    font-size: 1rem;
+  }
+
+  .google-btn {
+    height: 3.5rem;
+  }
+
+  .auth-footer {
+    border-top: none;
+    background: transparent;
+    padding-bottom: 2rem;
   }
 }

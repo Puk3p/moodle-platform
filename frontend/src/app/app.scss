@@ -200,6 +200,40 @@ $app-border: rgba(148, 163, 184, 0.45);
   display: flex;
   align-items: center;
   gap: 10px;
+
+  cursor: pointer; 
+  padding: 4px 8px; 
+  border-radius: 8px; 
+  transition: background-color 0.2s ease; 
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.05); 
+  }
+ 
+
+
+  //
+
+  //
+  .avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    background-color: #e2e8f0;
+    border-radius: 50%;
+  background: linear-gradient(135deg, #f97316, #f97316 40%, #f5f5f4);
+    background-size: cover;
+    background-position: center;
+  }
+}
+
+
+.sidebar-logo {
+  cursor: pointer; 
+  transition: opacity 0.2s;
+  
+  &:hover {
+    opacity: 0.8; 
+  }
 }
 
 .avatar {
@@ -289,18 +323,145 @@ $app-border: rgba(148, 163, 184, 0.45);
 
 
 .shell-main {
-  /* ... stilurile tale existente (flex, margin-left pt sidebar etc) ... */
+ 
   transition: margin-left 0.3s ease;
 
   &.full-screen {
-    margin-left: 0 !important; /* Reseteaza spatiul lasat pentru sidebar */
+    margin-left: 0 !important; 
     width: 100vw;
     height: 100vh;
     padding: 0;
     
     .content {
-      padding: 0; /* Scoate padding-ul din jurul router-outlet daca exista */
+      padding: 0; 
       height: 100%;
     }
+  }
+}
+
+.mobile-sidenav {
+  width: 280px;
+  background-color: white;
+  
+  .sidenav-header {
+   
+    height: auto; 
+    
+ 
+    padding-top: calc(env(safe-area-inset-top) + 30px); 
+    padding-bottom: 20px;
+    
+    background-color: #f95306;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    
+    .mobile-logo-icon { 
+      font-size: 40px; 
+      margin-bottom: 10px; 
+    }
+    
+    h2 { 
+      margin: 0; 
+      font-family: Roboto, sans-serif; 
+    }
+  }
+
+  .menu-icon { margin-right: 15px; color: #757575; font-size: 18px; }
+  .logout-item { color: #d32f2f; .menu-icon { color: #d32f2f; } }
+  
+  .mobile-teacher-section {
+      border-top: 1px solid #eee;
+      margin-top: 10px;
+      padding-top: 10px;
+      .mobile-section-title {
+          padding-left: 16px;
+          font-size: 12px;
+          color: #999;
+          text-transform: uppercase;
+          font-weight: bold;
+      }
+  }
+}
+
+.main-content-wrapper {
+    background-color: #f8f6f5; 
+}
+
+
+@media (min-width: 901px) {
+  .mobile-only {
+    display: none !important; 
+  }
+  .desktop-only {
+    display: flex !important; 
+  }
+  
+  .app-shell {
+      display: flex;
+      height: 100vh;
+      width: 100%;
+      overflow: hidden;
+  }
+  
+  .sidebar {
+      width: 260px; 
+      flex-shrink: 0;
+  }
+  
+  .shell-main {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto; 
+  }
+}
+
+
+@media (max-width: 900px) {
+  .desktop-only {
+    display: none !important; 
+  }
+  .mobile-only {
+    display: flex !important; 
+  }
+  
+  .app-shell {
+      display: block; 
+      height: auto;
+  }
+
+  .shell-main {
+      width: 100%;
+      padding: 0;
+  }
+  
+  .content {
+      padding: 1rem; 
+  }
+
+  
+  .mobile-toolbar {
+      .mobile-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      
+      padding-top: calc(env(safe-area-inset-top) + 20px) !important;
+      
+      padding-bottom: 25px !important; 
+      
+      height: auto !important;
+      min-height: 80px; 
+      
+      display: flex;
+      align-items: center; 
+      
+      background-color: #f95306;
+      color: white;
+      box-shadow: 0 4px 10px -3px rgba(0, 0, 0, 0.2);
+  }
   }
 }

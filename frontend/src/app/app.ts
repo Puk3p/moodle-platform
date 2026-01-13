@@ -3,7 +3,11 @@ import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } fro
 import { NgIf, NgClass } from '@angular/common'; // <--- Am adaugat NgClass
 import { AuthService } from './core/services/auth.service';
 import { filter } from 'rxjs/operators'; // <--- Import necesar pt pipe
-
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatListModule } from '@angular/material/list';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -11,17 +15,22 @@ import { filter } from 'rxjs/operators'; // <--- Import necesar pt pipe
   styleUrl: './app.scss',
   imports: [
     RouterOutlet,
+    MatSidenavModule, 
+    MatToolbarModule, 
+    MatListModule, 
+    MatIconModule,
+    MatButtonModule,
     RouterLink,
     RouterLinkActive,
     NgIf,
-    NgClass // <--- Folosim asta pt clasa full-screen
+    NgClass 
   ]
 })
 export class App implements OnInit {
   public authService = inject(AuthService);
   private router = inject(Router);
 
-  isQuizRoute = false; // <--- Flag nou
+  isQuizRoute = false; 
 
   ngOnInit() {
     // Ascultam schimbarile de navigare pentru a detecta pagina de Quiz

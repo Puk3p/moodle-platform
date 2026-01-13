@@ -13,10 +13,17 @@ import { QuizAttemptReviewComponent } from './features/teacher/quiz-attempt-revi
 import { TakeQuizComponent } from './features/quiz/take-quiz/take-quiz';
 
 export const routes: Routes = [
+  
+  
+   /*
+   {
   {
     path: '',
-    component: PublicHomeComponent
+    component : PublicHomeComponent
   },
+},
+  */
+  
   {
     path: 'login',
     loadComponent: () => import('./features/auth/login/login').then(m => m.Login),

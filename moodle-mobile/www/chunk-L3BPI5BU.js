@@ -1,0 +1,1 @@
+var o="http://192.168.94.159:8080",s={auth:{login:`${o}/api/auth/login`,register:`${o}/api/auth/register`,google:`${o}/api/auth/google`},courses:{myDashboard:`${o}/api/courses/my-dashboard`},resources:{myResources:`${o}/api/resources/my`,listAll:`${o}/api/resources`}},e=s.auth,r=s.resources;export{o as a,s as b,e as c};

@@ -1,124 +1,163 @@
-<div *ngIf="authService.isLoggedIn(); else loggedOutLayout" class="app-shell">
-  
-  <aside class="sidebar" *ngIf="!isQuizRoute">
-    <div class="sidebar-top">
-      <div class="sidebar-logo">
-        <div class="sidebar-logo-icon">
-          <i class="fa-solid fa-graduation-cap"></i>
-        </div>
-        <span class="sidebar-logo-text">Moodle V2</span>
+<ng-container *ngIf="!authService.isLoggedIn()">
+  <router-outlet></router-outlet>
+</ng-container>
+
+<mat-sidenav-container *ngIf="authService.isLoggedIn()" class="app-container">
+
+  <mat-sidenav #sidenav mode="over" class="mobile-sidenav">
+    <div class="sidenav-header">
+      <div class="mobile-logo-icon">
+        <i class="fa-solid fa-graduation-cap"></i>
       </div>
-
-      <nav class="sidebar-nav">
-        <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="sidebar-link">
-          <i class="fa-solid fa-gauge"></i>
-          <span>Dashboard</span>
-        </a>
-
-        <a routerLink="/courses" routerLinkActive="active" class="sidebar-link">
-          <i class="fa-solid fa-book-open"></i>
-          <span>My Courses</span>
-        </a>
-
-        <a routerLink="/calendar" routerLinkActive="active" class="sidebar-link">
-          <i class="fa-solid fa-calendar-day"></i>
-          <span>Calendar</span>
-        </a>
-
-        <a routerLink="/grades" routerLinkActive="active" class="sidebar-link">
-          <i class="fa-solid fa-chart-line"></i>
-          <span>Grades</span>
-        </a>
-
-        <a routerLink="/resources" routerLinkActive="active" class="sidebar-link">
-          <i class="fa-solid fa-folder-open"></i>
-          <span>Resources</span>
-        </a>
-
-        <div class="nav-section" *ngIf="authService.hasRole('TEACHER')">
-          <p class="section-title">Teacher Tools</p>
-          
-          <a routerLink="/manage-courses" routerLinkActive="active" class="sidebar-link">
-            <i class="fa-solid fa-pen-to-square"></i>
-            <span>Manage Courses</span>
-          </a>
-          
-          <a routerLink="/manage-quizzes" routerLinkActive="active" class="sidebar-link">
-            <i class="fa-solid fa-clipboard-question"></i>
-            <span>Quizzes</span>
-          </a>
-
-          <a routerLink="/question-bank" routerLinkActive="active" class="sidebar-link">
-            <i class="fa-solid fa-layer-group"></i>
-            <span>Question Bank</span>
-          </a>
-          
-          <a routerLink="/upload-resource" routerLinkActive="active" class="sidebar-link">
-            <i class="fa-solid fa-cloud-arrow-up"></i>
-            <span>Upload Resources</span>
-          </a>
-
-          <a routerLink="/create-announcement" routerLinkActive="active" class="sidebar-link">
-            <i class="fa-solid fa-bullhorn"></i>
-            <span>Create Announcement</span>
-          </a>
-
-          <a routerLink="/gradebook" routerLinkActive="active" class="sidebar-link">
-            <i class="fa-solid fa-clipboard-list"></i>
-            <span>Gradebook (Admin)</span>
-          </a>
-
-          <a routerLink="/students" routerLinkActive="active" class="sidebar-link">
-            <i class="fa-solid fa-users"></i>
-            <span>Students / Enrollments</span>
-          </a>
-        </div>
-
-      </nav>
+      <h2>Moodle V2</h2>
     </div>
 
-    <div class="sidebar-bottom">
-      <a routerLink="/settings" routerLinkActive="active" class="sidebar-link sidebar-link-small">
-        <i class="fa-solid fa-gear"></i>
-        <span>Settings</span>
+    <mat-nav-list>
+      <a mat-list-item routerLink="/dashboard" (click)="sidenav.close()">
+        <i class="fa-solid fa-gauge menu-icon"></i> <span class="menu-text">Dashboard</span>
+      </a>
+      <a mat-list-item routerLink="/courses" (click)="sidenav.close()">
+        <i class="fa-solid fa-book-open menu-icon"></i> <span class="menu-text">My Courses</span>
+      </a>
+      <a mat-list-item routerLink="/calendar" (click)="sidenav.close()">
+        <i class="fa-solid fa-calendar-day menu-icon"></i> <span class="menu-text">Calendar</span>
+      </a>
+      <a mat-list-item routerLink="/grades" (click)="sidenav.close()">
+        <i class="fa-solid fa-chart-line menu-icon"></i> <span class="menu-text">Grades</span>
+      </a>
+      <a mat-list-item routerLink="/resources" (click)="sidenav.close()">
+        <i class="fa-solid fa-folder-open menu-icon"></i> <span class="menu-text">Resources</span>
       </a>
 
-      <button type="button" class="sidebar-link sidebar-link-small logout-btn" (click)="logout()">
-        <i class="fa-solid fa-right-from-bracket"></i>
-        <span>Log out</span>
+      <div class="spacer"></div>
+
+      <div *ngIf="authService.hasRole('TEACHER')" class="mobile-teacher-section">
+        <p class="mobile-section-title">Teacher Tools</p>
+        <a mat-list-item routerLink="/manage-courses" (click)="sidenav.close()">
+          <i class="fa-solid fa-pen-to-square menu-icon"></i> <span>Manage Courses</span>
+        </a>
+        <a mat-list-item routerLink="/manage-quizzes" (click)="sidenav.close()">
+           <i class="fa-solid fa-clipboard-question menu-icon"></i> <span>Quizzes</span>
+        </a>
+      </div>
+
+      <a mat-list-item (click)="logout(); sidenav.close()" class="logout-item">
+        <i class="fa-solid fa-right-from-bracket menu-icon"></i> <span class="menu-text">Log Out</span>
+      </a>
+    </mat-nav-list>
+  </mat-sidenav>
+
+
+  <mat-sidenav-content class="main-content-wrapper">
+
+    <mat-toolbar color="primary" class="mobile-toolbar mobile-only" *ngIf="!isQuizRoute">
+      <button mat-icon-button (click)="sidenav.toggle()">
+        <span class="material-symbols-outlined">menu</span>
       </button>
-    </div>
-  </aside>
+      <span>Moodle V2</span>
+      <span class="spacer"></span>
+      <button mat-icon-button routerLink="/settings">
+         <span class="material-symbols-outlined">account_circle</span>
+      </button>
+    </mat-toolbar>
 
-  <div class="shell-main" [ngClass]="{'full-screen': isQuizRoute}">
-    
-    <header class="topbar" *ngIf="!isQuizRoute">
-      <div class="search-wrapper">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" placeholder="Search courses, assignments..." />
-      </div>
 
-      <div class="topbar-right">
-        <button class="icon-btn" type="button">
-          <i class="fa-regular fa-bell"></i>
-        </button>
-
-        <div class="profile">
-          <div class="avatar"></div>
-          <div class="profile-text">
-            <div class="name">{{ authService.currentUserValue?.firstName }} {{ authService.currentUserValue?.lastName }}</div>
-            <div class="subtitle">{{ authService.hasRole('TEACHER') ? 'Teacher' : 'Student' }}</div>
-          </div>
-        </div>
-      </div>
-    </header>
-
-    <main class="content">
-      <router-outlet></router-outlet>
-    </main>
+    <div class="app-shell">
+      
+      <aside class="sidebar desktop-only" *ngIf="!isQuizRoute">
+        <div class="sidebar-top">
+          <div class="sidebar-logo">
+            <div class="sidebar-logo" routerLink="/dashboard">
+  <div class="sidebar-logo-icon">
+    <i class="fa-solid fa-graduation-cap"></i>
   </div>
+  <span class="sidebar-logo-text">Moodle V2</span>
 </div>
+          </div>
 
-<ng-template #loggedOutLayout>
-  <router-outlet></router-outlet>
-</ng-template>
+          <nav class="sidebar-nav">
+            <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="sidebar-link">
+              <i class="fa-solid fa-gauge"></i> <span>Dashboard</span>
+            </a>
+            <a routerLink="/courses" routerLinkActive="active" class="sidebar-link">
+              <i class="fa-solid fa-book-open"></i> <span>My Courses</span>
+            </a>
+            <a routerLink="/calendar" routerLinkActive="active" class="sidebar-link">
+              <i class="fa-solid fa-calendar-day"></i> <span>Calendar</span>
+            </a>
+            <a routerLink="/grades" routerLinkActive="active" class="sidebar-link">
+              <i class="fa-solid fa-chart-line"></i> <span>Grades</span>
+            </a>
+            <a routerLink="/resources" routerLinkActive="active" class="sidebar-link">
+              <i class="fa-solid fa-folder-open"></i> <span>Resources</span>
+            </a>
+
+            <div class="nav-section" *ngIf="authService.hasRole('TEACHER')">
+              <p class="section-title">Teacher Tools</p>
+              <a routerLink="/manage-courses" routerLinkActive="active" class="sidebar-link">
+                <i class="fa-solid fa-pen-to-square"></i> <span>Manage Courses</span>
+              </a>
+              <a routerLink="/manage-quizzes" routerLinkActive="active" class="sidebar-link">
+                <i class="fa-solid fa-clipboard-question"></i> <span>Quizzes</span>
+              </a>
+              <a routerLink="/question-bank" routerLinkActive="active" class="sidebar-link">
+                <i class="fa-solid fa-layer-group"></i> <span>Question Bank</span>
+              </a>
+              <a routerLink="/upload-resource" routerLinkActive="active" class="sidebar-link">
+                <i class="fa-solid fa-cloud-arrow-up"></i> <span>Upload Resources</span>
+              </a>
+              <a routerLink="/create-announcement" routerLinkActive="active" class="sidebar-link">
+                <i class="fa-solid fa-bullhorn"></i> <span>Create Announcement</span>
+              </a>
+              <a routerLink="/gradebook" routerLinkActive="active" class="sidebar-link">
+                <i class="fa-solid fa-clipboard-list"></i> <span>Gradebook (Admin)</span>
+              </a>
+              <a routerLink="/students" routerLinkActive="active" class="sidebar-link">
+                <i class="fa-solid fa-users"></i> <span>Students / Enrollments</span>
+              </a>
+            </div>
+          </nav>
+        </div>
+
+        <div class="sidebar-bottom">
+          <a routerLink="/settings" routerLinkActive="active" class="sidebar-link sidebar-link-small">
+            <i class="fa-solid fa-gear"></i> <span>Settings</span>
+          </a>
+          <button type="button" class="sidebar-link sidebar-link-small logout-btn" (click)="logout()">
+            <i class="fa-solid fa-right-from-bracket"></i> <span>Log out</span>
+          </button>
+        </div>
+      </aside>
+
+      <div class="shell-main" [ngClass]="{'full-screen': isQuizRoute, 'mobile-padding': !isQuizRoute}">
+        
+        <header class="topbar desktop-only" *ngIf="!isQuizRoute">
+          <div class="search-wrapper">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" placeholder="Search courses, assignments..." />
+          </div>
+
+          <div class="topbar-right">
+            <button class="icon-btn" type="button">
+              <i class="fa-regular fa-bell"></i>
+            </button>
+
+            <div class="profile" routerLink="/settings">
+             <div class="avatar"></div>
+            <div class="profile-text">
+             <div class="name">{{ authService.currentUserValue?.firstName }} {{ authService.currentUserValue?.lastName }}</div>
+             <div class="subtitle">{{ authService.hasRole('TEACHER') ? 'Teacher' : 'Student' }}</div>
+            </div>
+            </div>
+          </div>
+        </header>
+
+        <main class="content">
+          <router-outlet></router-outlet>
+        </main>
+      </div>
+
+    </div>
+
+  </mat-sidenav-content>
+</mat-sidenav-container>
