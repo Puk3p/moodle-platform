@@ -200,4 +200,12 @@ export class AuthService {
   changePassword(request: ChangePasswordRequest): Observable<void> {
     return this.http.post<void>(`${API_BASE_URL}/api/users/change-password`, request);
   }
+
+  forgotPassword(email: string): Observable<void> {
+    return this.http.post<void>(`${API_BASE_URL}/api/auth/forgot-password`, { email });
+  }
+
+  resetPassword(token: string, newPassword: string): Observable<void> {
+    return this.http.post<void>(`${API_BASE_URL}/api/auth/reset-password`, { token, newPassword });
+  }
 }
