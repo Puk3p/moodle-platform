@@ -48,6 +48,8 @@ public class SecurityConfig {
 
                         .requestMatchers("/uploads/**").permitAll()
 
+                        .requestMatchers("/ws/**").permitAll()
+
                         .requestMatchers("/api/users/teachers").hasAnyRole("TEACHER", "ADMIN")
                         .requestMatchers("/api/courses/create").hasAnyRole("TEACHER", "ADMIN")
 

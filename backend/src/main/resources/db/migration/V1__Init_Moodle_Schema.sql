@@ -332,3 +332,22 @@ CREATE TABLE assignment_submissions (
                                         CONSTRAINT fk_sub_assignment FOREIGN KEY (assignment_id) REFERENCES module_items(id) ON DELETE CASCADE,
                                         CONSTRAINT fk_sub_student FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+
+-- PT TOKENI FORGOT PASSWORD
+CREATE TABLE password_reset_tokens (
+                                       id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                       token VARCHAR(255) NOT NULL UNIQUE,
+                                       user_id BIGINT NOT NULL,
+                                       expiry_date TIMESTAMP NOT NULL,
+                                       CONSTRAINT fk_reset_token_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+                                             id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                             sender VARCHAR(255) NOT NULL,
+    recipient VARCHAR(255) DEFAULT NULL,
+    content TEXT,
+    is_private BOOLEAN DEFAULT FALSE,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
