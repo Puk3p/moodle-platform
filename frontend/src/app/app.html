@@ -1,3 +1,26 @@
+<style>
+  .chat-dropdown-container {
+      position: absolute;
+      top: 60px; 
+      right: 10px;
+      width: 350px;
+      background: white;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+      border-radius: 8px;
+      z-index: 9999 !important; 
+      border: 1px solid #ddd;
+      overflow: hidden;
+  }
+
+  .message-row { display: flex; margin-bottom: 5px; width: 100%; }
+  
+  .message-row.my-message { justify-content: flex-end; }
+  .message-row.my-message .message-bubble { background: #673ab7; color: white; border-bottom-right-radius: 2px; }
+
+  .message-row:not(.my-message) { justify-content: flex-start; }
+  .message-row:not(.my-message) .message-bubble { background: #f1f1f1; color: #333; border-bottom-left-radius: 2px; }
+</style>
+
 <ng-container *ngIf="!authService.isLoggedIn()">
   <router-outlet></router-outlet>
 </ng-container>
@@ -6,9 +29,7 @@
 
   <mat-sidenav #sidenav mode="over" class="mobile-sidenav">
     <div class="sidenav-header">
-      <div class="mobile-logo-icon">
-        <i class="fa-solid fa-graduation-cap"></i>
-      </div>
+      <div class="mobile-logo-icon"><i class="fa-solid fa-graduation-cap"></i></div>
       <h2>Moodle V2</h2>
     </div>
 
@@ -68,11 +89,9 @@
         <div class="sidebar-top">
           <div class="sidebar-logo">
             <div class="sidebar-logo" routerLink="/dashboard">
-  <div class="sidebar-logo-icon">
-    <i class="fa-solid fa-graduation-cap"></i>
-  </div>
-  <span class="sidebar-logo-text">Moodle V2</span>
-</div>
+              <div class="sidebar-logo-icon"><i class="fa-solid fa-graduation-cap"></i></div>
+              <span class="sidebar-logo-text">Moodle V2</span>
+            </div>
           </div>
 
           <nav class="sidebar-nav">
@@ -137,11 +156,65 @@
             <input type="text" placeholder="Search courses, assignments..." />
           </div>
 
-          <div class="topbar-right">
-            <button class="icon-btn" type="button">
+          <div class="topbar-right" style="position: relative;">
+            
+            <button class="icon-btn" type="button" (click)="toggleChat()" style="position: relative; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;">
               <i class="fa-regular fa-bell"></i>
+              <span *ngIf="notificationCount > 0" 
+                    style="position: absolute; top: 0px; right: 0px; background-color: #ff5200; color: white; font-size: 10px; font-weight: bold; padding: 2px 5px; border-radius: 50%; border: 2px solid white; min-width: 15px; text-align: center; transform: translate(30%, -30%);">
+                {{ notificationCount }}
+              </span>
             </button>
 
+            <div *ngIf="isChatOpen" class="chat-dropdown-container">
+                <div class="chat-header" style="display: flex; align-items: center; padding: 15px; border-bottom: 1px solid #eee; background: #fafafa;">
+                    <i *ngIf="recipientEmail" class="fa-solid fa-arrow-left" (click)="backToContacts()" style="cursor: pointer; margin-right: 15px; color: #673ab7;"></i>
+                    <span *ngIf="!recipientEmail" style="font-weight: bold; color: #333;">Mesaje</span>
+                    <span *ngIf="recipientEmail" style="font-size: 14px; font-weight: bold; color: #333;">{{ recipientEmail }}</span>
+                    <i class="fa-solid fa-xmark close-chat" (click)="toggleChat()" style="margin-left: auto; cursor: pointer; color: #999;"></i>
+                </div>
+
+                <div *ngIf="!recipientEmail" class="contacts-list" style="height: 350px; overflow-y: auto;">
+                    <div style="padding: 10px; background: white; border-bottom: 1px solid #eee;">
+                        <input #newChatInput (keyup.enter)="selectContact(newChatInput.value); newChatInput.value=''" type="text" placeholder="Caută email nou..." style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ddd; font-size: 13px;">
+                    </div>
+                    <div *ngFor="let contact of contactList" (click)="selectContact(contact)"
+                         style="padding: 15px; border-bottom: 1px solid #f5f5f5; cursor: pointer; display: flex; align-items: center; background: white;"
+                         onmouseover="this.style.background='#f9f9f9'" onmouseout="this.style.background='white'">
+                        <div style="width: 40px; height: 40px; background: #e0e0e0; border-radius: 50%; color: #555; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-weight: bold;">
+                            {{ contact.charAt(0).toUpperCase() }}
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; color: #333; font-size: 14px;">{{ contact }}</div>
+                            <div style="font-size: 11px; color: #888;">Apasă pentru chat</div>
+                        </div>
+                    </div>
+                    <div *ngIf="contactList.length === 0" style="padding: 40px 20px; text-align: center; color: #999;">
+                        <i class="fa-regular fa-paper-plane" style="font-size: 30px; margin-bottom: 15px; opacity: 0.5;"></i><br>
+                        Nu ai conversații recente.
+                    </div>
+                </div>
+
+                <div *ngIf="recipientEmail" class="chat-view" style="display: flex; flex-direction: column; height: 350px; background: white;">
+                    <div class="chat-messages" style="flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column;">
+                        <div *ngFor="let msg of getFilteredMessages()" class="message-row" [ngClass]="{'my-message': msg.sender === authService.currentUserValue?.email}">
+                            <div class="message-bubble" style="padding: 10px 14px; border-radius: 12px; margin-bottom: 2px; max-width: 80%; word-wrap: break-word;">
+                                <div class="message-text" style="font-size: 13px;">{{ msg.content }}</div>
+                                <div style="font-size: 9px; text-align: right; opacity: 0.7; margin-top: 4px; margin-right: -4px;">
+                                    {{ msg.timestamp | date:'HH:mm' }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-input-area" style="padding: 10px; border-top: 1px solid #eee; display: flex; background: #fafafa;">
+                        <input [(ngModel)]="newMessage" (keyup.enter)="sendMessage()" type="text" placeholder="Scrie mesajul..." style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 20px; outline: none; font-size: 13px;">
+                        <button (click)="sendMessage()" style="margin-left: 10px; background: #673ab7; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                            <i class="fa-solid fa-paper-plane" style="font-size: 14px;"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
             <div class="profile" routerLink="/settings">
              <div class="avatar"></div>
             <div class="profile-text">

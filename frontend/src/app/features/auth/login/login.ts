@@ -1,8 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, FormControl } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
-
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 
 import { MatButtonModule } from '@angular/material/button';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -25,32 +24,29 @@ import { LoginRequest } from '../../../core/models/auth/login.request';
     CommonModule,
     ReactiveFormsModule,
     RouterLink,
-    
     MatButtonModule, MatToolbarModule, MatIconModule, MatRadioModule, MatFormFieldModule, MatInputModule, MatCheckboxModule,
-    
     FontAwesomeModule
   ],
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })
-export class Login {
+export class Login implements OnInit {
   faFacebook = faFacebook;
   faGoogle = faGoogle;
 
   hidePassword = true;
   isSubmitting = false;
   errorMessage: string | null = null;
-
   
   requiresTwoFa = false;
   tempToken: string | null = null;
   
-  
   twoFaControl = new FormControl('', [Validators.required, Validators.minLength(6), Validators.maxLength(6)]);
 
   private fb = inject(FormBuilder);
-  private authService = inject(AuthService);
+  public authService = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
@@ -61,12 +57,29 @@ export class Login {
   get passwordCtrl() { return this.form.controls.password; }
 
   constructor() {
-    this.authService.handleOAuthCallback();
     if (this.authService.isLoggedIn()) {
       this.router.navigate(['/dashboard']);
     }
   }
 
+  ngOnInit(): void {
+    let token = this.route.snapshot.queryParamMap.get('token');
+
+    if (!token) {
+        const urlParams = new URLSearchParams(window.location.search);
+        token = urlParams.get('token');
+    }
+
+    if (token) {
+        console.log("Token găsit (metoda fallback):", token);
+        this.authService.handleOAuthCallback(token);
+
+        if (this.authService.isLoggedIn()) {
+          window.history.replaceState({}, document.title, window.location.pathname + '#/dashboard');
+          this.router.navigate(['/dashboard']);
+        }
+    }
+  }
   
   onSubmit(): void {
     if (this.form.invalid || this.isSubmitting) {
@@ -79,23 +92,16 @@ export class Login {
 
     const credentials: LoginRequest = this.form.getRawValue();
 
-    console.log('Trimit cerere login...');
-
     this.authService.login(credentials).subscribe({
       next: (response) => {
-        console.log('Raspuns server:', response);
         this.isSubmitting = false;
 
-        
         if (response.requiresTwoFa && response.accessToken) {
-          console.log('Cere 2FA! Token temporar:', response.accessToken);
             this.requiresTwoFa = true;
             this.tempToken = response.accessToken; 
             return; 
         }
 
-        
-        console.log('Login normal, navighez...');
         this.router.navigate(['/dashboard']);
       },
       error: (err) => {
@@ -105,7 +111,6 @@ export class Login {
     });
   }
 
-  
   onVerifyTwoFa(): void {
       if (this.twoFaControl.invalid || !this.tempToken) {
           this.twoFaControl.markAsTouched();
