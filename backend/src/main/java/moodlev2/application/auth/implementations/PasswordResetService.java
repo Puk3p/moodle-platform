@@ -1,6 +1,7 @@
 package moodlev2.application.auth.implementations;
 
 import lombok.RequiredArgsConstructor;
+import moodlev2.application.auth.interfaces.IPasswordResetService;
 import moodlev2.common.exception.NotFoundException;
 import moodlev2.domain.user.ports.PasswordHasherPort;
 import moodlev2.infrastructure.persistence.jpa.PasswordResetTokenRepository;
@@ -18,7 +19,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class PasswordResetService {
+public class PasswordResetService implements IPasswordResetService {
 
     private final SpringDataUserRepository userRepository;
     private final PasswordResetTokenRepository tokenRepository;
@@ -58,7 +59,7 @@ public class PasswordResetService {
         tokenRepository.delete(resetToken);
     }
 
-    private void sendEmail(String to, String token) {
+    public void sendEmail(String to, String token) {
         String link = "http://localhost:4200/#/reset-password?token=" + token;
 
         SimpleMailMessage message = new SimpleMailMessage();

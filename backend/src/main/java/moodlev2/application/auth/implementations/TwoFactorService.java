@@ -13,6 +13,7 @@ import dev.samstevens.totp.secret.SecretGenerator;
 import dev.samstevens.totp.time.SystemTimeProvider;
 import dev.samstevens.totp.time.TimeProvider;
 import lombok.RequiredArgsConstructor;
+import moodlev2.application.auth.interfaces.ITwoFactorService;
 import moodlev2.common.exception.NotFoundException;
 import moodlev2.infrastructure.persistence.jpa.SpringDataUserRepository;
 import moodlev2.infrastructure.persistence.jpa.entity.UserEntity;
@@ -23,7 +24,7 @@ import static dev.samstevens.totp.util.Utils.getDataUriForImage;
 
 @Service
 @RequiredArgsConstructor
-public class TwoFactorService {
+public class TwoFactorService implements ITwoFactorService {
     private final SpringDataUserRepository userRepository;
 
     @Transactional
