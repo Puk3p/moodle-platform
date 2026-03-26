@@ -17,7 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
-public class JwtServiceAdapter implements TokenServicePort {
+public final class JwtServiceAdapter implements TokenServicePort {
     private final Key signingKey;
     private final String issuer;
 
