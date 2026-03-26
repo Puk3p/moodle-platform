@@ -1,3 +1,5 @@
+@use 'sass:color';
+
 $primary: #ff5100;
 $bg-light: #f8f6f5;
 $border: rgba(148, 163, 184, 0.45);
@@ -505,8 +507,8 @@ $text-gray: #6b7280;
   .btn-submit {
     background: $primary;
     color: white;
-    &:hover:not(:disabled) { background: darken($primary, 5%); }
-    &:disabled { opacity: 0.6; cursor: not-allowed; background: lighten($primary, 20%); }
+    &:hover:not(:disabled) { background: color.adjust($primary, $lightness: -5%); }
+    &:disabled { opacity: 0.6; cursor: not-allowed; background: color.adjust($primary, $lightness: 20%); }
   }
 }
 

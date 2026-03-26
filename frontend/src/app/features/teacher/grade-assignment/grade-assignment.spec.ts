@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { GradeAssignment } from './grade-assignment';
+import { GradeAssignmentComponent } from './grade-assignment';
 
-describe('GradeAssignment', () => {
-  let component: GradeAssignment;
-  let fixture: ComponentFixture<GradeAssignment>;
+describe('GradeAssignmentComponent', () => {
+  let component: GradeAssignmentComponent;
+  let fixture: ComponentFixture<GradeAssignmentComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [GradeAssignment]
+      imports: [GradeAssignmentComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(GradeAssignment);
+    fixture = TestBed.createComponent(GradeAssignmentComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

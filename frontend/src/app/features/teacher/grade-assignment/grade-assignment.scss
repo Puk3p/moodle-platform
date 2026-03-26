@@ -1,3 +1,5 @@
+@use 'sass:color';
+
 $primary: #ff5100;
 $primary-hover: #ea4c00;
 $bg-light: #f8f6f5;
@@ -95,7 +97,7 @@ $text-muted: #6b7280;
         display: flex; justify-content: space-between; align-items: center;
         padding: 1rem; background: #f9fafb; border: 1px solid $border; border-radius: 0.75rem; margin-bottom: 0.75rem;
         transition: all 0.2s;
-        &:hover { background: #f3f4f6; border-color: darken($border, 5%); }
+        &:hover { background: #f3f4f6; border-color: color.adjust($border, $lightness: -5%); }
 
         .file-info {
             display: flex; align-items: center; gap: 1rem;

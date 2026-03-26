@@ -1,3 +1,5 @@
+@use 'sass:color';
+
 $primary: #ff5100;
 $border: #e5e7eb;
 
@@ -45,6 +47,6 @@ $border: #e5e7eb;
 .btn-grade {
     background: $primary; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; 
     font-weight: 600; font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem;
-    &:hover { background: darken($primary, 5%); }
+    &:hover { background: color.adjust($primary, $lightness: -5%); }
     span { font-size: 1.1rem; }
 }

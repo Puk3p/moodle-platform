@@ -1,3 +1,5 @@
+@use 'sass:color';
+
 $primary: #ff5100;
 $bg-light: #f8f6f5;
 $border: #e5e7eb; 
@@ -296,7 +298,7 @@ $text-muted: #6b7280;
     cursor: pointer;
     box-shadow: 0 4px 6px -1px rgba($primary, 0.2);
     transition: all 0.2s;
-    &:hover { background: darken($primary, 5%); transform: translateY(-1px); }
+    &:hover { background: color.adjust($primary, $lightness: -5%); transform: translateY(-1px); }
     &:disabled { opacity: 0.7; cursor: not-allowed; }
   }
 }

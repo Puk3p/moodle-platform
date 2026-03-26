@@ -1,3 +1,5 @@
+@use 'sass:color';
+
 $primary: #ff5100;
 $bg-color: #f8f6f5;
 $white: #ffffff;
@@ -332,7 +334,7 @@ textarea {
 
     i { font-size: 16px; }
 
-    &:hover { background-color: darken($primary, 5%); transform: translateY(-1px); }
+    &:hover { background-color: color.adjust($primary, $lightness: -5%); transform: translateY(-1px); }
     &:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
   }
 }

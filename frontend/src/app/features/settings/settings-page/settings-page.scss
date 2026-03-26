@@ -1,3 +1,5 @@
+@use 'sass:color';
+
 $primary: #ff5100;
 $card-radius: 16px;
 $card-border: #e5e7eb;
@@ -421,7 +423,7 @@ $page-bg: #f8f6f5;
     box-shadow: 0 8px 16px rgba($primary, 0.25);
 
     &:hover {
-      background: darken($primary, 5%);
+      background: color.adjust($primary, $lightness: -5%);
     }
   }
 
@@ -456,7 +458,7 @@ $page-bg: #f8f6f5;
     border-radius: 0;
 
     &:hover {
-      color: darken($primary, 5%);
+      color: color.adjust($primary, $lightness: -5%);
       text-decoration: underline;
     }
   }

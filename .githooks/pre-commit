@@ -59,14 +59,18 @@ fi
 TS_FILES=$(echo "$STAGED_FILES" | grep -E '\.(ts|html)$' | grep '^frontend/' || true)
 
 if [[ -n "$TS_FILES" ]]; then
-    echo "→ Frontend files changed — running type check..."
-    (cd frontend && npx ng build --configuration production 2>&1) || {
-        echo ""
-        echo "✖ Frontend build failed. Fix TypeScript errors before committing."
-        echo ""
-        exit 1
-    }
-    echo "✓ Frontend type check passed."
+    if [[ -d "frontend/node_modules" ]]; then
+        echo "→ Frontend files changed — running type check..."
+        (cd frontend && npx ng build --configuration production 2>&1) || {
+            echo ""
+            echo "✖ Frontend build failed. Fix TypeScript errors before committing."
+            echo ""
+            exit 1
+        }
+        echo "✓ Frontend type check passed."
+    else
+        echo "⚠ Skipping frontend check (node_modules not installed). CI will run it."
+    fi
 fi
 
 echo ""

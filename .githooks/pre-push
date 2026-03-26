@@ -40,19 +40,23 @@ fi
 TS_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -E '\.(ts|html|scss)$' | grep '^frontend/' || true)
 
 if [[ -n "$TS_FILES" ]]; then
-    echo "→ Running frontend build..."
-    (cd frontend && npx ng build --configuration production) || {
-        echo "✖ Frontend build failed."
-        exit 1
-    }
-    echo "✓ Frontend build passed."
+    if [[ -d "frontend/node_modules" ]]; then
+        echo "→ Running frontend build..."
+        (cd frontend && npx ng build --configuration production) || {
+            echo "✖ Frontend build failed."
+            exit 1
+        }
+        echo "✓ Frontend build passed."
 
-    echo "→ Running frontend tests..."
-    (cd frontend && npx ng test --watch=false --browsers=ChromeHeadless) || {
-        echo "✖ Frontend tests failed."
-        exit 1
-    }
-    echo "✓ Frontend tests passed."
+        echo "→ Running frontend tests..."
+        (cd frontend && npx ng test --watch=false --browsers=ChromeHeadless) || {
+            echo "✖ Frontend tests failed."
+            exit 1
+        }
+        echo "✓ Frontend tests passed."
+    else
+        echo "⚠ Skipping frontend checks (node_modules not installed). CI will run them."
+    fi
 fi
 
 echo ""

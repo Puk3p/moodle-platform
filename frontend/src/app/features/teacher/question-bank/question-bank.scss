@@ -1,3 +1,4 @@
+@use 'sass:color';
 
 $primary-color: #ff5100;
 $primary-light: #fff5f0;
@@ -210,7 +211,7 @@ $red-bg: #fef2f2; $red-text: #b91c1c;
       @include flex-center;
       gap: 0.5rem;
       transition: background 0.2s;
-      &:hover { background-color: darken($primary-color, 5%); }
+      &:hover { background-color: color.adjust($primary-color, $lightness: -5%); }
       &:disabled { background-color: #ffdacc; cursor: not-allowed; }
     }
   }
@@ -284,10 +285,10 @@ $red-bg: #fef2f2; $red-text: #b91c1c;
     font-weight: 600;
     border: 1px solid transparent;
 
-    &.code { background: $purple-bg; color: $purple-text; border-color: darken($purple-bg, 5%); }
-    &.multi-choice, &.mult { background: $blue-bg; color: $blue-text; border-color: darken($blue-bg, 5%); }
-    &.true-false, &.true, &.single-choice { background: $orange-bg; color: $orange-text; border-color: darken($orange-bg, 5%); }
-    &.drag-drop, &.drag { background: $indigo-bg; color: $indigo-text; border-color: darken($indigo-bg, 5%); }
+    &.code { background: $purple-bg; color: $purple-text; border-color: color.adjust($purple-bg, $lightness: -5%); }
+    &.multi-choice, &.mult { background: $blue-bg; color: $blue-text; border-color: color.adjust($blue-bg, $lightness: -5%); }
+    &.true-false, &.true, &.single-choice { background: $orange-bg; color: $orange-text; border-color: color.adjust($orange-bg, $lightness: -5%); }
+    &.drag-drop, &.drag { background: $indigo-bg; color: $indigo-text; border-color: color.adjust($indigo-bg, $lightness: -5%); }
   }
 
   .badge-diff {
@@ -298,9 +299,9 @@ $red-bg: #fef2f2; $red-text: #b91c1c;
     font-weight: 600;
     border: 1px solid transparent;
 
-    &.easy { background: $green-bg; color: $green-text; border-color: darken($green-bg, 5%); }
-    &.medium { background: $yellow-bg; color: $yellow-text; border-color: darken($yellow-bg, 5%); }
-    &.hard { background: $red-bg; color: $red-text; border-color: darken($red-bg, 5%); }
+    &.easy { background: $green-bg; color: $green-text; border-color: color.adjust($green-bg, $lightness: -5%); }
+    &.medium { background: $yellow-bg; color: $yellow-text; border-color: color.adjust($yellow-bg, $lightness: -5%); }
+    &.hard { background: $red-bg; color: $red-text; border-color: color.adjust($red-bg, $lightness: -5%); }
   }
 
   .usage-text { font-size: 0.75rem; color: $text-gray; font-weight: 500; }
@@ -463,7 +464,7 @@ $red-bg: #fef2f2; $red-text: #b91c1c;
         .preview-info { display: flex; align-items: center; gap: 0.75rem; color: $text-dark; font-weight: 500; }
         .btn-remove {
           background: none; border: none; color: $red-text; cursor: pointer;
-          &:hover { color: darken($red-text, 10%); }
+          &:hover { color: color.adjust($red-text, $lightness: -10%); }
         }
       }
 
@@ -532,7 +533,7 @@ $red-bg: #fef2f2; $red-text: #b91c1c;
       .btn-primary {
         background: $primary-color; border: 1px solid $primary-color; color: white;
         padding: 0.6rem 1.2rem; border-radius: 0.5rem; cursor: pointer; font-weight: 500;
-        &:hover { background: darken($primary-color, 5%); }
+        &:hover { background: color.adjust($primary-color, $lightness: -5%); }
         &:disabled { background: #ffdacc; border-color: #ffdacc; cursor: not-allowed; }
       }
     }

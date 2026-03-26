@@ -1,3 +1,5 @@
+@use 'sass:color';
+
 $primary-orange: #ff5200;
 $primary-orange-light: rgba(255, 82, 0, 0.1);
 $bg-light: #f8f9fa; // Un gri foarte deschis, mai modern
@@ -299,7 +301,7 @@ $radius-sm: 12px;
   // Momentan lasam un stil generic clean, sau putem folosi nth-child pt variatie
   &:nth-child(odd) {
       background: $primary-orange-light;
-      color: darken($primary-orange, 10%);
+      color: color.adjust($primary-orange, $lightness: -10%);
       border-left-color: $primary-orange;
   }
 }
