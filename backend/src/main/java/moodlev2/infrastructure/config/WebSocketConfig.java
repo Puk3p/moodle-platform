@@ -1,4 +1,4 @@
-package moodlev2.config;
+package moodlev2.infrastructure.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.server.ServerHttpRequest;

@@ -1,7 +1,7 @@
 package moodlev2.application.user;
 
 import lombok.RequiredArgsConstructor;
-import moodlev2.application.auth.implementations.TwoFactorService;
+import moodlev2.application.auth.interfaces.ITwoFactorService;
 import moodlev2.common.exception.NotFoundException;
 import moodlev2.domain.user.User;
 import moodlev2.domain.user.ports.PasswordHasherPort;
@@ -16,7 +16,7 @@ public class ChangePasswordService {
 
     private final UserRepositoryPort userRepository;
     private final PasswordHasherPort passwordHasher;
-    private final TwoFactorService twoFactorService;
+    private final ITwoFactorService twoFactorService;
 
     @Transactional
     public void changePassword(String email, ChangePasswordRequest request) {

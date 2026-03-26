@@ -27,6 +27,7 @@ import static dev.samstevens.totp.util.Utils.getDataUriForImage;
 public class TwoFactorService implements ITwoFactorService {
     private final SpringDataUserRepository userRepository;
 
+    @Override
     @Transactional
     public TwoFactorSetupDto setupTwoFactor(String email) {
         UserEntity user = userRepository.findByEmail(email)
@@ -59,9 +60,10 @@ public class TwoFactorService implements ITwoFactorService {
             throw new RuntimeException("Error generating QR code", e);
         }
 
-        return new TwoFactorSetupDto(user.getTwoFaSecret(), qrCodeImage);
+        return new ITwoFactorService.TwoFactorSetupDto(user.getTwoFaSecret(), qrCodeImage);
     }
 
+    @Override
     @Transactional
     public boolean verifyAndEnable(String email, String code) {
         UserEntity user = userRepository.findByEmail(email)
@@ -84,6 +86,7 @@ public class TwoFactorService implements ITwoFactorService {
         return isValid;
     }
 
+    @Override
     public boolean verifyCode(String email, String code) {
         UserEntity user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new NotFoundException("User not found"));
@@ -96,5 +99,4 @@ public class TwoFactorService implements ITwoFactorService {
         return codeVerifier.isValidCode(user.getTwoFaSecret(), code);
     }
 
-    public record TwoFactorSetupDto(String secret, String qrImageBase64) {}
 }

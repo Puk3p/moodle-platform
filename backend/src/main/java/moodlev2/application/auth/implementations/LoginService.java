@@ -17,7 +17,6 @@ import moodlev2.web.auth.dto.VerifyTwoFaLoginRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
@@ -88,6 +87,7 @@ public class LoginService implements ILoginService {
         return finalizeLogin(user, ipAddress, userAgent);
     }
 
+    @Override
     @Transactional
     public AuthResponse verifyTwoFaLogin(VerifyTwoFaLoginRequest request, String ipAddress, String userAgent) {
         

@@ -12,7 +12,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class GetSimpleClassesService {
+public class ClassService {
 
     private final ClassRepository classRepository;
 

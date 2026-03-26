@@ -3,9 +3,9 @@ package moodlev2.web.auth;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import moodlev2.application.auth.implementations.LoginService;
-import moodlev2.application.auth.implementations.RegisterService;
-import moodlev2.application.auth.implementations.PasswordResetService;
+import moodlev2.application.auth.interfaces.ILoginService;
+import moodlev2.application.auth.interfaces.IRegisterService;
+import moodlev2.application.auth.interfaces.IPasswordResetService;
 import moodlev2.web.auth.dto.AuthResponse;
 import moodlev2.web.auth.dto.LoginRequest;
 import moodlev2.web.auth.dto.RegisterRequest;
@@ -22,9 +22,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
-    private final LoginService loginService;
-    private final RegisterService registerService;
-    private final PasswordResetService passwordResetService;
+    private final ILoginService loginService;
+    private final IRegisterService registerService;
+    private final IPasswordResetService passwordResetService;
 
     @PostMapping("/login")
     public AuthResponse login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
