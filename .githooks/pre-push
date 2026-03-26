@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "╔══════════════════════════════════════╗"
+echo "║         PRE-PUSH CHECKS              ║"
+echo "╚══════════════════════════════════════╝"
+
+# ── 1. Backend: Full verify (compile + SpotBugs) ─────────
+JAVA_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | grep '\.java$' || true)
+
+if [[ -n "$JAVA_FILES" ]]; then
+    echo "→ Running backend Spotless check..."
+    (cd backend && ./mvnw spotless:check -q) || {
+        echo "✖ Spotless failed. Run: cd backend && ./mvnw spotless:apply"
+        exit 1
+    }
+    echo "✓ Spotless passed."
+
+    echo "→ Running SpotBugs analysis..."
+    (cd backend && ./mvnw compile spotbugs:check -q -DskipTests) || {
+        echo "✖ SpotBugs found issues. Fix them before pushing."
+        exit 1
+    }
+    echo "✓ SpotBugs passed."
+
+    echo "→ Running backend tests..."
+    (cd backend && ./mvnw test -q) || {
+        echo "✖ Backend tests failed."
+        exit 1
+    }
+    echo "✓ Backend tests passed."
+fi
+
+# ── 2. Frontend: Build + test ────────────────────────────
+TS_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -E '\.(ts|html|scss)$' | grep '^frontend/' || true)
+
+if [[ -n "$TS_FILES" ]]; then
+    echo "→ Running frontend build..."
+    (cd frontend && npx ng build --configuration production) || {
+        echo "✖ Frontend build failed."
+        exit 1
+    }
+    echo "✓ Frontend build passed."
+
+    echo "→ Running frontend tests..."
+    (cd frontend && npx ng test --watch=false --browsers=ChromeHeadless) || {
+        echo "✖ Frontend tests failed."
+        exit 1
+    }
+    echo "✓ Frontend tests passed."
+fi
+
+echo ""
+echo "✓ All pre-push checks passed. Pushing..."

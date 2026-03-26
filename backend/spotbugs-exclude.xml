@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- Exclude Lombok-generated code -->
+    <Match>
+        <Source name="~.*\.java"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Source name="~.*\.java"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- Exclude DTO / request / response records -->
+    <Match>
+        <Package name="~moodlev2\.web\..*\.dto"/>
+    </Match>
+
+    <!-- Exclude JPA entities (mutable by design) -->
+    <Match>
+        <Package name="moodlev2.infrastructure.persistence.jpa.entity"/>
+    </Match>
+
+    <!-- Exclude Spring config classes -->
+    <Match>
+        <Package name="moodlev2.infrastructure.config"/>
+    </Match>
+</FindBugsFilter>
