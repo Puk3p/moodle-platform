@@ -10,5 +10,4 @@ public record CourseGradeDto(
         int percentage,
         String status,
         boolean isCurrent,
-        List<RecentGradeItemDto> recentItems
-) {}
+        List<RecentGradeItemDto> recentItems) {}

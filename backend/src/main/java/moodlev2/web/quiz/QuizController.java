@@ -20,7 +20,6 @@ public class QuizController {
 
     public record StartQuizRequest(String password) {}
 
-
     @PostMapping("/create")
     public void createQuiz(@RequestBody CreateQuizDto dto) {
         managementService.createQuiz(dto);

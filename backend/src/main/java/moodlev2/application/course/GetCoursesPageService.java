@@ -1,5 +1,8 @@
 package moodlev2.application.course;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import moodlev2.domain.user.User;
 import moodlev2.domain.user.ports.UserRepositoryPort;
@@ -11,10 +14,6 @@ import moodlev2.web.course.dto.CourseOverviewDto;
 import moodlev2.web.course.dto.CoursesPageResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -33,7 +32,10 @@ public class GetCoursesPageService {
             User user = userRepository.findByEmail(email).orElse(null);
             if (user != null) {
                 userName = user.getFirstName() + " " + user.getLastName();
-                avatar = "https://ui-avatars.com/api/?name=" + userName + "&background=0D8ABC&color=fff";
+                avatar =
+                        "https://ui-avatars.com/api/?name="
+                                + userName
+                                + "&background=0D8ABC&color=fff";
                 userId = user.getId();
             }
         }
@@ -48,35 +50,34 @@ public class GetCoursesPageService {
 
         LocalDate now = LocalDate.now();
 
-        List<CourseOverviewDto> activeCourses = courseEntities.stream()
-                .map(c -> {
-                    String instructorName = (c.getTeacher() != null)
-                            ? c.getTeacher().getFirstName() + " " + c.getTeacher().getLastName()
-                            : "Unknown Instructor";
+        List<CourseOverviewDto> activeCourses =
+                courseEntities.stream()
+                        .map(
+                                c -> {
+                                    String instructorName =
+                                            (c.getTeacher() != null)
+                                                    ? c.getTeacher().getFirstName()
+                                                            + " "
+                                                            + c.getTeacher().getLastName()
+                                                    : "Unknown Instructor";
 
-                    int progress = calculateProgress(c, now);
+                                    int progress = calculateProgress(c, now);
 
-                    return new CourseOverviewDto(
-                            String.valueOf(c.getId()),
-                            c.getCode(),
-                            c.getName(),
-                            instructorName,
-                            progress,
-                            "Check calendar",
-                            c.getImageUrl()
-                    );
-                })
-                .toList();
+                                    return new CourseOverviewDto(
+                                            String.valueOf(c.getId()),
+                                            c.getCode(),
+                                            c.getName(),
+                                            instructorName,
+                                            progress,
+                                            "Check calendar",
+                                            c.getImageUrl());
+                                })
+                        .toList();
 
         List<CompletedCourseSummaryDto> completedCourses = new ArrayList<>();
 
         return new CoursesPageResponse(
-                userName,
-                "Student",
-                avatar,
-                activeCourses,
-                completedCourses
-        );
+                userName, "Student", avatar, activeCourses, completedCourses);
     }
 
     private int calculateProgress(CourseEntity course, LocalDate now) {
@@ -85,9 +86,8 @@ public class GetCoursesPageService {
         }
 
         long totalModules = course.getModules().size();
-        long passedModules = course.getModules().stream()
-                .filter(m -> isModulePassed(m, now))
-                .count();
+        long passedModules =
+                course.getModules().stream().filter(m -> isModulePassed(m, now)).count();
 
         if (totalModules == 0) return 0;
 

@@ -10,5 +10,4 @@ public record CoursePreviewDto(
         List<ModulePreviewDto> modules,
         List<AnnouncementPreviewDto> announcements,
         List<DeadlinePreviewDto> deadlines,
-        List<ModuleItemPreviewDto> quizzes
-) {}
+        List<ModuleItemPreviewDto> quizzes) {}

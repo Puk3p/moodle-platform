@@ -6,8 +6,7 @@ public final class ColorUtil {
 
     private static final Random RANDOM = new Random();
 
-    private ColorUtil() {
-    }
+    private ColorUtil() {}
 
     public static String randomPastelColor() {
         int r = (RANDOM.nextInt(128) + 127);

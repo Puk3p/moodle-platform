@@ -1,21 +1,22 @@
 package moodlev2.infrastructure.persistence.jpa.entity;
 
 import jakarta.persistence.*;
+import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import moodlev2.domain.user.Role;
 
-import java.time.Instant;
-import java.util.HashSet;
-import java.util.Set;
-
 @Entity
 @Table(name = "users")
-@Getter @Setter
+@Getter
+@Setter
 @NoArgsConstructor
 public class UserEntity {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false, unique = true)
@@ -31,10 +32,7 @@ public class UserEntity {
     private String lastName;
 
     @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(
-        name = "user_roles",
-        joinColumns = @JoinColumn(name = "user_id")
-    )
+    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "role", nullable = false)
     @Enumerated(EnumType.STRING)
     private Set<Role> roles = new HashSet<>();
@@ -52,13 +50,11 @@ public class UserEntity {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-
     @Column(name = "two_fa_secret")
     private String twoFaSecret;
 
     @Column(name = "two_fa_enabled", nullable = false)
     private boolean twoFaEnabled = false;
-
 
     @PrePersist
     protected void onCreate() {

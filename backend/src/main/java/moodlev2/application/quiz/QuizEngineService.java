@@ -1,5 +1,10 @@
 package moodlev2.application.quiz;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import moodlev2.common.exception.NotFoundException;
 import moodlev2.common.util.ColorUtil;
@@ -11,12 +16,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,13 +30,19 @@ public class QuizEngineService {
 
     @Transactional
     public StudentQuizViewDto startAttempt(Long quizId, String userEmail, String providedPassword) {
-        UserEntity user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+        UserEntity user =
+                userRepository
+                        .findByEmail(userEmail)
+                        .orElseThrow(() -> new NotFoundException("User not found"));
 
-        QuizEntity quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new NotFoundException("Quiz not found"));
+        QuizEntity quiz =
+                quizRepository
+                        .findById(quizId)
+                        .orElseThrow(() -> new NotFoundException("Quiz not found"));
 
-        var existingAttempt = quizAttemptRepository.findByQuizIdAndUserIdAndStatus(quizId, user.getId(), "IN_PROGRESS");
+        var existingAttempt =
+                quizAttemptRepository.findByQuizIdAndUserIdAndStatus(
+                        quizId, user.getId(), "IN_PROGRESS");
         if (existingAttempt.isPresent()) {
             return mapper.toStudentView(quiz, existingAttempt.get().getId());
         }
@@ -53,9 +58,14 @@ public class QuizEngineService {
         }
 
         if (quiz.getMaxAttempts() != null && quiz.getMaxAttempts() > 0) {
-            int existingAttemptsCount = quizAttemptRepository.countByQuizIdAndUserId(quizId, user.getId());
+            int existingAttemptsCount =
+                    quizAttemptRepository.countByQuizIdAndUserId(quizId, user.getId());
             if (existingAttemptsCount >= quiz.getMaxAttempts()) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "You have reached the maximum number of attempts (" + quiz.getMaxAttempts() + ") for this quiz.");
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "You have reached the maximum number of attempts ("
+                                + quiz.getMaxAttempts()
+                                + ") for this quiz.");
             }
         }
 
@@ -73,8 +83,10 @@ public class QuizEngineService {
 
     @Transactional
     public QuizResultDto submitAttempt(QuizSubmissionDto dto, String userEmail) {
-        QuizAttemptEntity attempt = attemptRepository.findById(dto.attemptId())
-                .orElseThrow(() -> new NotFoundException("Attempt not found"));
+        QuizAttemptEntity attempt =
+                attemptRepository
+                        .findById(dto.attemptId())
+                        .orElseThrow(() -> new NotFoundException("Attempt not found"));
 
         if (!attempt.getUser().getEmail().equals(userEmail)) {
             throw new RuntimeException("Unauthorized submission");
@@ -86,13 +98,15 @@ public class QuizEngineService {
 
         QuizEntity quiz = attempt.getQuiz();
 
-        Map<Long, QuizQuestionEntity> questionMap = quiz.getQuestions().stream()
-                .collect(Collectors.toMap(QuizQuestionEntity::getId, Function.identity()));
+        Map<Long, QuizQuestionEntity> questionMap =
+                quiz.getQuestions().stream()
+                        .collect(Collectors.toMap(QuizQuestionEntity::getId, Function.identity()));
 
         BigDecimal totalScore = BigDecimal.ZERO;
-        BigDecimal maxScore = quiz.getQuestions().stream()
-                .map(q -> BigDecimal.valueOf(q.getPoints()))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal maxScore =
+                quiz.getQuestions().stream()
+                        .map(q -> BigDecimal.valueOf(q.getPoints()))
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         for (QuizSubmissionDto.AnswerDto ans : dto.answers()) {
             QuizQuestionEntity question = questionMap.get(ans.questionId());
@@ -105,32 +119,38 @@ public class QuizEngineService {
             BigDecimal questionScore = BigDecimal.ZERO;
 
             if (ans.selectedOptionId() != null) {
-                QuizOptionEntity selectedOption = question.getOptions().stream()
-                        .filter(opt -> opt.getId().equals(ans.selectedOptionId()))
-                        .findFirst()
-                        .orElse(null);
+                QuizOptionEntity selectedOption =
+                        question.getOptions().stream()
+                                .filter(opt -> opt.getId().equals(ans.selectedOptionId()))
+                                .findFirst()
+                                .orElse(null);
 
                 responseEntity.setSelectedOption(selectedOption);
                 if (selectedOption != null && selectedOption.isCorrect()) {
                     questionScore = BigDecimal.valueOf(question.getPoints());
                 }
-            }
-            else if (ans.orderedOptionIds() != null && !ans.orderedOptionIds().isEmpty()) {
-                String orderStr = ans.orderedOptionIds().stream()
-                        .map(String::valueOf)
-                        .collect(Collectors.joining(","));
+            } else if (ans.orderedOptionIds() != null && !ans.orderedOptionIds().isEmpty()) {
+                String orderStr =
+                        ans.orderedOptionIds().stream()
+                                .map(String::valueOf)
+                                .collect(Collectors.joining(","));
                 responseEntity.setTextResponse(orderStr);
 
-                List<Long> correctOrderIds = question.getOptions().stream()
-                        .sorted(Comparator.comparingInt(o -> o.getSortOrder() != null ? o.getSortOrder() : 0))
-                        .map(QuizOptionEntity::getId)
-                        .toList();
+                List<Long> correctOrderIds =
+                        question.getOptions().stream()
+                                .sorted(
+                                        Comparator.comparingInt(
+                                                o ->
+                                                        o.getSortOrder() != null
+                                                                ? o.getSortOrder()
+                                                                : 0))
+                                .map(QuizOptionEntity::getId)
+                                .toList();
 
                 if (ans.orderedOptionIds().equals(correctOrderIds)) {
                     questionScore = BigDecimal.valueOf(question.getPoints());
                 }
-            }
-            else if (ans.textAnswer() != null) {
+            } else if (ans.textAnswer() != null) {
                 responseEntity.setTextResponse(ans.textAnswer());
             }
 
@@ -145,7 +165,9 @@ public class QuizEngineService {
 
         attemptRepository.save(attempt);
 
-        boolean passed = totalScore.intValue() >= (quiz.getPassingScore() != null ? quiz.getPassingScore() : 50);
+        boolean passed =
+                totalScore.intValue()
+                        >= (quiz.getPassingScore() != null ? quiz.getPassingScore() : 50);
 
         return new QuizResultDto(
                 attempt.getId(),
@@ -153,8 +175,7 @@ public class QuizEngineService {
                 totalScore,
                 maxScore,
                 passed,
-                attempt.getCompletedAt().toString()
-        );
+                attempt.getCompletedAt().toString());
     }
 
     @Transactional(readOnly = true)
@@ -166,20 +187,26 @@ public class QuizEngineService {
 
     @Transactional(readOnly = true)
     public QuizResultsResponse getQuizResultsWithMetadata(Long quizId) {
-        QuizEntity quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new NotFoundException("Quiz not found"));
+        QuizEntity quiz =
+                quizRepository
+                        .findById(quizId)
+                        .orElseThrow(() -> new NotFoundException("Quiz not found"));
 
         String courseCode = quiz.getCourse().getCode();
 
         Map<Long, UserEntity> uniqueStudentsMap = new HashMap<>();
 
-        enrollmentRepository.findAllByCourseCode(courseCode)
+        enrollmentRepository
+                .findAllByCourseCode(courseCode)
                 .forEach(e -> uniqueStudentsMap.put(e.getUser().getId(), e.getUser()));
 
         if (quiz.getCourse().getAssignedClasses() != null) {
             for (ClassEntity clazz : quiz.getCourse().getAssignedClasses()) {
                 userRepository.findAll().stream()
-                        .filter(u -> u.getClazz() != null && u.getClazz().getId().equals(clazz.getId()))
+                        .filter(
+                                u ->
+                                        u.getClazz() != null
+                                                && u.getClazz().getId().equals(clazz.getId()))
                         .forEach(u -> uniqueStudentsMap.put(u.getId(), u));
             }
         }
@@ -187,12 +214,16 @@ public class QuizEngineService {
         if (quiz.getAssignedClasses() != null) {
             for (ClassEntity clazz : quiz.getAssignedClasses()) {
                 userRepository.findAll().stream()
-                        .filter(u -> u.getClazz() != null && u.getClazz().getId().equals(clazz.getId()))
+                        .filter(
+                                u ->
+                                        u.getClazz() != null
+                                                && u.getClazz().getId().equals(clazz.getId()))
                         .forEach(u -> uniqueStudentsMap.put(u.getId(), u));
             }
         }
 
-        List<QuizAttemptEntity> allAttempts = attemptRepository.findByQuizIdOrderByCompletedAtDesc(quizId);
+        List<QuizAttemptEntity> allAttempts =
+                attemptRepository.findByQuizIdOrderByCompletedAtDesc(quizId);
 
         Map<Long, QuizAttemptEntity> userAttemptMap = new HashMap<>();
 
@@ -207,13 +238,16 @@ public class QuizEngineService {
         }
 
         List<UserEntity> sortedStudents = new ArrayList<>(uniqueStudentsMap.values());
-        sortedStudents.sort(Comparator.comparing(UserEntity::getLastName).thenComparing(UserEntity::getFirstName));
+        sortedStudents.sort(
+                Comparator.comparing(UserEntity::getLastName)
+                        .thenComparing(UserEntity::getFirstName));
 
         List<QuizAttemptListDto> resultsList = new ArrayList<>();
 
-        BigDecimal quizMaxScore = quiz.getQuestions().stream()
-                .map(q -> BigDecimal.valueOf(q.getPoints()))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal quizMaxScore =
+                quiz.getQuestions().stream()
+                        .map(q -> BigDecimal.valueOf(q.getPoints()))
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         for (UserEntity student : sortedStudents) {
             QuizAttemptEntity attempt = userAttemptMap.get(student.getId());
@@ -221,25 +255,27 @@ public class QuizEngineService {
             if (attempt != null) {
                 resultsList.add(mapAttemptToListDto(attempt));
             } else {
-                String group = (student.getClazz() != null) ? student.getClazz().getName() : "No Group";
+                String group =
+                        (student.getClazz() != null) ? student.getClazz().getName() : "No Group";
                 String studentName = student.getFirstName() + " " + student.getLastName();
 
-                resultsList.add(new QuizAttemptListDto(
-                        null,
-                        student.getId(),
-                        studentName,
-                        student.getEmail(),
-                        ColorUtil.randomPastelColor(),
-                        group,
-                        "MISSING",
-                        BigDecimal.ZERO,
-                        quizMaxScore,
-                        false
-                ));
+                resultsList.add(
+                        new QuizAttemptListDto(
+                                null,
+                                student.getId(),
+                                studentName,
+                                student.getEmail(),
+                                ColorUtil.randomPastelColor(),
+                                group,
+                                "MISSING",
+                                BigDecimal.ZERO,
+                                quizMaxScore,
+                                false));
             }
         }
 
-        String dueDateStr = quiz.getAvailableTo() != null ? quiz.getAvailableTo().toString() : "No Deadline";
+        String dueDateStr =
+                quiz.getAvailableTo() != null ? quiz.getAvailableTo().toString() : "No Deadline";
 
         return new QuizResultsResponse(
                 quiz.getId(),
@@ -248,13 +284,16 @@ public class QuizEngineService {
                 dueDateStr,
                 quiz.getDurationMinutes(),
                 quiz.isPublished(),
-                resultsList
-        );
+                resultsList);
     }
 
     private QuizAttemptListDto mapAttemptToListDto(QuizAttemptEntity attempt) {
-        String studentName = attempt.getUser().getFirstName() + " " + attempt.getUser().getLastName();
-        String group = (attempt.getUser().getClazz() != null) ? attempt.getUser().getClazz().getName() : "No Group";
+        String studentName =
+                attempt.getUser().getFirstName() + " " + attempt.getUser().getLastName();
+        String group =
+                (attempt.getUser().getClazz() != null)
+                        ? attempt.getUser().getClazz().getName()
+                        : "No Group";
 
         String submittedAt;
         if ("IN_PROGRESS".equals(attempt.getStatus())) {
@@ -265,18 +304,20 @@ public class QuizEngineService {
             submittedAt = "Unknown";
         }
 
-        BigDecimal maxScore = attempt.getQuiz().getQuestions().stream()
-                .map(q -> BigDecimal.valueOf(q.getPoints()))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal maxScore =
+                attempt.getQuiz().getQuestions().stream()
+                        .map(q -> BigDecimal.valueOf(q.getPoints()))
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         double percentage = 0.0;
         if (maxScore.compareTo(BigDecimal.ZERO) > 0 && attempt.getScore() != null) {
             percentage = (attempt.getScore().doubleValue() / maxScore.doubleValue()) * 100.0;
         }
 
-        int passingScoreThreshold = attempt.getQuiz().getPassingScore() != null
-                ? attempt.getQuiz().getPassingScore()
-                : 50;
+        int passingScoreThreshold =
+                attempt.getQuiz().getPassingScore() != null
+                        ? attempt.getQuiz().getPassingScore()
+                        : 50;
 
         boolean passed = percentage >= passingScoreThreshold;
 
@@ -290,28 +331,33 @@ public class QuizEngineService {
                 submittedAt,
                 attempt.getScore() != null ? attempt.getScore() : BigDecimal.ZERO,
                 maxScore,
-                passed
-        );
+                passed);
     }
 
     @Transactional(readOnly = true)
     public QuizAttemptReviewDto getAttemptReview(Long attemptId) {
-        QuizAttemptEntity attempt = attemptRepository.findById(attemptId)
-                .orElseThrow(() -> new NotFoundException("Attempt not found"));
+        QuizAttemptEntity attempt =
+                attemptRepository
+                        .findById(attemptId)
+                        .orElseThrow(() -> new NotFoundException("Attempt not found"));
 
-        List<QuestionReviewDto> questions = attempt.getQuiz().getQuestions().stream()
-                .map(q -> mapQuestionToReviewDto(q, attempt))
-                .toList();
+        List<QuestionReviewDto> questions =
+                attempt.getQuiz().getQuestions().stream()
+                        .map(q -> mapQuestionToReviewDto(q, attempt))
+                        .toList();
 
         long diffSeconds = 0;
-        if(attempt.getStartedAt() != null && attempt.getCompletedAt() != null) {
-            diffSeconds = java.time.Duration.between(attempt.getStartedAt(), attempt.getCompletedAt()).getSeconds();
+        if (attempt.getStartedAt() != null && attempt.getCompletedAt() != null) {
+            diffSeconds =
+                    java.time.Duration.between(attempt.getStartedAt(), attempt.getCompletedAt())
+                            .getSeconds();
         }
         String timeTaken = String.format("%d min %d sec", diffSeconds / 60, diffSeconds % 60);
 
-        BigDecimal maxScore = attempt.getQuiz().getQuestions().stream()
-                .map(q -> BigDecimal.valueOf(q.getPoints()))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal maxScore =
+                attempt.getQuiz().getQuestions().stream()
+                        .map(q -> BigDecimal.valueOf(q.getPoints()))
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         return new QuizAttemptReviewDto(
                 attempt.getId(),
@@ -322,23 +368,27 @@ public class QuizEngineService {
                 maxScore,
                 timeTaken,
                 attempt.getCompletedAt() != null ? attempt.getCompletedAt().toString() : "N/A",
-                questions
-        );
+                questions);
     }
 
-    private QuestionReviewDto mapQuestionToReviewDto(QuizQuestionEntity q, QuizAttemptEntity attempt) {
-        QuizResponseEntity response = attempt.getResponses().stream()
-                .filter(r -> r.getQuestion().getId().equals(q.getId()))
-                .findFirst()
-                .orElse(null);
+    private QuestionReviewDto mapQuestionToReviewDto(
+            QuizQuestionEntity q, QuizAttemptEntity attempt) {
+        QuizResponseEntity response =
+                attempt.getResponses().stream()
+                        .filter(r -> r.getQuestion().getId().equals(q.getId()))
+                        .findFirst()
+                        .orElse(null);
 
-        Long selectedOptionId = (response != null && response.getSelectedOption() != null)
-                ? response.getSelectedOption().getId() : null;
+        Long selectedOptionId =
+                (response != null && response.getSelectedOption() != null)
+                        ? response.getSelectedOption().getId()
+                        : null;
 
         String studentTextResponse = (response != null) ? response.getTextResponse() : null;
 
         Set<Long> multiSelectedIds = new HashSet<>();
-        if (studentTextResponse != null && (q.getType().equals("MULTI_CHOICE") || q.getType().equals("MCQ_MULTI"))) {
+        if (studentTextResponse != null
+                && (q.getType().equals("MULTI_CHOICE") || q.getType().equals("MCQ_MULTI"))) {
             try {
                 String clean = studentTextResponse.replace("[", "").replace("]", "");
                 if (!clean.isBlank()) {
@@ -352,51 +402,62 @@ public class QuizEngineService {
         }
 
         boolean isFullCorrect = false;
-        if (response != null && response.getScore() != null && response.getScore().compareTo(BigDecimal.ZERO) > 0) {
+        if (response != null
+                && response.getScore() != null
+                && response.getScore().compareTo(BigDecimal.ZERO) > 0) {
             isFullCorrect = response.getScore().compareTo(BigDecimal.valueOf(q.getPoints())) >= 0;
         }
 
-        List<OptionReviewDto> options = q.getOptions().stream().map(o -> {
-            boolean isSelected = false;
-            if (q.getType().equals("MULTI_CHOICE") || q.getType().equals("MCQ_MULTI")) {
-                isSelected = multiSelectedIds.contains(o.getId());
-            } else {
-                isSelected = o.getId().equals(selectedOptionId);
-            }
-            return new OptionReviewDto(
-                    o.getId(),
-                    o.getText(),
-                    isSelected,
-                    o.isCorrect()
-            );
-        }).toList();
+        List<OptionReviewDto> options =
+                q.getOptions().stream()
+                        .map(
+                                o -> {
+                                    boolean isSelected = false;
+                                    if (q.getType().equals("MULTI_CHOICE")
+                                            || q.getType().equals("MCQ_MULTI")) {
+                                        isSelected = multiSelectedIds.contains(o.getId());
+                                    } else {
+                                        isSelected = o.getId().equals(selectedOptionId);
+                                    }
+                                    return new OptionReviewDto(
+                                            o.getId(), o.getText(), isSelected, o.isCorrect());
+                                })
+                        .toList();
 
         return new QuestionReviewDto(
                 q.getId(),
                 q.getText(),
                 q.getType(),
-                (response != null && response.getScore() != null) ? response.getScore() : BigDecimal.ZERO,
+                (response != null && response.getScore() != null)
+                        ? response.getScore()
+                        : BigDecimal.ZERO,
                 BigDecimal.valueOf(q.getPoints()),
                 isFullCorrect,
                 studentTextResponse,
                 options,
-                null
-        );
+                null);
     }
 
     @Transactional
     public void updateQuestionScore(Long attemptId, Long questionId, BigDecimal newScore) {
-        QuizAttemptEntity attempt = attemptRepository.findById(attemptId)
-                .orElseThrow(() -> new NotFoundException("Attempt not found"));
+        QuizAttemptEntity attempt =
+                attemptRepository
+                        .findById(attemptId)
+                        .orElseThrow(() -> new NotFoundException("Attempt not found"));
 
-        QuizResponseEntity response = attempt.getResponses().stream()
-                .filter(r -> r.getQuestion().getId().equals(questionId))
-                .findFirst()
-                .orElseThrow(() -> new NotFoundException("Response for this question not found in attempt"));
+        QuizResponseEntity response =
+                attempt.getResponses().stream()
+                        .filter(r -> r.getQuestion().getId().equals(questionId))
+                        .findFirst()
+                        .orElseThrow(
+                                () ->
+                                        new NotFoundException(
+                                                "Response for this question not found in attempt"));
 
         BigDecimal maxPoints = BigDecimal.valueOf(response.getQuestion().getPoints());
         if (newScore.compareTo(maxPoints) > 0) {
-            throw new IllegalArgumentException("Score cannot exceed maximum points for this question (" + maxPoints + ")");
+            throw new IllegalArgumentException(
+                    "Score cannot exceed maximum points for this question (" + maxPoints + ")");
         }
         if (newScore.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("Score cannot be negative");

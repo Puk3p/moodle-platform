@@ -13,7 +13,6 @@ public class MoodleV2Application {
         SpringApplication.run(MoodleV2Application.class, args);
     }
 
-
     @Bean
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {
@@ -26,5 +25,4 @@ public class MoodleV2Application {
             }
         };
     }
-
 }

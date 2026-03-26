@@ -1,5 +1,6 @@
 package moodlev2.web.course;
 
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import moodlev2.application.course.*;
 import moodlev2.web.course.dto.*;
@@ -8,8 +9,6 @@ import moodlev2.web.course.dto.preview.CoursePreviewDto;
 import moodlev2.web.course.dto.students.EnrolledStudentsResponse;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/courses")
@@ -40,7 +39,8 @@ public class CourseController {
     }
 
     @GetMapping("/{id}")
-    public CourseDetailsResponse getCourseDetails(@PathVariable String id, Authentication authentication) {
+    public CourseDetailsResponse getCourseDetails(
+            @PathVariable String id, Authentication authentication) {
         String email = (authentication != null) ? authentication.getName() : "anonymous";
 
         return getCourseDetailsUseCase.getCourseDetails(id, email);

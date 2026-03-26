@@ -12,6 +12,4 @@ public record CourseDetailsResponse(
         List<CourseModuleDto> modules,
         List<CourseDeadlineDto> deadlines,
         List<CourseAnnouncementDto> announcements,
-
-        List<CourseModuleItemDto> quizzes
-) {}
+        List<CourseModuleItemDto> quizzes) {}

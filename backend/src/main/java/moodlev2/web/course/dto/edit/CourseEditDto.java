@@ -10,5 +10,4 @@ public record CourseEditDto(
         String status,
         String description,
         List<ModuleEditDto> modules,
-        List<Long> selectedGroupIds
-) {}
+        List<Long> selectedGroupIds) {}

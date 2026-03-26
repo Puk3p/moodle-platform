@@ -6,5 +6,4 @@ public record TeacherActivityDto(
         String title,
         String subtitle,
         String timeAgo,
-        String icon
-) {}
+        String icon) {}

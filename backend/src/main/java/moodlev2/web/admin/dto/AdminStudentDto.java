@@ -7,5 +7,4 @@ public record AdminStudentDto(
         String email,
         String className,
         Long classId,
-        boolean twoFaEnabled
-) {}
+        boolean twoFaEnabled) {}

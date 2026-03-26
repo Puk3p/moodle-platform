@@ -26,19 +26,47 @@ public class ChatMessageEntity {
         this.timestamp = LocalDateTime.now();
     }
 
-    public Long getId() { return id; }
-    public String getSender() { return sender; }
-    public void setSender(String sender) { this.sender = sender; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getRecipient() { return recipient; }
-    public void setRecipient(String recipient) { this.recipient = recipient; }
+    public String getSender() {
+        return sender;
+    }
 
-    public String getContent() { return content; }
-    public void setContent(String content) { this.content = content; }
+    public void setSender(String sender) {
+        this.sender = sender;
+    }
 
-    public boolean isPrivate() { return isPrivate; }
-    public void setPrivate(boolean isPrivate) { this.isPrivate = isPrivate; }
+    public String getRecipient() {
+        return recipient;
+    }
 
-    public LocalDateTime getTimestamp() { return timestamp; }
-    public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
+    public void setRecipient(String recipient) {
+        this.recipient = recipient;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    public boolean isPrivate() {
+        return isPrivate;
+    }
+
+    public void setPrivate(boolean isPrivate) {
+        this.isPrivate = isPrivate;
+    }
+
+    public LocalDateTime getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(LocalDateTime timestamp) {
+        this.timestamp = timestamp;
+    }
 }

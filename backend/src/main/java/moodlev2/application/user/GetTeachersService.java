@@ -1,13 +1,12 @@
 package moodlev2.application.user;
 
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import moodlev2.domain.user.Role;
 import moodlev2.infrastructure.persistence.jpa.SpringDataUserRepository;
 import moodlev2.web.course.dto.SimpleDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -19,10 +18,11 @@ public class GetTeachersService {
     public List<SimpleDto> getTeachersList() {
         return userRepository.findAll().stream()
                 .filter(user -> user.getRoles().contains(Role.TEACHER))
-                .map(user -> new SimpleDto(
-                        user.getId(),
-                        user.getFirstName() + " " + user.getLastName()
-                ))
+                .map(
+                        user ->
+                                new SimpleDto(
+                                        user.getId(),
+                                        user.getFirstName() + " " + user.getLastName()))
                 .toList();
     }
 }

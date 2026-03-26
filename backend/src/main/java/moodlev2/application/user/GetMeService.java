@@ -1,6 +1,5 @@
 package moodlev2.application.user;
 
-
 import lombok.RequiredArgsConstructor;
 import moodlev2.common.exception.NotFoundException;
 import moodlev2.infrastructure.persistence.jpa.SpringDataUserRepository;
@@ -15,8 +14,10 @@ public class GetMeService {
     private final SpringDataUserRepository springDataUserRepository;
 
     public UserProfileDto getCurrentUserProfile(String email) {
-        UserEntity user = springDataUserRepository.findByEmail(email)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+        UserEntity user =
+                springDataUserRepository
+                        .findByEmail(email)
+                        .orElseThrow(() -> new NotFoundException("User not found"));
 
         String className = (user.getClazz() != null) ? user.getClazz().getName() : "Not Assigned";
 
@@ -26,7 +27,6 @@ public class GetMeService {
                 user.getLastName(),
                 className,
                 String.valueOf(user.getId()),
-                user.isTwoFaEnabled()
-        );
+                user.isTwoFaEnabled());
     }
 }

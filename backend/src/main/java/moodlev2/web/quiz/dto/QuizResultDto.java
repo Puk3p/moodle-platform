@@ -8,5 +8,4 @@ public record QuizResultDto(
         BigDecimal score,
         BigDecimal maxScore,
         boolean passed,
-        String completedAt
-) {}
+        String completedAt) {}

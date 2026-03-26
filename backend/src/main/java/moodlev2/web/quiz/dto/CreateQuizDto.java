@@ -8,7 +8,6 @@ public record CreateQuizDto(
         String description,
         Long courseId,
         Long moduleId,
-
         Integer timeLimitMinutes,
         Integer passingScore,
         Integer maxAttempts,
@@ -17,16 +16,8 @@ public record CreateQuizDto(
         LocalDateTime availableFrom,
         LocalDateTime availableTo,
         List<Long> assignedClassIds,
-
         String generationType,
-
         List<Long> specificQuestionIds,
-
-        List<RandomRuleDto> randomRules
-) {
-    public record RandomRuleDto(
-            Long categoryId,
-            String difficulty,
-            int count
-    ) {}
+        List<RandomRuleDto> randomRules) {
+    public record RandomRuleDto(Long categoryId, String difficulty, int count) {}
 }

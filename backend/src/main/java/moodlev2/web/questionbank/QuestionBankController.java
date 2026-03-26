@@ -1,5 +1,6 @@
 package moodlev2.web.questionbank;
 
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import moodlev2.application.questionbank.QuestionBankService;
 import moodlev2.web.questionbank.dto.CategoryDto;
@@ -9,8 +10,6 @@ import moodlev2.web.questionbank.dto.QuestionDto;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/question-bank")
@@ -27,19 +26,16 @@ public class QuestionBankController {
     @GetMapping("/questions")
     public List<QuestionDto> getQuestions(
             @RequestParam(defaultValue = "0") Long categoryId,
-            @RequestParam(required = false) String search
-    ) {
+            @RequestParam(required = false) String search) {
         return service.getQuestions(categoryId, search);
     }
 
     @PostMapping(value = "/questions", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public void createQuestion(
             @RequestPart("data") CreateQuestionRequest request,
-            @RequestPart(value = "file", required = false) MultipartFile file
-    ) {
+            @RequestPart(value = "file", required = false) MultipartFile file) {
         service.createQuestion(request, file);
     }
-
 
     @PostMapping("/categories")
     public void createCategory(@RequestBody CreateCategoryRequest request) {
@@ -55,8 +51,7 @@ public class QuestionBankController {
     public void updateQuestion(
             @PathVariable Long id,
             @RequestPart("data") CreateQuestionRequest request,
-            @RequestPart(value = "file", required = false) MultipartFile file
-    ) {
+            @RequestPart(value = "file", required = false) MultipartFile file) {
         service.updateQuestion(id, request, file);
     }
 }

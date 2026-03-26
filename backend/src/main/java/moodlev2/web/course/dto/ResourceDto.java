@@ -7,5 +7,4 @@ public record ResourceDto(
         String type,
         String size,
         String date,
-        boolean isVisible
-) {}
+        boolean isVisible) {}

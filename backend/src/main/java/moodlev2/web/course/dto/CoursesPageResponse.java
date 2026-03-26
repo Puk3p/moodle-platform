@@ -7,5 +7,4 @@ public record CoursesPageResponse(
         String userRole,
         String userAvatarUrl,
         List<CourseOverviewDto> activeCourses,
-        List<CompletedCourseSummaryDto> completedCourses
-) {}
+        List<CompletedCourseSummaryDto> completedCourses) {}

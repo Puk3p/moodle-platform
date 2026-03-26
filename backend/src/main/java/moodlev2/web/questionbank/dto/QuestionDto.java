@@ -10,7 +10,6 @@ public record QuestionDto(
         String difficulty,
         int usageCount,
         String categoryId,
-        List<OptionDto> options
-) {
+        List<OptionDto> options) {
     public record OptionDto(String text, boolean isCorrect) {}
 }

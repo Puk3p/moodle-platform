@@ -1,13 +1,7 @@
 package moodlev2.infrastructure.security;
 
 import io.jsonwebtoken.*;
-import moodlev2.domain.auth.ports.TokenServicePort;
-import moodlev2.domain.user.Role;
-import moodlev2.domain.user.User;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 import io.jsonwebtoken.security.Keys;
-
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.time.Duration;
@@ -16,19 +10,22 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-
+import moodlev2.domain.auth.ports.TokenServicePort;
+import moodlev2.domain.user.Role;
+import moodlev2.domain.user.User;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 @Component
 public class JwtServiceAdapter implements TokenServicePort {
     private final Key signingKey;
     private final String issuer;
 
-    //link util, de aici am luat
-    //https://medium.com/@th.chousiadas/spring-security-architecture-of-jwt-authentication-a7967a8ee309
+    // link util, de aici am luat
+    // https://medium.com/@th.chousiadas/spring-security-architecture-of-jwt-authentication-a7967a8ee309
     public JwtServiceAdapter(
             @Value("${security.jwt.secret}") String secret,
-            @Value("${security.jwt.issuer:moodlev2}") String issuer
-    ) {
+            @Value("${security.jwt.issuer:moodlev2}") String issuer) {
         this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.issuer = issuer;
     }
@@ -38,9 +35,7 @@ public class JwtServiceAdapter implements TokenServicePort {
         Instant now = Instant.now();
         Instant expiresAt = now.plus(validity);
 
-        List<String> roleName = user.getRoles().stream()
-                .map(Enum::name)
-                .toList();
+        List<String> roleName = user.getRoles().stream().map(Enum::name).toList();
 
         String scopesString;
         if (scopes == null || scopes.isEmpty()) {
@@ -49,31 +44,27 @@ public class JwtServiceAdapter implements TokenServicePort {
             scopesString = String.join(" ", scopes);
         }
 
-        JwtBuilder builder = Jwts.builder()
-                .setSubject(String.valueOf(user.getId()))
-                .setIssuer(issuer)
-                .setIssuedAt(Date.from(now))
-                .setExpiration(Date.from(expiresAt))
-                .claim("uid", user.getId())
-                .claim("email", user.getEmail())
-                .claim("roles", roleName);
+        JwtBuilder builder =
+                Jwts.builder()
+                        .setSubject(String.valueOf(user.getId()))
+                        .setIssuer(issuer)
+                        .setIssuedAt(Date.from(now))
+                        .setExpiration(Date.from(expiresAt))
+                        .claim("uid", user.getId())
+                        .claim("email", user.getEmail())
+                        .claim("roles", roleName);
 
         if (scopesString != null) {
             builder.claim("scopes", scopesString);
         }
 
-        return builder
-                .signWith(signingKey, SignatureAlgorithm.HS256)
-                .compact();
+        return builder.signWith(signingKey, SignatureAlgorithm.HS256).compact();
     }
 
     @Override
     public TokenPayload parse(String token) {
         try {
-            Jws<Claims> jws = Jwts.parser()
-                    .setSigningKey(signingKey)
-                    .build()
-                    .parseClaimsJws(token);
+            Jws<Claims> jws = Jwts.parser().setSigningKey(signingKey).build().parseClaimsJws(token);
 
             Claims claims = jws.getBody();
 
@@ -86,11 +77,10 @@ public class JwtServiceAdapter implements TokenServicePort {
 
             List<String> roleNames = claims.get("roles", List.class);
 
-            Set<Role> roles = roleNames == null
-                    ? Set.of()
-                    : roleNames.stream()
-                    .map(Role::valueOf)
-                    .collect(Collectors.toSet());
+            Set<Role> roles =
+                    roleNames == null
+                            ? Set.of()
+                            : roleNames.stream().map(Role::valueOf).collect(Collectors.toSet());
 
             Instant expiresAt = claims.getExpiration().toInstant();
 

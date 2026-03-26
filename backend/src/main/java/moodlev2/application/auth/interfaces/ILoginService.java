@@ -6,5 +6,7 @@ import moodlev2.web.auth.dto.VerifyTwoFaLoginRequest;
 
 public interface ILoginService {
     AuthResponse login(LoginRequest request, String ipAddress, String userAgent);
-    AuthResponse verifyTwoFaLogin(VerifyTwoFaLoginRequest request, String ipAddress, String userAgent);
+
+    AuthResponse verifyTwoFaLogin(
+            VerifyTwoFaLoginRequest request, String ipAddress, String userAgent);
 }

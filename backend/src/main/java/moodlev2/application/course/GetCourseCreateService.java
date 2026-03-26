@@ -1,5 +1,6 @@
 package moodlev2.application.course;
 
+import java.util.ArrayList;
 import lombok.RequiredArgsConstructor;
 import moodlev2.common.exception.NotFoundException;
 import moodlev2.infrastructure.persistence.jpa.CourseRepository;
@@ -9,8 +10,6 @@ import moodlev2.infrastructure.persistence.jpa.entity.UserEntity;
 import moodlev2.web.course.dto.CreateCourseDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
 
 @Service
 @RequiredArgsConstructor
@@ -26,8 +25,13 @@ public class GetCourseCreateService {
             throw new IllegalArgumentException("Teacher ID is required");
         }
 
-        UserEntity teacher = userRepository.findById(dto.teacherId())
-                .orElseThrow(() -> new NotFoundException("Teacher not found with ID: " + dto.teacherId()));
+        UserEntity teacher =
+                userRepository
+                        .findById(dto.teacherId())
+                        .orElseThrow(
+                                () ->
+                                        new NotFoundException(
+                                                "Teacher not found with ID: " + dto.teacherId()));
 
         CourseEntity course = new CourseEntity();
         course.setCode(dto.code());

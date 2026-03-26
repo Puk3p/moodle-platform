@@ -7,5 +7,4 @@ public record RecentGradeItemDto(
         String weightLabel,
         String gradedOn,
         String typeLabel,
-        String typeIcon
-) {}
+        String typeIcon) {}

@@ -8,5 +8,4 @@ public record ModuleEditDto(
         String startDate,
         String endDate,
         String status,
-        ModuleStatsDto stats
-) {}
+        ModuleStatsDto stats) {}

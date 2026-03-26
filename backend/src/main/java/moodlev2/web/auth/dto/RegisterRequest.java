@@ -9,4 +9,3 @@ public class RegisterRequest {
     @NotBlank public String firstName;
     @NotBlank public String lastName;
 }
-

@@ -1,5 +1,8 @@
 package moodlev2.application.resource;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import moodlev2.common.exception.NotFoundException;
 import moodlev2.infrastructure.persistence.jpa.CalendarEventRepository;
@@ -10,10 +13,6 @@ import moodlev2.infrastructure.persistence.jpa.entity.*;
 import moodlev2.web.resource.dto.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -28,18 +27,30 @@ public class ResourceService {
     @Transactional(readOnly = true)
     public UploadOptionsDto getUploadOptions(String userEmail) {
         List<CourseEntity> courses = courseRepository.findAll();
-        List<CourseOptionDto> courseOptions = courses.stream().map(c -> new CourseOptionDto(
-                c.getCode(),
-                c.getName(),
-                c.getModules().stream().map(m -> new ModuleOptionDto(m.getId(), m.getTitle())).toList()
-        )).toList();
+        List<CourseOptionDto> courseOptions =
+                courses.stream()
+                        .map(
+                                c ->
+                                        new CourseOptionDto(
+                                                c.getCode(),
+                                                c.getName(),
+                                                c.getModules().stream()
+                                                        .map(
+                                                                m ->
+                                                                        new ModuleOptionDto(
+                                                                                m.getId(),
+                                                                                m.getTitle()))
+                                                        .toList()))
+                        .toList();
         return new UploadOptionsDto(courseOptions);
     }
 
     @Transactional
     public void createResource(CreateResourceDto dto) {
-        CourseModuleEntity module = courseModuleRepository.findById(dto.getModuleId())
-                .orElseThrow(() -> new NotFoundException("Module not found"));
+        CourseModuleEntity module =
+                courseModuleRepository
+                        .findById(dto.getModuleId())
+                        .orElseThrow(() -> new NotFoundException("Module not found"));
 
         ModuleItemEntity item = new ModuleItemEntity();
         item.setModule(module);
@@ -80,7 +91,8 @@ public class ResourceService {
             } else {
                 item.setFileType("assignment");
             }
-        } else if ("Link".equalsIgnoreCase(dto.getType()) || "External Link".equalsIgnoreCase(dto.getType())) {
+        } else if ("Link".equalsIgnoreCase(dto.getType())
+                || "External Link".equalsIgnoreCase(dto.getType())) {
             item.setType("resource");
             item.setFileType("link");
             item.setUrl(dto.getExternalUrl());
@@ -114,26 +126,31 @@ public class ResourceService {
     private String formatFileSize(long bytes) {
         if (bytes < 1024) return bytes + " B";
         int exp = (int) (Math.log(bytes) / Math.log(1024));
-        String pre = "KMGTPE".charAt(exp-1) + "";
+        String pre = "KMGTPE".charAt(exp - 1) + "";
         return String.format("%.1f %sB", bytes / Math.pow(1024, exp), pre);
     }
 
     @Transactional
     public void toggleVisibility(Long resourceId, boolean isVisible) {
-        ModuleItemEntity item = moduleItemRepository.findById(resourceId)
-                .orElseThrow(() -> new NotFoundException("Resource not found"));
+        ModuleItemEntity item =
+                moduleItemRepository
+                        .findById(resourceId)
+                        .orElseThrow(() -> new NotFoundException("Resource not found"));
         item.setVisible(isVisible);
         moduleItemRepository.save(item);
     }
 
     @Transactional
     public void deleteResource(Long resourceId) {
-        ModuleItemEntity item = moduleItemRepository.findById(resourceId)
-                .orElseThrow(() -> new NotFoundException("Resource not found"));
-        if (item.getFileType() != null && !"link".equalsIgnoreCase(item.getFileType()) && item.getUrl() != null) {
+        ModuleItemEntity item =
+                moduleItemRepository
+                        .findById(resourceId)
+                        .orElseThrow(() -> new NotFoundException("Resource not found"));
+        if (item.getFileType() != null
+                && !"link".equalsIgnoreCase(item.getFileType())
+                && item.getUrl() != null) {
             fileStorageService.deleteFile(item.getUrl());
         }
         moduleItemRepository.delete(item);
     }
-
 }

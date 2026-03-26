@@ -1,6 +1,9 @@
 package moodlev2.application.auth.implementations;
 
 import jakarta.transaction.Transactional;
+import java.time.Duration;
+import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import moodlev2.application.auth.interfaces.ILoginService;
 import moodlev2.domain.auth.ports.TokenServicePort;
@@ -16,20 +19,16 @@ import moodlev2.web.auth.dto.LoginRequest;
 import moodlev2.web.auth.dto.VerifyTwoFaLoginRequest;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
-import java.util.Optional;
-import java.util.Set;
-
 @RequiredArgsConstructor
 @Service
 public class LoginService implements ILoginService {
     private static final Duration ACCESS_TOKEN_VALIDITY = Duration.ofHours(1);
-    private static final Duration TEMP_TOKEN_VALIDITY = Duration.ofMinutes(5); 
+    private static final Duration TEMP_TOKEN_VALIDITY = Duration.ofMinutes(5);
 
     private final UserRepositoryPort userRepository;
     private final PasswordHasherPort passwordHasher;
     private final TokenServicePort tokenService;
-    private final TwoFactorService twoFactorService; 
+    private final TwoFactorService twoFactorService;
 
     private final UserSessionRepository userSessionRepository;
     private final SpringDataUserRepository jpaUserRepository;
@@ -58,10 +57,8 @@ public class LoginService implements ILoginService {
             throw new IllegalArgumentException("Invalid password");
         }
 
-        
         if (user.isTwoFaEnabled()) {
-            
-            
+
             User tempUser = new User();
             tempUser.setId(user.getId());
             tempUser.setEmail(user.getEmail());
@@ -69,28 +66,21 @@ public class LoginService implements ILoginService {
             tempUser.setLastName(user.getLastName());
             tempUser.setRoles(Set.of(Role.STUDENT));
 
-            String tempToken = tokenService.generateToken(
-                    tempUser,
-                    TEMP_TOKEN_VALIDITY,
-                    Set.of("auth:pre-2fa") 
-            );
+            String tempToken =
+                    tokenService.generateToken(
+                            tempUser, TEMP_TOKEN_VALIDITY, Set.of("auth:pre-2fa"));
 
-            
-            return new AuthResponse(
-                    tempToken,
-                    null, null, null, null, null,
-                    true 
-            );
+            return new AuthResponse(tempToken, null, null, null, null, null, true);
         }
 
-        
         return finalizeLogin(user, ipAddress, userAgent);
     }
 
     @Override
     @Transactional
-    public AuthResponse verifyTwoFaLogin(VerifyTwoFaLoginRequest request, String ipAddress, String userAgent) {
-        
+    public AuthResponse verifyTwoFaLogin(
+            VerifyTwoFaLoginRequest request, String ipAddress, String userAgent) {
+
         TokenServicePort.TokenPayload payload;
         try {
             payload = tokenService.parse(request.tempToken());
@@ -98,26 +88,22 @@ public class LoginService implements ILoginService {
             throw new IllegalArgumentException("Invalid or expired login session.");
         }
 
-        
-        User user = userRepository.findById(payload.userId())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        User user =
+                userRepository
+                        .findById(payload.userId())
+                        .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        
         boolean isValid = twoFactorService.verifyCode(user.getEmail(), request.code());
         if (!isValid) {
             throw new IllegalArgumentException("Invalid 2FA Code");
         }
 
-        
         return finalizeLogin(user, ipAddress, userAgent);
     }
 
     private AuthResponse finalizeLogin(User user, String ipAddress, String userAgent) {
-        String accessToken = tokenService.generateToken(
-                user,
-                ACCESS_TOKEN_VALIDITY,
-                Set.of("access:api")
-        );
+        String accessToken =
+                tokenService.generateToken(user, ACCESS_TOKEN_VALIDITY, Set.of("access:api"));
 
         saveUserSession(user.getEmail(), accessToken, ipAddress, userAgent);
 
@@ -128,22 +114,28 @@ public class LoginService implements ILoginService {
                 user.getFirstName(),
                 user.getLastName(),
                 user.getRoles(),
-                false 
-        );
+                false);
     }
 
-    private void saveUserSession(String email, String accessToken, String ipAddress, String userAgent) {
-        var userEntity = jpaUserRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User entity not found for session saving"));
+    private void saveUserSession(
+            String email, String accessToken, String ipAddress, String userAgent) {
+        var userEntity =
+                jpaUserRepository
+                        .findByEmail(email)
+                        .orElseThrow(
+                                () ->
+                                        new RuntimeException(
+                                                "User entity not found for session saving"));
 
         UserSessionEntity session = new UserSessionEntity();
         session.setUser(userEntity);
         session.setIpAddress(ipAddress);
         session.setDeviceName(parseUserAgent(userAgent));
 
-        String signature = accessToken.length() > 15
-                ? accessToken.substring(accessToken.length() - 15)
-                : accessToken;
+        String signature =
+                accessToken.length() > 15
+                        ? accessToken.substring(accessToken.length() - 15)
+                        : accessToken;
 
         session.setTokenSignature(signature);
 
@@ -152,7 +144,7 @@ public class LoginService implements ILoginService {
 
     private String parseUserAgent(String ua) {
         if (ua == null) return "Unknown Device";
-        
+
         if (ua.contains("Windows")) return "Windows";
         if (ua.contains("Mac")) return "macOS";
         if (ua.contains("Linux")) return "Linux";

@@ -8,5 +8,4 @@ public record CreateCourseDto(
         @NotBlank String title,
         String term,
         String description,
-        @NotNull Long teacherId
-) {}
+        @NotNull Long teacherId) {}

@@ -9,5 +9,4 @@ public record QuizResultsResponse(
         String dueDate,
         int timeLimitMinutes,
         boolean isPublished,
-        List<QuizAttemptListDto> attempts
-) {}
+        List<QuizAttemptListDto> attempts) {}

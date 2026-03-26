@@ -18,8 +18,10 @@ public class GetCourseEditService {
 
     @Transactional(readOnly = true)
     public CourseEditDto getCourseForEdit(String code) {
-        CourseEntity course = courseRepository.findByCode(code)
-                .orElseThrow(() -> new NotFoundException("Course not found"));
+        CourseEntity course =
+                courseRepository
+                        .findByCode(code)
+                        .orElseThrow(() -> new NotFoundException("Course not found"));
 
         return mapper.toDto(course);
     }

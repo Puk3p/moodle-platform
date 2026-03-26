@@ -9,26 +9,31 @@ echo "╚═══════════════════════�
 JAVA_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | grep '\.java$' || true)
 
 if [[ -n "$JAVA_FILES" ]]; then
-    echo "→ Running backend Spotless check..."
-    (cd backend && ./mvnw spotless:check -q) || {
-        echo "✖ Spotless failed. Run: cd backend && ./mvnw spotless:apply"
-        exit 1
-    }
-    echo "✓ Spotless passed."
+    JAVA_VER=$(java -version 2>&1 | head -1 | grep -oE '"[0-9]+' | tr -d '"')
+    if [[ "$JAVA_VER" -ge 21 ]] 2>/dev/null; then
+        echo "→ Running backend Spotless check..."
+        (cd backend && ./mvnw spotless:check -q) || {
+            echo "✖ Spotless failed. Run: cd backend && ./mvnw spotless:apply"
+            exit 1
+        }
+        echo "✓ Spotless passed."
 
-    echo "→ Running SpotBugs analysis..."
-    (cd backend && ./mvnw compile spotbugs:check -q -DskipTests) || {
-        echo "✖ SpotBugs found issues. Fix them before pushing."
-        exit 1
-    }
-    echo "✓ SpotBugs passed."
+        echo "→ Running SpotBugs analysis..."
+        (cd backend && ./mvnw compile spotbugs:check -q -DskipTests) || {
+            echo "✖ SpotBugs found issues. Fix them before pushing."
+            exit 1
+        }
+        echo "✓ SpotBugs passed."
 
-    echo "→ Running backend tests..."
-    (cd backend && ./mvnw test -q) || {
-        echo "✖ Backend tests failed."
-        exit 1
-    }
-    echo "✓ Backend tests passed."
+        echo "→ Running backend tests..."
+        (cd backend && ./mvnw test -q) || {
+            echo "✖ Backend tests failed."
+            exit 1
+        }
+        echo "✓ Backend tests passed."
+    else
+        echo "⚠ Skipping backend checks (local JDK $JAVA_VER < 21). CI will run them."
+    fi
 fi
 
 # ── 2. Frontend: Build + test ────────────────────────────

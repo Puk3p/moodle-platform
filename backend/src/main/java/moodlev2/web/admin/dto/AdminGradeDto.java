@@ -12,5 +12,4 @@ public record AdminGradeDto(
         String submittedAt,
         String scoreLabel,
         BigDecimal scoreValue,
-        String teacherName
-) {}
+        String teacherName) {}

@@ -2,8 +2,8 @@ package moodlev2.infrastructure.config;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import moodlev2.infrastructure.security.OAuth2LoginSuccessHandler;
 import moodlev2.infrastructure.security.JwtAuthenticationFilter;
+import moodlev2.infrastructure.security.OAuth2LoginSuccessHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -17,10 +17,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import java.util.List;
+
 @Configuration
 @EnableMethodSecurity
 @RequiredArgsConstructor
@@ -31,46 +28,49 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .cors(Customizer.withDefaults())
+        http.cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
-
-                .exceptionHandling(exception -> exception
-                        .authenticationEntryPoint((request, response, authException) -> {
-                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
-                        })
-                )
-
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/oauth2/**").permitAll()
-                        .requestMatchers("/login/oauth2/**").permitAll()
-
-                        .requestMatchers("/uploads/**").permitAll()
-
-                        .requestMatchers("/ws/**").permitAll()
-
-                        .requestMatchers("/api/users/teachers").hasAnyRole("TEACHER", "ADMIN")
-                        .requestMatchers("/api/courses/create").hasAnyRole("TEACHER", "ADMIN")
-
-                        .requestMatchers("/api/courses/**").authenticated()
-                        .requestMatchers("/api/calendar/**").authenticated()
-                        .requestMatchers("/api/grades/**").authenticated()
-                        .requestMatchers("/api/resources/**").authenticated()
-                        .requestMatchers("/api/users/**").authenticated()
-
-                        .anyRequest().authenticated()
-                )
-
-                .oauth2Login(oauth -> oauth
-                        .successHandler(googleOAuthSuccessHandler)
-                )
-
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-
-                .addFilterAfter(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .exceptionHandling(
+                        exception ->
+                                exception.authenticationEntryPoint(
+                                        (request, response, authException) -> {
+                                            response.sendError(
+                                                    HttpServletResponse.SC_UNAUTHORIZED,
+                                                    "Unauthorized");
+                                        }))
+                .authorizeHttpRequests(
+                        auth ->
+                                auth.requestMatchers("/api/auth/**")
+                                        .permitAll()
+                                        .requestMatchers("/oauth2/**")
+                                        .permitAll()
+                                        .requestMatchers("/login/oauth2/**")
+                                        .permitAll()
+                                        .requestMatchers("/uploads/**")
+                                        .permitAll()
+                                        .requestMatchers("/ws/**")
+                                        .permitAll()
+                                        .requestMatchers("/api/users/teachers")
+                                        .hasAnyRole("TEACHER", "ADMIN")
+                                        .requestMatchers("/api/courses/create")
+                                        .hasAnyRole("TEACHER", "ADMIN")
+                                        .requestMatchers("/api/courses/**")
+                                        .authenticated()
+                                        .requestMatchers("/api/calendar/**")
+                                        .authenticated()
+                                        .requestMatchers("/api/grades/**")
+                                        .authenticated()
+                                        .requestMatchers("/api/resources/**")
+                                        .authenticated()
+                                        .requestMatchers("/api/users/**")
+                                        .authenticated()
+                                        .anyRequest()
+                                        .authenticated())
+                .oauth2Login(oauth -> oauth.successHandler(googleOAuthSuccessHandler))
+                .sessionManagement(
+                        session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterAfter(
+                        jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

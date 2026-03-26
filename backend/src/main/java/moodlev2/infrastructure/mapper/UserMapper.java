@@ -5,7 +5,7 @@ import moodlev2.infrastructure.persistence.jpa.entity.ClassEntity;
 import moodlev2.infrastructure.persistence.jpa.entity.UserEntity;
 import org.springframework.stereotype.Component;
 
-//efectiv mapare intre dto si entity
+// efectiv mapare intre dto si entity
 @Component
 public class UserMapper {
     public User toDomain(UserEntity entity) {
@@ -24,7 +24,6 @@ public class UserMapper {
         user.setEnabled(entity.isActive());
         user.setCreatedAt(entity.getCreatedAt());
         user.setUpdatedAt(entity.getUpdatedAt());
-
 
         user.setTwoFaSecret(entity.getTwoFaSecret());
         user.setTwoFaEnabled(entity.isTwoFaEnabled());

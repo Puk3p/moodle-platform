@@ -9,5 +9,4 @@ public record GradesPageResponse(
         GradeBreakdownDto gradeBreakdown,
         SimpleCourseGradeDto bestCourse,
         SimpleCourseGradeDto needsAttention,
-        List<UpcomingGradeDto> upcomingGradeReleases
-) {}
+        List<UpcomingGradeDto> upcomingGradeReleases) {}

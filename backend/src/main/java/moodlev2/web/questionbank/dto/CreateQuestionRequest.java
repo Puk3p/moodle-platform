@@ -8,7 +8,6 @@ public record CreateQuestionRequest(
         String difficulty,
         Long categoryId,
         List<String> tags,
-        List<OptionDto> options
-) {
+        List<OptionDto> options) {
     public record OptionDto(String text, boolean isCorrect) {}
 }

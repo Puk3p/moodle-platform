@@ -6,9 +6,11 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "question_bank_options")
-@Getter @Setter
+@Getter
+@Setter
 public class QuestionOptionEntity {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)

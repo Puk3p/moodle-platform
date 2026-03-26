@@ -1,12 +1,11 @@
 package moodlev2.infrastructure.mapper;
 
-import moodlev2.infrastructure.persistence.jpa.entity.*;
-import moodlev2.web.quiz.dto.*;
-import org.springframework.stereotype.Component;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import moodlev2.infrastructure.persistence.jpa.entity.*;
+import moodlev2.web.quiz.dto.*;
+import org.springframework.stereotype.Component;
 
 @Component
 public class QuizEngineMapper {
@@ -19,26 +18,22 @@ public class QuizEngineMapper {
                 quiz.getDurationMinutes(),
                 quiz.getQuestions().stream()
                         .map(q -> mapQuestionForStudent(q, quiz.isShuffleOptions()))
-                        .toList()
-        );
+                        .toList());
     }
 
-    private StudentQuizViewDto.StudentQuestionDto mapQuestionForStudent(QuizQuestionEntity q, boolean shuffle) {
-        List<StudentQuizViewDto.StudentOptionDto> optionDtos = q.getOptions().stream()
-                .map(o -> new StudentQuizViewDto.StudentOptionDto(o.getId(), o.getText()))
-                .collect(Collectors.toList());
+    private StudentQuizViewDto.StudentQuestionDto mapQuestionForStudent(
+            QuizQuestionEntity q, boolean shuffle) {
+        List<StudentQuizViewDto.StudentOptionDto> optionDtos =
+                q.getOptions().stream()
+                        .map(o -> new StudentQuizViewDto.StudentOptionDto(o.getId(), o.getText()))
+                        .collect(Collectors.toList());
 
         if (shuffle) {
             Collections.shuffle(optionDtos);
         }
 
         return new StudentQuizViewDto.StudentQuestionDto(
-                q.getId(),
-                q.getText(),
-                q.getPoints(),
-                q.getType(),
-                optionDtos
-        );
+                q.getId(), q.getText(), q.getPoints(), q.getType(), optionDtos);
     }
 
     public QuizEntity toEntity(CreateQuizDto dto, CourseEntity course, CourseModuleEntity module) {

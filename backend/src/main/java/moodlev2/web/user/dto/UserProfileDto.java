@@ -6,5 +6,4 @@ public record UserProfileDto(
         String lastName,
         String className,
         String studentId,
-        boolean twoFaEnabled
-) {}
+        boolean twoFaEnabled) {}

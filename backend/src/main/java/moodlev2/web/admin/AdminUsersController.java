@@ -1,12 +1,11 @@
 package moodlev2.web.admin;
 
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import moodlev2.application.admin.AdminUsersService;
 import moodlev2.web.admin.dto.AdminStudentDto;
 import moodlev2.web.admin.dto.UpdateStudentRequest;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/students")

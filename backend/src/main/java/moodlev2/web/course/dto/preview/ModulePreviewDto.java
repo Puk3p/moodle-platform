@@ -8,5 +8,4 @@ public record ModulePreviewDto(
         String dateRange,
         String status,
         String unlockDate,
-        List<ModuleItemPreviewDto> items
-) {}
+        List<ModuleItemPreviewDto> items) {}

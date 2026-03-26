@@ -12,5 +12,4 @@ public record QuizAttemptListDto(
         String submittedAt,
         BigDecimal score,
         BigDecimal maxScore,
-        boolean passed
-) {}
+        boolean passed) {}

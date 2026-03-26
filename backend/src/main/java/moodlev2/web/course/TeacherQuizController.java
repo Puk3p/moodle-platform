@@ -1,5 +1,7 @@
 package moodlev2.web.course;
 
+import java.math.BigDecimal;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import moodlev2.application.course.GetTeacherQuizzesService;
 import moodlev2.application.quiz.QuizEngineService;
@@ -9,9 +11,6 @@ import moodlev2.web.quiz.dto.QuizAttemptReviewDto;
 import moodlev2.web.quiz.dto.QuizResultsResponse;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
-import java.math.BigDecimal;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/teacher/quizzes")

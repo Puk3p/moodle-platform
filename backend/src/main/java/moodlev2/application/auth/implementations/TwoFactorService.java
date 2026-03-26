@@ -1,5 +1,7 @@
 package moodlev2.application.auth.implementations;
 
+import static dev.samstevens.totp.util.Utils.getDataUriForImage;
+
 import dev.samstevens.totp.code.CodeVerifier;
 import dev.samstevens.totp.code.DefaultCodeGenerator;
 import dev.samstevens.totp.code.DefaultCodeVerifier;
@@ -20,8 +22,6 @@ import moodlev2.infrastructure.persistence.jpa.entity.UserEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import static dev.samstevens.totp.util.Utils.getDataUriForImage;
-
 @Service
 @RequiredArgsConstructor
 public class TwoFactorService implements ITwoFactorService {
@@ -30,8 +30,10 @@ public class TwoFactorService implements ITwoFactorService {
     @Override
     @Transactional
     public TwoFactorSetupDto setupTwoFactor(String email) {
-        UserEntity user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+        UserEntity user =
+                userRepository
+                        .findByEmail(email)
+                        .orElseThrow(() -> new NotFoundException("User not found"));
 
         if (user.getTwoFaSecret() == null) {
             SecretGenerator secretGenerator = new DefaultSecretGenerator();
@@ -40,14 +42,15 @@ public class TwoFactorService implements ITwoFactorService {
             userRepository.save(user);
         }
 
-        QrData data = new QrData.Builder()
-                .label(user.getEmail())
-                .secret(user.getTwoFaSecret())
-                .issuer("MoodleV2")
-                .algorithm(HashingAlgorithm.SHA1)
-                .digits(6)
-                .period(30)
-                .build();
+        QrData data =
+                new QrData.Builder()
+                        .label(user.getEmail())
+                        .secret(user.getTwoFaSecret())
+                        .issuer("MoodleV2")
+                        .algorithm(HashingAlgorithm.SHA1)
+                        .digits(6)
+                        .period(30)
+                        .build();
 
         QrGenerator generator = new ZxingPngQrGenerator();
 
@@ -66,15 +69,18 @@ public class TwoFactorService implements ITwoFactorService {
     @Override
     @Transactional
     public boolean verifyAndEnable(String email, String code) {
-        UserEntity user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+        UserEntity user =
+                userRepository
+                        .findByEmail(email)
+                        .orElseThrow(() -> new NotFoundException("User not found"));
 
         if (user.getTwoFaSecret() == null) {
             throw new IllegalArgumentException("2FA not initialized");
         }
 
         TimeProvider timeProvider = new SystemTimeProvider();
-        CodeVerifier codeVerifier = new DefaultCodeVerifier(new DefaultCodeGenerator(), timeProvider);
+        CodeVerifier codeVerifier =
+                new DefaultCodeVerifier(new DefaultCodeGenerator(), timeProvider);
 
         boolean isValid = codeVerifier.isValidCode(user.getTwoFaSecret(), code);
 
@@ -88,15 +94,17 @@ public class TwoFactorService implements ITwoFactorService {
 
     @Override
     public boolean verifyCode(String email, String code) {
-        UserEntity user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+        UserEntity user =
+                userRepository
+                        .findByEmail(email)
+                        .orElseThrow(() -> new NotFoundException("User not found"));
 
         if (user.getTwoFaSecret() == null) return false;
 
         TimeProvider timeProvider = new SystemTimeProvider();
-        CodeVerifier codeVerifier = new DefaultCodeVerifier(new DefaultCodeGenerator(), timeProvider);
+        CodeVerifier codeVerifier =
+                new DefaultCodeVerifier(new DefaultCodeGenerator(), timeProvider);
 
         return codeVerifier.isValidCode(user.getTwoFaSecret(), code);
     }
-
 }

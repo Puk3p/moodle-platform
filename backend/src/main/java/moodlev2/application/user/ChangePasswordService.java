@@ -20,8 +20,10 @@ public class ChangePasswordService {
 
     @Transactional
     public void changePassword(String email, ChangePasswordRequest request) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+        User user =
+                userRepository
+                        .findByEmail(email)
+                        .orElseThrow(() -> new NotFoundException("User not found"));
 
         if (!passwordHasher.matches(request.currentPassword(), user.getPasswordHash())) {
             throw new IllegalArgumentException("Current password is incorrect.");
@@ -30,7 +32,8 @@ public class ChangePasswordService {
         if (user.isTwoFaEnabled()) {
 
             if (request.twoFaCode() == null || request.twoFaCode().isBlank()) {
-                throw new IllegalArgumentException("2FA Code is required to change password because 2FA is enabled on your account.");
+                throw new IllegalArgumentException(
+                        "2FA Code is required to change password because 2FA is enabled on your account.");
             }
 
             boolean isCodeValid = twoFactorService.verifyCode(user.getEmail(), request.twoFaCode());

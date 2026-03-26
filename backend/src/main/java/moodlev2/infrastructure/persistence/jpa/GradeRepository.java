@@ -1,10 +1,9 @@
 package moodlev2.infrastructure.persistence.jpa;
 
+import java.util.List;
 import moodlev2.infrastructure.persistence.jpa.entity.GradeEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-
-import java.util.List;
 
 public interface GradeRepository extends JpaRepository<GradeEntity, Long> {
 

@@ -1,5 +1,6 @@
 package moodlev2.application.classs;
 
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import moodlev2.infrastructure.persistence.jpa.ClassRepository;
 import moodlev2.infrastructure.persistence.jpa.entity.ClassEntity;
@@ -7,8 +8,6 @@ import moodlev2.web.admin.dto.CreateClassRequest;
 import moodlev2.web.course.dto.SimpleDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -22,7 +21,6 @@ public class ClassService {
                 .map(c -> new SimpleDto(c.getId(), c.getName()))
                 .toList();
     }
-
 
     @Transactional
     public void createClass(CreateClassRequest request) {

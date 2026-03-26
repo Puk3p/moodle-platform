@@ -7,5 +7,4 @@ public record ModuleItemPreviewDto(
         String meta,
         boolean isAssignment,
         String url,
-        boolean hasPassword
-) {}
+        boolean hasPassword) {}

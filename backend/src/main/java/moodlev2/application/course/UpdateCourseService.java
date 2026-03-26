@@ -1,5 +1,12 @@
 package moodlev2.application.course;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import moodlev2.common.exception.NotFoundException;
 import moodlev2.infrastructure.persistence.jpa.ClassRepository;
@@ -12,14 +19,6 @@ import moodlev2.web.course.dto.edit.ModuleEditDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 @Service
 @RequiredArgsConstructor
 public class UpdateCourseService {
@@ -29,8 +28,11 @@ public class UpdateCourseService {
 
     @Transactional
     public void updateCourse(String currentCode, CourseEditDto dto) {
-        CourseEntity course = courseRepository.findByCode(currentCode)
-                .orElseThrow(() -> new NotFoundException("Course not found: " + currentCode));
+        CourseEntity course =
+                courseRepository
+                        .findByCode(currentCode)
+                        .orElseThrow(
+                                () -> new NotFoundException("Course not found: " + currentCode));
 
         course.setName(dto.title());
         course.setDescription(dto.description());
@@ -57,8 +59,9 @@ public class UpdateCourseService {
     private void updateModules(CourseEntity course, List<ModuleEditDto> moduleDtos) {
         if (moduleDtos == null) return;
 
-        Map<Long, CourseModuleEntity> existingMap = course.getModules().stream()
-                .collect(Collectors.toMap(CourseModuleEntity::getId, Function.identity()));
+        Map<Long, CourseModuleEntity> existingMap =
+                course.getModules().stream()
+                        .collect(Collectors.toMap(CourseModuleEntity::getId, Function.identity()));
 
         List<CourseModuleEntity> updatedList = new ArrayList<>();
 
@@ -80,7 +83,9 @@ public class UpdateCourseService {
             if (modDto.startDate() != null && !modDto.startDate().isEmpty()) {
                 try {
                     entity.setStartDate(LocalDate.parse(modDto.startDate()));
-                } catch (Exception e) { entity.setStartDate(null); }
+                } catch (Exception e) {
+                    entity.setStartDate(null);
+                }
             } else {
                 entity.setStartDate(null);
             }
@@ -88,7 +93,9 @@ public class UpdateCourseService {
             if (modDto.endDate() != null && !modDto.endDate().isEmpty()) {
                 try {
                     entity.setEndDate(LocalDate.parse(modDto.endDate()));
-                } catch (Exception e) { entity.setEndDate(null); }
+                } catch (Exception e) {
+                    entity.setEndDate(null);
+                }
             } else {
                 entity.setEndDate(null);
             }

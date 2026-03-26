@@ -12,5 +12,4 @@ public record QuestionReviewDto(
         boolean isCorrect,
         String studentAnswer,
         List<OptionReviewDto> options,
-        String feedback
-) {}
+        String feedback) {}

@@ -1,5 +1,9 @@
 package moodlev2.application.quiz;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import moodlev2.common.exception.NotFoundException;
@@ -8,11 +12,6 @@ import moodlev2.infrastructure.persistence.jpa.entity.*;
 import moodlev2.web.quiz.dto.CreateQuizDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -29,8 +28,10 @@ public class QuizManagementService {
     public void createQuiz(CreateQuizDto dto) {
         log.info("Creating quiz: {}", dto.title());
 
-        CourseEntity course = courseRepository.findById(dto.courseId())
-                .orElseThrow(() -> new NotFoundException("Course not found"));
+        CourseEntity course =
+                courseRepository
+                        .findById(dto.courseId())
+                        .orElseThrow(() -> new NotFoundException("Course not found"));
 
         CourseModuleEntity module = null;
         if (dto.moduleId() != null) {
@@ -66,17 +67,20 @@ public class QuizManagementService {
                 for (Long qId : dto.specificQuestionIds()) {
                     QuestionEntity bankQ = questionRepository.findById(qId).orElse(null);
                     if (bankQ != null) {
-                        questionsToAdd.add(convertBankQuestionToQuizQuestion(bankQ, quiz, sortOrder++));
+                        questionsToAdd.add(
+                                convertBankQuestionToQuizQuestion(bankQ, quiz, sortOrder++));
                     }
                 }
             }
-        }
-        else if ("RANDOM".equalsIgnoreCase(dto.generationType())) {
+        } else if ("RANDOM".equalsIgnoreCase(dto.generationType())) {
             if (dto.randomRules() != null) {
                 int sortOrder = 1;
                 for (CreateQuizDto.RandomRuleDto rule : dto.randomRules()) {
-                    log.info("Processing Random Rule -> Category ID: {}, Difficulty: {}, Count: {}",
-                            rule.categoryId(), rule.difficulty(), rule.count());
+                    log.info(
+                            "Processing Random Rule -> Category ID: {}, Difficulty: {}, Count: {}",
+                            rule.categoryId(),
+                            rule.difficulty(),
+                            rule.count());
 
                     List<QuestionEntity> candidates;
 
@@ -87,13 +91,22 @@ public class QuizManagementService {
                     }
 
                     if (rule.difficulty() != null && !"ANY".equalsIgnoreCase(rule.difficulty())) {
-                        candidates = candidates.stream()
-                                .filter(q -> q.getDifficulty().name().equalsIgnoreCase(rule.difficulty()))
-                                .collect(Collectors.toList());
+                        candidates =
+                                candidates.stream()
+                                        .filter(
+                                                q ->
+                                                        q.getDifficulty()
+                                                                .name()
+                                                                .equalsIgnoreCase(
+                                                                        rule.difficulty()))
+                                        .collect(Collectors.toList());
                     }
 
                     if (candidates.isEmpty()) {
-                        log.warn("No questions found for rule: Category={}, Difficulty={}", rule.categoryId(), rule.difficulty());
+                        log.warn(
+                                "No questions found for rule: Category={}, Difficulty={}",
+                                rule.categoryId(),
+                                rule.difficulty());
                         continue;
                     }
 
@@ -101,7 +114,10 @@ public class QuizManagementService {
                     int questionsToTake = Math.min(rule.count(), candidates.size());
                     List<QuestionEntity> selected = candidates.subList(0, questionsToTake);
 
-                    log.info("Found {} candidates, selected {} questions.", candidates.size(), selected.size());
+                    log.info(
+                            "Found {} candidates, selected {} questions.",
+                            candidates.size(),
+                            selected.size());
 
                     for (QuestionEntity q : selected) {
                         questionsToAdd.add(convertBankQuestionToQuizQuestion(q, quiz, sortOrder++));
@@ -111,7 +127,8 @@ public class QuizManagementService {
         }
 
         if (questionsToAdd.isEmpty()) {
-            throw new RuntimeException("Could not create quiz: No questions selected or generated. Please check your Question Bank or Rules.");
+            throw new RuntimeException(
+                    "Could not create quiz: No questions selected or generated. Please check your Question Bank or Rules.");
         }
 
         quiz.setQuestions(questionsToAdd);
@@ -121,7 +138,8 @@ public class QuizManagementService {
         log.info("Quiz created successfully with {} questions.", questionsToAdd.size());
     }
 
-    private QuizQuestionEntity convertBankQuestionToQuizQuestion(QuestionEntity bankQ, QuizEntity quiz, int order) {
+    private QuizQuestionEntity convertBankQuestionToQuizQuestion(
+            QuestionEntity bankQ, QuizEntity quiz, int order) {
         QuizQuestionEntity qq = new QuizQuestionEntity();
         qq.setQuiz(quiz);
         qq.setText(bankQ.getText());
@@ -149,8 +167,10 @@ public class QuizManagementService {
 
     @Transactional
     public void updateQuiz(Long quizId, CreateQuizDto dto) {
-        QuizEntity quiz = quizRepository.findById(quizId)
-                .orElseThrow(() -> new NotFoundException("Quiz not found"));
+        QuizEntity quiz =
+                quizRepository
+                        .findById(quizId)
+                        .orElseThrow(() -> new NotFoundException("Quiz not found"));
 
         quiz.setTitle(dto.title());
         quiz.setDescription(dto.description());

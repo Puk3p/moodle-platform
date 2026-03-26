@@ -1,10 +1,12 @@
 package moodlev2.application.questionbank;
 
+import java.util.ArrayList;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
+import moodlev2.application.resource.FileStorageService;
 import moodlev2.infrastructure.persistence.jpa.CategoryRepository;
 import moodlev2.infrastructure.persistence.jpa.QuestionRepository;
 import moodlev2.infrastructure.persistence.jpa.entity.*;
-import moodlev2.application.resource.FileStorageService;
 import moodlev2.web.questionbank.dto.CategoryDto;
 import moodlev2.web.questionbank.dto.CreateCategoryRequest;
 import moodlev2.web.questionbank.dto.CreateQuestionRequest;
@@ -12,9 +14,6 @@ import moodlev2.web.questionbank.dto.QuestionDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -41,13 +40,7 @@ public class QuestionBankService {
     private void flattenCategory(CategoryEntity cat, int level, List<CategoryDto> list) {
         long count = questionRepository.countByCategoryId(cat.getId());
 
-        list.add(new CategoryDto(
-                String.valueOf(cat.getId()),
-                cat.getName(),
-                level,
-                count,
-                true
-        ));
+        list.add(new CategoryDto(String.valueOf(cat.getId()), cat.getName(), level, count, true));
 
         for (CategoryEntity child : cat.getChildren()) {
             flattenCategory(child, level + 1, list);
@@ -66,18 +59,20 @@ public class QuestionBankService {
 
         if (searchTerm != null && !searchTerm.isBlank()) {
             String term = searchTerm.toLowerCase();
-            entities = entities.stream()
-                    .filter(q -> q.getText().toLowerCase().contains(term))
-                    .toList();
+            entities =
+                    entities.stream()
+                            .filter(q -> q.getText().toLowerCase().contains(term))
+                            .toList();
         }
 
         return entities.stream().map(this::mapQuestion).toList();
     }
 
     private QuestionDto mapQuestion(QuestionEntity q) {
-        List<QuestionDto.OptionDto> options = q.getOptions().stream()
-                .map(o -> new QuestionDto.OptionDto(o.getText(), o.isCorrect()))
-                .toList();
+        List<QuestionDto.OptionDto> options =
+                q.getOptions().stream()
+                        .map(o -> new QuestionDto.OptionDto(o.getText(), o.isCorrect()))
+                        .toList();
 
         String catId = q.getCategory() != null ? String.valueOf(q.getCategory().getId()) : null;
 
@@ -89,8 +84,7 @@ public class QuestionBankService {
                 formatEnum(q.getDifficulty().name()),
                 q.getUsageCount(),
                 catId,
-                options
-        );
+                options);
     }
 
     private String formatEnum(String val) {
@@ -109,16 +103,18 @@ public class QuestionBankService {
 
     @Transactional
     public void createQuestion(CreateQuestionRequest request, MultipartFile file) {
-        CategoryEntity category = categoryRepository.findById(request.categoryId())
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+        CategoryEntity category =
+                categoryRepository
+                        .findById(request.categoryId())
+                        .orElseThrow(() -> new RuntimeException("Category not found"));
 
         QuestionEntity question = new QuestionEntity();
         question.setText(request.text());
         question.setType(moodlev2.domain.question.QuestionType.valueOf(request.type()));
-        question.setDifficulty(moodlev2.domain.question.QuestionDifficulty.valueOf(request.difficulty()));
+        question.setDifficulty(
+                moodlev2.domain.question.QuestionDifficulty.valueOf(request.difficulty()));
         question.setCategory(category);
         question.setUsageCount(0);
-
 
         if (request.options() != null && !request.options().isEmpty()) {
             int order = 1;
@@ -147,8 +143,10 @@ public class QuestionBankService {
         category.setSortOrder(0);
 
         if (request.parentId() != null && request.parentId() > 0) {
-            CategoryEntity parent = categoryRepository.findById(request.parentId())
-                    .orElseThrow(() -> new RuntimeException("Parent category not found"));
+            CategoryEntity parent =
+                    categoryRepository
+                            .findById(request.parentId())
+                            .orElseThrow(() -> new RuntimeException("Parent category not found"));
             category.setParent(parent);
         } else {
             category.setParent(null);
@@ -167,8 +165,10 @@ public class QuestionBankService {
 
     @Transactional
     public void updateQuestion(Long id, CreateQuestionRequest request, MultipartFile file) {
-        QuestionEntity q = questionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Question not found"));
+        QuestionEntity q =
+                questionRepository
+                        .findById(id)
+                        .orElseThrow(() -> new RuntimeException("Question not found"));
 
         q.setText(request.text());
         q.setType(moodlev2.domain.question.QuestionType.valueOf(request.type()));

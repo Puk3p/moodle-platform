@@ -7,18 +7,9 @@ public record StudentQuizViewDto(
         Long quizId,
         String title,
         Integer timeLimitMinutes,
-        List<StudentQuestionDto> questions
-) {
+        List<StudentQuestionDto> questions) {
     public record StudentQuestionDto(
-            Long id,
-            String text,
-            Integer points,
-            String type,
-            List<StudentOptionDto> options
-    ) {}
+            Long id, String text, Integer points, String type, List<StudentOptionDto> options) {}
 
-    public record StudentOptionDto(
-            Long id,
-            String text
-    ) {}
+    public record StudentOptionDto(Long id, String text) {}
 }

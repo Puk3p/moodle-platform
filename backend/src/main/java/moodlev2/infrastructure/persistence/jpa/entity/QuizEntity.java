@@ -1,20 +1,22 @@
 package moodlev2.infrastructure.persistence.jpa.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "quizzes")
-@Getter @Setter @NoArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
 public class QuizEntity {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false)
@@ -66,8 +68,7 @@ public class QuizEntity {
     @JoinTable(
             name = "quiz_assigned_classes",
             joinColumns = @JoinColumn(name = "quiz_id"),
-            inverseJoinColumns = @JoinColumn(name = "class_id")
-    )
+            inverseJoinColumns = @JoinColumn(name = "class_id"))
     private List<ClassEntity> assignedClasses = new ArrayList<>();
 
     @Column(name = "created_at")
@@ -86,6 +87,7 @@ public class QuizEntity {
     protected void onUpdate() {
         this.updatedAt = Instant.now();
     }
+
     public boolean isPublished() {
         return "PUBLISHED".equalsIgnoreCase(this.status);
     }

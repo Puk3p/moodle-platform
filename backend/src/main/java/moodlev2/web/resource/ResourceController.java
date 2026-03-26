@@ -1,10 +1,11 @@
 package moodlev2.web.resource;
 
 import jakarta.servlet.http.HttpServletRequest;
+import java.io.IOException;
 import lombok.RequiredArgsConstructor;
+import moodlev2.application.resource.FileStorageService;
 import moodlev2.application.resource.GetResourcesService;
 import moodlev2.application.resource.ResourceService;
-import moodlev2.application.resource.FileStorageService;
 import moodlev2.web.resource.dto.CreateResourceDto;
 import moodlev2.web.resource.dto.ResourcesPageResponse;
 import moodlev2.web.resource.dto.UploadOptionsDto;
@@ -14,8 +15,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
-import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/resources")
@@ -30,8 +29,7 @@ public class ResourceController {
     public ResourcesPageResponse getResources(
             Authentication authentication,
             @RequestParam(required = false, defaultValue = "Fall 2024") String term,
-            @RequestParam(required = false, defaultValue = "current") String scope
-    ) {
+            @RequestParam(required = false, defaultValue = "current") String scope) {
         String email = (authentication != null) ? authentication.getName() : null;
         return getResourcesService.getResourcesForUser(email, term, scope);
     }
@@ -46,18 +44,19 @@ public class ResourceController {
         resourceService.createResource(dto);
     }
 
-
     @GetMapping("/download/{fileName:.+}")
-    public ResponseEntity<Resource> downloadFile(@PathVariable String fileName, HttpServletRequest request) {
+    public ResponseEntity<Resource> downloadFile(
+            @PathVariable String fileName, HttpServletRequest request) {
         Resource resource = fileStorageService.loadFileAsResource(fileName);
 
         String contentType = null;
         try {
-            contentType = request.getServletContext().getMimeType(resource.getFile().getAbsolutePath());
+            contentType =
+                    request.getServletContext().getMimeType(resource.getFile().getAbsolutePath());
         } catch (IOException ex) {
         }
 
-        if(contentType == null) {
+        if (contentType == null) {
             contentType = "application/octet-stream";
         }
 
@@ -70,10 +69,11 @@ public class ResourceController {
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + downloadFileName + "\"")
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + downloadFileName + "\"")
                 .body(resource);
     }
-
 
     @PatchMapping("/{id}/visibility")
     public void toggleVisibility(@PathVariable Long id, @RequestBody VisibilityRequest request) {
@@ -84,8 +84,6 @@ public class ResourceController {
     public void deleteResource(@PathVariable Long id) {
         resourceService.deleteResource(id);
     }
-
-
 
     public record VisibilityRequest(boolean isVisible) {}
 }

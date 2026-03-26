@@ -1,5 +1,9 @@
 package moodlev2.application.course;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import moodlev2.infrastructure.persistence.jpa.AnnouncementRepository;
 import moodlev2.infrastructure.persistence.jpa.CourseRepository;
@@ -11,11 +15,6 @@ import moodlev2.infrastructure.persistence.jpa.entity.ModuleItemEntity;
 import moodlev2.web.course.dto.teacher.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -31,9 +30,8 @@ public class GetTeacherDashboardService {
 
         List<CourseEntity> allCourses = courseRepository.findAll();
 
-        List<TeacherCourseDto> courses = allCourses.stream()
-                .map(this::mapToTeacherCourseDto)
-                .toList();
+        List<TeacherCourseDto> courses =
+                allCourses.stream().map(this::mapToTeacherCourseDto).toList();
 
         List<TeacherActivityDto> activities = new ArrayList<>();
 
@@ -41,38 +39,38 @@ public class GetTeacherDashboardService {
         for (ModuleItemEntity item : recentItems) {
             if (activities.size() >= 3) break;
 
-            activities.add(new TeacherActivityDto(
-                    "resource",
-                    item.getModule().getCourse().getCode(),
-                    "Resource added",
-                    item.getTitle(),
-                    calculateTimeAgo(item.getCreatedAt()),
-                    "cloud_upload"
-            ));
+            activities.add(
+                    new TeacherActivityDto(
+                            "resource",
+                            item.getModule().getCourse().getCode(),
+                            "Resource added",
+                            item.getTitle(),
+                            calculateTimeAgo(item.getCreatedAt()),
+                            "cloud_upload"));
         }
 
         List<AnnouncementEntity> recentAnnouncements = announcementRepository.findAll();
         for (AnnouncementEntity ann : recentAnnouncements) {
             if (activities.size() >= 6) break;
 
-            activities.add(new TeacherActivityDto(
-                    "announcement",
-                    ann.getCourse().getCode(),
-                    "Announcement posted",
-                    "\"" + ann.getTitle() + "\"",
-                    calculateTimeAgo(ann.getCreatedAt()),
-                    "campaign"
-            ));
+            activities.add(
+                    new TeacherActivityDto(
+                            "announcement",
+                            ann.getCourse().getCode(),
+                            "Announcement posted",
+                            "\"" + ann.getTitle() + "\"",
+                            calculateTimeAgo(ann.getCreatedAt()),
+                            "campaign"));
         }
 
-        activities.add(new TeacherActivityDto(
-                "submission",
-                "CS201",
-                "New submission",
-                "Student: Sarah J. • Lab 4",
-                "15 mins ago",
-                "upload_file"
-        ));
+        activities.add(
+                new TeacherActivityDto(
+                        "submission",
+                        "CS201",
+                        "New submission",
+                        "Student: Sarah J. • Lab 4",
+                        "15 mins ago",
+                        "upload_file"));
 
         return new TeacherDashboardResponse(courses, activities);
     }
@@ -102,8 +100,7 @@ public class GetTeacherDashboardService {
                 (course.getStatus() != null ? course.getStatus() : "Draft"),
                 avgGrade,
                 pending,
-                isStarted
-        );
+                isStarted);
     }
 
     private String calculateTimeAgo(Instant created) {

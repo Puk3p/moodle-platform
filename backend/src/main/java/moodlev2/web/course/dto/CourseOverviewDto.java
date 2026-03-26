@@ -7,5 +7,4 @@ public record CourseOverviewDto(
         String prof,
         int progress,
         String nextDeadline,
-        String imageUrl
-) {}
+        String imageUrl) {}

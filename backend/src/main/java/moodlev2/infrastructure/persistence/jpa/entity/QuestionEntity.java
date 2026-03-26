@@ -1,21 +1,22 @@
 package moodlev2.infrastructure.persistence.jpa.entity;
 
 import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
 import moodlev2.domain.question.QuestionDifficulty;
 import moodlev2.domain.question.QuestionType;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 @Entity
 @Table(name = "questions")
-@Getter @Setter
+@Getter
+@Setter
 public class QuestionEntity {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String text;
@@ -37,8 +38,7 @@ public class QuestionEntity {
     @JoinTable(
             name = "question_tags",
             joinColumns = @JoinColumn(name = "question_id"),
-            inverseJoinColumns = @JoinColumn(name = "tag_id")
-    )
+            inverseJoinColumns = @JoinColumn(name = "tag_id"))
     private Set<TagEntity> tags = new HashSet<>();
 
     @Column(name = "image_url")

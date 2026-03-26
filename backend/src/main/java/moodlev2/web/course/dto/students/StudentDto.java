@@ -8,5 +8,4 @@ public record StudentDto(
         String group,
         int progress,
         String lastActivity,
-        String avatarColor
-) {}
+        String avatarColor) {}

@@ -1,7 +1,9 @@
 package moodlev2.web.chat;
 
-import moodlev2.web.chat.dto.ChatMessage;
+import java.security.Principal;
+import java.util.List;
 import moodlev2.application.chat.ChatService;
+import moodlev2.web.chat.dto.ChatMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -11,14 +13,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.security.Principal;
-import java.util.List;
-
 @Controller
 public class ChatController {
 
-    @Autowired
-    private ChatService chatService;
+    @Autowired private ChatService chatService;
 
     @GetMapping("/api/chat/history")
     @ResponseBody

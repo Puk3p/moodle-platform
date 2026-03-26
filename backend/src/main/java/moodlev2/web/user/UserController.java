@@ -1,6 +1,7 @@
 package moodlev2.web.user;
 
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import moodlev2.application.user.ChangePasswordService;
 import moodlev2.application.user.GetMeService;
@@ -12,8 +13,6 @@ import moodlev2.web.user.dto.SessionDto;
 import moodlev2.web.user.dto.UserProfileDto;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
@@ -33,14 +32,14 @@ public class UserController {
     }
 
     @PostMapping("/change-password")
-    public void changePassword(@RequestBody ChangePasswordRequest request, Authentication authentication) {
+    public void changePassword(
+            @RequestBody ChangePasswordRequest request, Authentication authentication) {
         changePasswordService.changePassword(authentication.getName(), request);
     }
 
-
-
     @GetMapping("/sessions")
-    public List<SessionDto> getActiveSessions(Authentication authentication, HttpServletRequest request) {
+    public List<SessionDto> getActiveSessions(
+            Authentication authentication, HttpServletRequest request) {
         String token = extractToken(request);
         return manageSessionsService.getUserSessions(authentication.getName(), token);
     }
@@ -63,7 +62,6 @@ public class UserController {
         }
         return "";
     }
-
 
     @GetMapping("/teachers")
     public List<SimpleDto> getTeachers() {

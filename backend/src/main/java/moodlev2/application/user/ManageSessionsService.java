@@ -1,13 +1,12 @@
 package moodlev2.application.user;
 
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import moodlev2.infrastructure.persistence.jpa.UserSessionRepository;
 import moodlev2.web.user.dto.SessionDto;
 import org.springframework.stereotype.Service;
-
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -17,16 +16,18 @@ public class ManageSessionsService {
 
     public List<SessionDto> getUserSessions(String email, String currentToken) {
         String currentSignature = currentToken.substring(currentToken.length() - 15);
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, HH:mm").withZone(ZoneId.systemDefault());
+        DateTimeFormatter formatter =
+                DateTimeFormatter.ofPattern("MMM dd, HH:mm").withZone(ZoneId.systemDefault());
 
         return sessionRepository.findAllByUserEmail(email).stream()
-                .map(s -> new SessionDto(
-                        s.getId(),
-                        s.getDeviceName(),
-                        s.getIpAddress(),
-                        formatter.format(s.getLastActive()),
-                        s.getTokenSignature().equals(currentSignature)
-                ))
+                .map(
+                        s ->
+                                new SessionDto(
+                                        s.getId(),
+                                        s.getDeviceName(),
+                                        s.getIpAddress(),
+                                        formatter.format(s.getLastActive()),
+                                        s.getTokenSignature().equals(currentSignature)))
                 .toList();
     }
 

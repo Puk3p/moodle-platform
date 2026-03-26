@@ -10,5 +10,4 @@ public record StudentSubmissionSummaryDto(
         String status,
         Integer grade,
         Long submissionId,
-        LocalDateTime submittedAt
-) {}
+        LocalDateTime submittedAt) {}

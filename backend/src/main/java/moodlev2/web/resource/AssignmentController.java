@@ -1,5 +1,7 @@
 package moodlev2.web.resource;
 
+import java.security.Principal;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import moodlev2.application.resource.AssignmentService;
 import moodlev2.web.resource.dto.GradeRequest;
@@ -8,9 +10,6 @@ import moodlev2.web.resource.dto.TeacherAssignmentOverviewDto;
 import moodlev2.web.resource.dto.TeacherSubmissionViewDto;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.security.Principal;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/assignments")
@@ -29,9 +28,9 @@ public class AssignmentController {
             @RequestParam("assignmentId") Long assignmentId,
             @RequestParam(value = "textResponse", required = false) String textResponse,
             @RequestParam(value = "file", required = false) List<MultipartFile> files,
-            Principal principal
-    ) {
-        assignmentService.submitStudentAssignment(assignmentId, textResponse, files, principal.getName());
+            Principal principal) {
+        assignmentService.submitStudentAssignment(
+                assignmentId, textResponse, files, principal.getName());
     }
 
     @GetMapping("/submissions/{id}")

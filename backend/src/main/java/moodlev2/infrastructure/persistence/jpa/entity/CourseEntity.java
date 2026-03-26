@@ -1,21 +1,23 @@
 package moodlev2.infrastructure.persistence.jpa.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "courses")
-@Getter @Setter @NoArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
 public class CourseEntity {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false, unique = true)
@@ -49,6 +51,7 @@ public class CourseEntity {
 
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
     private List<QuizEntity> quizzes = new ArrayList<>();
+
     @Column(name = "created_at")
     private Instant createdAt;
 
@@ -56,8 +59,7 @@ public class CourseEntity {
     @JoinTable(
             name = "course_classes",
             joinColumns = @JoinColumn(name = "course_id"),
-            inverseJoinColumns = @JoinColumn(name = "class_id")
-    )
+            inverseJoinColumns = @JoinColumn(name = "class_id"))
     private Set<ClassEntity> assignedClasses = new HashSet<>();
 
     @PrePersist

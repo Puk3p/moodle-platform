@@ -12,5 +12,4 @@ public record QuizAttemptReviewDto(
         BigDecimal maxScore,
         String timeTaken,
         String submittedAt,
-        List<QuestionReviewDto> questions
-) {}
+        List<QuestionReviewDto> questions) {}

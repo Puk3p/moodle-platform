@@ -1,9 +1,9 @@
 package moodlev2.web.chat.dto;
 
+import java.time.LocalDateTime; // <--- Folosim LocalDateTime
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.time.LocalDateTime; // <--- Folosim LocalDateTime
 
 @Data
 @AllArgsConstructor
@@ -18,6 +18,8 @@ public class ChatMessage {
     private LocalDateTime timestamp;
 
     public enum MessageType {
-        CHAT, JOIN, LEAVE
+        CHAT,
+        JOIN,
+        LEAVE
     }
 }

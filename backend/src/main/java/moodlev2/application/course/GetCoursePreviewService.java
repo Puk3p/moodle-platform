@@ -22,10 +22,13 @@ public class GetCoursePreviewService {
 
     @Transactional(readOnly = true)
     public CoursePreviewDto getPreviewData(String courseCode) {
-        CourseEntity course = courseRepository.findByCode(courseCode)
-                .orElseThrow(() -> new NotFoundException("Course not found"));
+        CourseEntity course =
+                courseRepository
+                        .findByCode(courseCode)
+                        .orElseThrow(() -> new NotFoundException("Course not found"));
 
-        var announcements = announcementRepository.findTop3ByCourseCodeOrderByCreatedAtDesc(courseCode);
+        var announcements =
+                announcementRepository.findTop3ByCourseCodeOrderByCreatedAtDesc(courseCode);
 
         var deadlines = calendarRepository.findTop3ByCourseCodeOrderByEventDateAsc(courseCode);
 

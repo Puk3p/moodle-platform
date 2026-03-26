@@ -1,16 +1,18 @@
 package moodlev2.infrastructure.persistence.jpa.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "categories")
-@Getter @Setter
+@Getter
+@Setter
 public class CategoryEntity {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String name;
@@ -25,5 +27,4 @@ public class CategoryEntity {
     @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY)
     @OrderBy("sortOrder ASC")
     private List<CategoryEntity> children = new ArrayList<>();
-
 }

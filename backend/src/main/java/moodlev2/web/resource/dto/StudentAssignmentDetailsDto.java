@@ -10,5 +10,4 @@ public record StudentAssignmentDetailsDto(
         Integer maxGrade,
         String submissionType,
         String fileUrl,
-        MySubmissionDto mySubmission
-) {}
+        MySubmissionDto mySubmission) {}

@@ -1,5 +1,8 @@
 package moodlev2.application.resource;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import moodlev2.common.exception.NotFoundException;
 import moodlev2.infrastructure.persistence.jpa.CourseRepository;
@@ -12,10 +15,6 @@ import moodlev2.web.resource.dto.ResourceFileDto;
 import moodlev2.web.resource.dto.ResourcesPageResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,8 +29,10 @@ public class GetResourcesService {
         if (email == null) {
             return new ResourcesPageResponse(List.of());
         }
-        UserEntity user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+        UserEntity user =
+                userRepository
+                        .findByEmail(email)
+                        .orElseThrow(() -> new NotFoundException("User not found"));
 
         List<CourseEntity> courses = courseRepository.findAllCoursesForStudent(user.getId());
 
@@ -39,19 +40,16 @@ public class GetResourcesService {
 
         for (CourseEntity course : courses) {
 
-            List<ResourceFileDto> files = course.getModules().stream()
-                    .flatMap(module -> module.getItems().stream())
-                    .filter(ModuleItemEntity::isVisible)
-                    .filter(this::isResource)
-                    .map(this::mapItemToDto)
-                    .collect(Collectors.toList());
+            List<ResourceFileDto> files =
+                    course.getModules().stream()
+                            .flatMap(module -> module.getItems().stream())
+                            .filter(ModuleItemEntity::isVisible)
+                            .filter(this::isResource)
+                            .map(this::mapItemToDto)
+                            .collect(Collectors.toList());
 
             if (!files.isEmpty()) {
-                resultList.add(new CourseResourcesDto(
-                        course.getCode(),
-                        course.getName(),
-                        files
-                ));
+                resultList.add(new CourseResourcesDto(course.getCode(), course.getName(), files));
             }
         }
 
@@ -81,11 +79,6 @@ public class GetResourcesService {
         if (type.equals("link")) sizeLabel = "Website link";
 
         return new ResourceFileDto(
-                String.valueOf(item.getId()),
-                item.getTitle(),
-                sizeLabel,
-                type,
-                item.getUrl()
-        );
+                String.valueOf(item.getId()), item.getTitle(), sizeLabel, type, item.getUrl());
     }
 }

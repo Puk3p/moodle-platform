@@ -15,5 +15,4 @@ public record TeacherSubmissionViewDto(
         Integer currentGrade,
         Integer maxGrade,
         String currentFeedback,
-        String assignmentResourceUrl
-) {}
+        String assignmentResourceUrl) {}

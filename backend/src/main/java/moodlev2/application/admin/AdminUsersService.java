@@ -1,5 +1,6 @@
 package moodlev2.application.admin;
 
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import moodlev2.common.exception.NotFoundException;
 import moodlev2.domain.user.Role;
@@ -11,8 +12,6 @@ import moodlev2.web.admin.dto.AdminStudentDto;
 import moodlev2.web.admin.dto.UpdateStudentRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -31,16 +30,20 @@ public class AdminUsersService {
 
     @Transactional
     public void updateStudent(Long id, UpdateStudentRequest request) {
-        UserEntity user = userRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+        UserEntity user =
+                userRepository
+                        .findById(id)
+                        .orElseThrow(() -> new NotFoundException("User not found"));
 
         user.setFirstName(request.firstName());
         user.setLastName(request.lastName());
         user.setEmail(request.email());
 
         if (request.classId() != null) {
-            ClassEntity clazz = classRepository.findById(request.classId())
-                    .orElseThrow(() -> new NotFoundException("Class not found"));
+            ClassEntity clazz =
+                    classRepository
+                            .findById(request.classId())
+                            .orElseThrow(() -> new NotFoundException("Class not found"));
             user.setClazz(clazz);
         } else {
             user.setClazz(null);
@@ -51,8 +54,10 @@ public class AdminUsersService {
 
     @Transactional
     public void disableTwoFactor(Long id) {
-        UserEntity user = userRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+        UserEntity user =
+                userRepository
+                        .findById(id)
+                        .orElseThrow(() -> new NotFoundException("User not found"));
 
         user.setTwoFaEnabled(false);
         user.setTwoFaSecret(null);
@@ -78,7 +83,6 @@ public class AdminUsersService {
                 user.getEmail(),
                 className,
                 classId,
-                user.isTwoFaEnabled()
-        );
+                user.isTwoFaEnabled());
     }
 }

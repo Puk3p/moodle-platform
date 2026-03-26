@@ -1,5 +1,8 @@
 package moodlev2.application.auth.implementations;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import moodlev2.application.auth.interfaces.IPasswordResetService;
 import moodlev2.common.exception.NotFoundException;
@@ -13,10 +16,6 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.UUID;
-
 @Service
 @RequiredArgsConstructor
 public class PasswordResetService implements IPasswordResetService {
@@ -28,8 +27,10 @@ public class PasswordResetService implements IPasswordResetService {
 
     @Transactional
     public void processForgotPassword(String email) {
-        UserEntity user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+        UserEntity user =
+                userRepository
+                        .findByEmail(email)
+                        .orElseThrow(() -> new NotFoundException("User not found"));
 
         String token = UUID.randomUUID().toString();
         PasswordResetTokenEntity myToken = new PasswordResetTokenEntity();
@@ -44,8 +45,10 @@ public class PasswordResetService implements IPasswordResetService {
 
     @Transactional
     public void resetPassword(String token, String newPassword) {
-        PasswordResetTokenEntity resetToken = tokenRepository.findByToken(token)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid token"));
+        PasswordResetTokenEntity resetToken =
+                tokenRepository
+                        .findByToken(token)
+                        .orElseThrow(() -> new IllegalArgumentException("Invalid token"));
 
         if (resetToken.isExpired()) {
             tokenRepository.delete(resetToken);

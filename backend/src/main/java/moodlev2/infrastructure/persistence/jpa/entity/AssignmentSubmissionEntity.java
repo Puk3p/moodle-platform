@@ -1,8 +1,8 @@
 package moodlev2.infrastructure.persistence.jpa.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
 import java.time.LocalDateTime;
+import lombok.Data;
 
 @Entity
 @Table(name = "assignment_submissions")

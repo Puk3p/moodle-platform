@@ -9,5 +9,4 @@ public record MySubmissionDto(
         String fileName,
         LocalDateTime submittedAt,
         Integer grade,
-        String feedback
-) {}
+        String feedback) {}

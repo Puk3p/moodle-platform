@@ -9,5 +9,4 @@ public record TeacherQuizDto(
         int questionsCount,
         int durationMinutes,
         String attemptsLabel,
-        String lastUpdated
-) {}
+        String lastUpdated) {}

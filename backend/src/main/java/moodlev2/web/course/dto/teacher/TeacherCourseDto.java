@@ -9,5 +9,4 @@ public record TeacherCourseDto(
         String status,
         Double avgGrade,
         Integer pendingSubmissions,
-        boolean isStarted
-) {}
+        boolean isStarted) {}

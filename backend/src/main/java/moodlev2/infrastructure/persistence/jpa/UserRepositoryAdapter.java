@@ -1,12 +1,11 @@
 package moodlev2.infrastructure.persistence.jpa;
 
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import moodlev2.domain.user.User;
 import moodlev2.domain.user.ports.UserRepositoryPort;
 import moodlev2.infrastructure.mapper.UserMapper;
 import org.springframework.stereotype.Component;
-
-import java.util.Optional;
 
 @RequiredArgsConstructor
 @Component
@@ -16,14 +15,12 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
 
     @Override
     public Optional<User> findById(Long id) {
-        return springDataUserRepository.findById(id)
-                .map(userMapper::toDomain);
+        return springDataUserRepository.findById(id).map(userMapper::toDomain);
     }
 
     @Override
     public Optional<User> findByEmail(String email) {
-        return springDataUserRepository.findByEmail(email)
-                .map(userMapper::toDomain);
+        return springDataUserRepository.findByEmail(email).map(userMapper::toDomain);
     }
 
     @Override

@@ -1,11 +1,10 @@
 package moodlev2.infrastructure.mapper;
 
+import java.time.Duration;
+import java.time.Instant;
 import moodlev2.infrastructure.persistence.jpa.entity.QuizEntity;
 import moodlev2.web.course.dto.teacher.TeacherQuizDto;
 import org.springframework.stereotype.Component;
-
-import java.time.Duration;
-import java.time.Instant;
 
 @Component
 public class QuizMapper {
@@ -34,8 +33,7 @@ public class QuizMapper {
                 entity.getQuestionsCount(),
                 entity.getDurationMinutes(),
                 attemptsLabel,
-                lastUpdated
-        );
+                lastUpdated);
     }
 
     private String calculateTimeAgo(Instant time) {

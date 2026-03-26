@@ -1,5 +1,8 @@
 package moodlev2.application.auth.implementations;
 
+import java.time.Duration;
+import java.util.EnumSet;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import moodlev2.application.auth.interfaces.IRegisterService;
 import moodlev2.domain.auth.ports.TokenServicePort;
@@ -11,10 +14,6 @@ import moodlev2.web.auth.dto.AuthResponse;
 import moodlev2.web.auth.dto.RegisterRequest;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
-import java.util.EnumSet;
-import java.util.Set;
-
 @RequiredArgsConstructor
 @Service
 public class RegisterService implements IRegisterService {
@@ -24,7 +23,6 @@ public class RegisterService implements IRegisterService {
     private final UserRepositoryPort userRepository;
     private final TokenServicePort tokenService;
     private final PasswordHasherPort passwordHasher;
-
 
     @Override
     public AuthResponse register(RegisterRequest request) {
@@ -55,11 +53,8 @@ public class RegisterService implements IRegisterService {
 
         User saved = userRepository.save(user);
 
-        String accesToken = tokenService.generateToken(
-                saved,
-                ACCES_TOKEN_VALIDITY,
-                Set.of("access:api")
-        );
+        String accesToken =
+                tokenService.generateToken(saved, ACCES_TOKEN_VALIDITY, Set.of("access:api"));
 
         return new AuthResponse(
                 accesToken,
@@ -68,7 +63,6 @@ public class RegisterService implements IRegisterService {
                 saved.getFirstName(),
                 saved.getLastName(),
                 saved.getRoles(),
-                false
-        );
+                false);
     }
 }

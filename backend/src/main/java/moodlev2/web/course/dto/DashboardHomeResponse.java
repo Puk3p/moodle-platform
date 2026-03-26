@@ -7,5 +7,4 @@ public record DashboardHomeResponse(
         List<ActiveCourseDto> activeCourses,
         List<CompletedCourseDto> completedCourses,
         List<DeadlineDto> deadlines,
-        List<ActivityDto> activities
-) {}
+        List<ActivityDto> activities) {}

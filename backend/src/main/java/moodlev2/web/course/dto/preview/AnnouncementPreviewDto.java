@@ -1,7 +1,3 @@
 package moodlev2.web.course.dto.preview;
 
-public record AnnouncementPreviewDto(
-        String title,
-        String body,
-        String timeAgo
-) {}
+public record AnnouncementPreviewDto(String title, String body, String timeAgo) {}
