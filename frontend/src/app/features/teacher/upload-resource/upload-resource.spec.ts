@@ -1,4 +1,6 @@
+import { provideHttpClient } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
 import { UploadResourceComponent } from './upload-resource';
 
@@ -8,7 +10,8 @@ describe('UploadResource', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [UploadResourceComponent]
+      imports: [UploadResourceComponent],
+      providers: [provideHttpClient(), provideRouter([])],
     })
     .compileComponents();
 

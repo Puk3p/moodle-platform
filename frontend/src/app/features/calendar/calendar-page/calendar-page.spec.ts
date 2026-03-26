@@ -1,4 +1,6 @@
+import { provideHttpClient } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
 import { CalendarPageComponent } from './calendar-page';
 
@@ -8,7 +10,8 @@ describe('CalendarPage', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [CalendarPageComponent]
+      imports: [CalendarPageComponent],
+      providers: [provideHttpClient(), provideRouter([])],
     })
     .compileComponents();
 

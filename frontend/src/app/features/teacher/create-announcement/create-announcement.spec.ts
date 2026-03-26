@@ -1,4 +1,6 @@
+import { provideHttpClient } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
 import { CreateAnnouncementComponent } from './create-announcement';
 
@@ -8,7 +10,8 @@ describe('CreateAnnouncementComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [CreateAnnouncementComponent]
+      imports: [CreateAnnouncementComponent],
+      providers: [provideHttpClient(), provideRouter([])],
     })
     .compileComponents();
 

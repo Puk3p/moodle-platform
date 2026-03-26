@@ -1,4 +1,6 @@
+import { provideHttpClient } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
 import { ResourcesPageComponent } from './resources-page';
 
@@ -8,7 +10,8 @@ describe('ResourcesPage', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ResourcesPageComponent]
+      imports: [ResourcesPageComponent],
+      providers: [provideHttpClient(), provideRouter([])],
     })
     .compileComponents();
 

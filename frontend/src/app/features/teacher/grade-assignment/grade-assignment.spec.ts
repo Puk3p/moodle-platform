@@ -1,4 +1,6 @@
+import { provideHttpClient } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
 import { GradeAssignmentComponent } from './grade-assignment';
 
@@ -8,7 +10,8 @@ describe('GradeAssignmentComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [GradeAssignmentComponent]
+      imports: [GradeAssignmentComponent],
+      providers: [provideHttpClient(), provideRouter([])],
     })
     .compileComponents();
 

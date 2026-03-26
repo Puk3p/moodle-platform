@@ -1,4 +1,6 @@
+import { provideHttpClient } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
 import { ManageQuizzesComponent } from './manage-quizzes';
 
@@ -7,7 +9,8 @@ describe('ManageQuizzes', () => {
   let fixture: ComponentFixture<ManageQuizzesComponent>;
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ManageQuizzesComponent]
+      imports: [ManageQuizzesComponent],
+      providers: [provideHttpClient(), provideRouter([])],
     })
     .compileComponents();
 

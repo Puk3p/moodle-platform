@@ -1,4 +1,6 @@
+import { provideHttpClient } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
 import { AssignmentDashboardComponent } from './assignment-dashboard';
 
@@ -8,7 +10,8 @@ describe('AssignmentDashboardComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [AssignmentDashboardComponent]
+      imports: [AssignmentDashboardComponent],
+      providers: [provideHttpClient(), provideRouter([])],
     })
     .compileComponents();
 

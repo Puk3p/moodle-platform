@@ -1,4 +1,6 @@
+import { provideHttpClient } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
 import { SettingsPageComponent } from './settings-page';
 
@@ -7,7 +9,8 @@ describe('SettingsPage', () => {
   let fixture: ComponentFixture<SettingsPageComponent>;
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [SettingsPageComponent]
+      imports: [SettingsPageComponent],
+      providers: [provideHttpClient(), provideRouter([])],
     })
     .compileComponents();
 
