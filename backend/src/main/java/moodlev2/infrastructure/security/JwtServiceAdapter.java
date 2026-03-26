@@ -26,8 +26,12 @@ public class JwtServiceAdapter implements TokenServicePort {
     public JwtServiceAdapter(
             @Value("${security.jwt.secret}") String secret,
             @Value("${security.jwt.issuer:moodlev2}") String issuer) {
-        this.signingKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.signingKey = buildKey(secret);
         this.issuer = issuer;
+    }
+
+    private static Key buildKey(String secret) {
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
     @Override
@@ -69,7 +73,7 @@ public class JwtServiceAdapter implements TokenServicePort {
             Claims claims = jws.getBody();
 
             Long userId = claims.get("uid", Long.class);
-            if (!(userId instanceof Long)) {
+            if (userId == null) {
                 throw new JwtException("Invalid user ID in token");
             }
 

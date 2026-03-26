@@ -1,5 +1,6 @@
 package moodlev2.application.resource;
 
+import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
@@ -7,6 +8,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
@@ -16,20 +19,23 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class FileStorageService {
 
-    private final Path fileStorageLocation;
+    private static final Logger log = LoggerFactory.getLogger(FileStorageService.class);
 
-    public FileStorageService() {
-        this.fileStorageLocation = Paths.get("uploads").toAbsolutePath().normalize();
+    private final Path fileStorageLocation = Paths.get("uploads").toAbsolutePath().normalize();
+
+    @PostConstruct
+    void init() {
         try {
             Files.createDirectories(this.fileStorageLocation);
-        } catch (Exception ex) {
-            throw new RuntimeException(
+        } catch (IOException ex) {
+            throw new IllegalStateException(
                     "Could not create the directory where the uploaded files will be stored.", ex);
         }
     }
 
     public String storeFile(MultipartFile file) {
-        String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
+        String rawName = file.getOriginalFilename();
+        String originalFileName = StringUtils.cleanPath(rawName != null ? rawName : "unknown");
 
         String fileName = UUID.randomUUID().toString() + "_" + originalFileName;
 
@@ -74,7 +80,7 @@ public class FileStorageService {
 
             Files.deleteIfExists(filePath);
         } catch (IOException ex) {
-            System.err.println("Warning: Could not delete file: " + fileUrl);
+            log.warn("Could not delete file: {}", fileUrl);
         }
     }
 }
