@@ -71,7 +71,6 @@ export class Login implements OnInit {
     }
 
     if (token) {
-        console.log("Token găsit (metoda fallback):", token);
         this.authService.handleOAuthCallback(token);
 
         if (this.authService.isLoggedIn()) {

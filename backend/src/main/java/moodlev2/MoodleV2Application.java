@@ -2,9 +2,6 @@ package moodlev2;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Bean;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @SpringBootApplication
 public class MoodleV2Application {
@@ -13,16 +10,8 @@ public class MoodleV2Application {
         SpringApplication.run(MoodleV2Application.class, args);
     }
 
-    @Bean
-    public WebMvcConfigurer corsConfigurer() {
-        return new WebMvcConfigurer() {
-            @Override
-            public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**")
-                        .allowedOrigins("*")
-                        .allowedMethods("*")
-                        .allowedHeaders("*");
-            }
-        };
-    }
+    // CORS is configured centrally in CorsConfig and applied through Spring Security so that a
+    // single, environment-driven allow-list governs every request. A second wildcard MVC-level
+    // CORS mapping used to live here; it was removed because it silently re-opened the API to any
+    // origin and overrode the secure configuration.
 }

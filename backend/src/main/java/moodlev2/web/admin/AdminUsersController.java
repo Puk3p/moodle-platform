@@ -5,11 +5,13 @@ import lombok.RequiredArgsConstructor;
 import moodlev2.application.admin.AdminUsersService;
 import moodlev2.web.admin.dto.AdminStudentDto;
 import moodlev2.web.admin.dto.UpdateStudentRequest;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/admin/students")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminUsersController {
 
     private final AdminUsersService adminUsersService;

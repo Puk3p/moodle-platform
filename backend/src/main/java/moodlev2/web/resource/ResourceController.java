@@ -13,6 +13,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,6 +41,7 @@ public class ResourceController {
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public void uploadResource(@ModelAttribute CreateResourceDto dto) {
         resourceService.createResource(dto);
     }
@@ -76,11 +78,13 @@ public class ResourceController {
     }
 
     @PatchMapping("/{id}/visibility")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public void toggleVisibility(@PathVariable Long id, @RequestBody VisibilityRequest request) {
         resourceService.toggleVisibility(id, request.isVisible());
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public void deleteResource(@PathVariable Long id) {
         resourceService.deleteResource(id);
     }

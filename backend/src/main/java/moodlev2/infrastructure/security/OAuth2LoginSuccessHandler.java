@@ -11,6 +11,7 @@ import moodlev2.domain.auth.ports.TokenServicePort;
 import moodlev2.domain.user.Role;
 import moodlev2.domain.user.User;
 import moodlev2.domain.user.ports.UserRepositoryPort;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -22,6 +23,9 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final TokenServicePort tokenService;
     private final UserRepositoryPort userRepository;
+
+    @Value("${app.frontend.url:http://localhost:4200}")
+    private String frontendUrl;
 
     @Override
     public void onAuthenticationSuccess(
@@ -61,7 +65,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
         String token = tokenService.generateToken(user, Duration.ofHours(1), Set.of("access:api"));
 
-        response.sendRedirect("http://localhost:4200/login?token=" + token);
+        response.sendRedirect(frontendUrl + "/login?token=" + token);
     }
 
     private String fistNonNull(String... valori) {

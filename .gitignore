@@ -42,5 +42,9 @@ comentarii.py
 .env
 backend/.env
 
+### DB connection helper scripts (may contain credentials) ###
+**/connectors/
+connect_*.sh
+
 ### Uploads ###
 uploads/
