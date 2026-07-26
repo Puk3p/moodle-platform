@@ -5,12 +5,12 @@ import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import moodlev2.application.auth.interfaces.IPasswordResetService;
-import moodlev2.common.exception.NotFoundException;
 import moodlev2.domain.user.ports.PasswordHasherPort;
 import moodlev2.infrastructure.persistence.jpa.PasswordResetTokenRepository;
 import moodlev2.infrastructure.persistence.jpa.SpringDataUserRepository;
 import moodlev2.infrastructure.persistence.jpa.entity.PasswordResetTokenEntity;
 import moodlev2.infrastructure.persistence.jpa.entity.UserEntity;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -25,22 +25,32 @@ public class PasswordResetService implements IPasswordResetService {
     private final JavaMailSender mailSender;
     private final PasswordHasherPort passwordHasher;
 
+    @Value("${app.frontend.url:http://localhost:4200}")
+    private String frontendUrl;
+
     @Transactional
     public void processForgotPassword(String email) {
-        UserEntity user =
-                userRepository
-                        .findByEmail(email)
-                        .orElseThrow(() -> new NotFoundException("User not found"));
+        if (email == null || email.isBlank()) {
+            return;
+        }
+        String normalized = email.trim().toLowerCase();
 
-        String token = UUID.randomUUID().toString();
-        PasswordResetTokenEntity myToken = new PasswordResetTokenEntity();
-        myToken.setToken(token);
-        myToken.setUser(user);
-        myToken.setExpiryDate(Instant.now().plus(1, ChronoUnit.HOURS)); // expira intr o ora
+        // Do not disclose whether the address is registered: always return normally. An e-mail is
+        // only sent when the account actually exists.
+        userRepository
+                .findByEmail(normalized)
+                .ifPresent(
+                        user -> {
+                            String token = UUID.randomUUID().toString();
+                            PasswordResetTokenEntity myToken = new PasswordResetTokenEntity();
+                            myToken.setToken(token);
+                            myToken.setUser(user);
+                            myToken.setExpiryDate(Instant.now().plus(1, ChronoUnit.HOURS));
 
-        tokenRepository.save(myToken);
+                            tokenRepository.save(myToken);
 
-        sendEmail(user.getEmail(), token);
+                            sendEmail(user.getEmail(), token);
+                        });
     }
 
     @Transactional
@@ -55,6 +65,8 @@ public class PasswordResetService implements IPasswordResetService {
             throw new IllegalArgumentException("Token expired");
         }
 
+        moodlev2.common.util.PasswordPolicy.validate(newPassword);
+
         UserEntity user = resetToken.getUser();
         user.setPasswordHash(passwordHasher.hash(newPassword));
         userRepository.save(user);
@@ -63,7 +75,7 @@ public class PasswordResetService implements IPasswordResetService {
     }
 
     public void sendEmail(String to, String token) {
-        String link = "http://localhost:4200/#/reset-password?token=" + token;
+        String link = frontendUrl + "/#/reset-password?token=" + token;
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(to);

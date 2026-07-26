@@ -43,6 +43,8 @@ public class ChangePasswordService {
             }
         }
 
+        moodlev2.common.util.PasswordPolicy.validate(request.newPassword());
+
         String newHash = passwordHasher.hash(request.newPassword());
         user.setPasswordHash(newHash);
 
