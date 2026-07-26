@@ -31,6 +31,17 @@ public final class JwtServiceAdapter implements TokenServicePort {
     }
 
     private static Key buildKey(String secret) {
+        if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+            throw new IllegalStateException(
+                    "JWT secret (security.jwt.secret) must be set and at least 32 bytes long. "
+                            + "Configure a strong, random value via the JWT_SECRET environment"
+                            + " variable.");
+        }
+        if (secret.contains("your-secret-key")) {
+            throw new IllegalStateException(
+                    "JWT secret is still set to the example placeholder. Set a real JWT_SECRET"
+                            + " before running in production.");
+        }
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 

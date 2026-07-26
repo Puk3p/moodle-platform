@@ -7,6 +7,7 @@ import moodlev2.web.course.dto.*;
 import moodlev2.web.course.dto.edit.CourseEditDto;
 import moodlev2.web.course.dto.preview.CoursePreviewDto;
 import moodlev2.web.course.dto.students.EnrolledStudentsResponse;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -57,16 +58,19 @@ public class CourseController {
     }
 
     @GetMapping("/{code}/edit")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public CourseEditDto getCourseForEdit(@PathVariable String code) {
         return getCourseEditService.getCourseForEdit(code);
     }
 
     @GetMapping("/{code}/students")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public EnrolledStudentsResponse getEnrolledStudents(@PathVariable String code) {
         return getEnrolledStudentsService.getEnrolledStudents(code);
     }
 
     @PutMapping("/{code}")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public void updateCourse(@PathVariable String code, @RequestBody CourseEditDto dto) {
         updateCourseService.updateCourse(code, dto);
     }

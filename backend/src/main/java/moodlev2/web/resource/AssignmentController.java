@@ -8,6 +8,7 @@ import moodlev2.web.resource.dto.GradeRequest;
 import moodlev2.web.resource.dto.StudentAssignmentDetailsDto;
 import moodlev2.web.resource.dto.TeacherAssignmentOverviewDto;
 import moodlev2.web.resource.dto.TeacherSubmissionViewDto;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -34,16 +35,19 @@ public class AssignmentController {
     }
 
     @GetMapping("/submissions/{id}")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public TeacherSubmissionViewDto getSubmission(@PathVariable Long id) {
         return assignmentService.getSubmissionForGrading(id);
     }
 
     @PostMapping("/submissions/{id}/grade")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public void gradeSubmission(@PathVariable Long id, @RequestBody GradeRequest request) {
         assignmentService.gradeSubmission(id, request.grade(), request.feedback());
     }
 
     @GetMapping("/{id}/overview")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public TeacherAssignmentOverviewDto getOverview(@PathVariable Long id) {
         return assignmentService.getAssignmentOverview(id);
     }

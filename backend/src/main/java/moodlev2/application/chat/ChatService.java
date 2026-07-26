@@ -35,9 +35,11 @@ public class ChatService {
                 .collect(Collectors.toList());
     }
 
-    public void sendPrivateMessage(ChatMessage chatMessage) {
+    public void sendPrivateMessage(String senderEmail, ChatMessage chatMessage) {
+        chatMessage.setSender(senderEmail);
+
         ChatMessageEntity entity = new ChatMessageEntity();
-        entity.setSender(chatMessage.getSender());
+        entity.setSender(senderEmail);
         entity.setRecipient(chatMessage.getRecipient());
         entity.setContent(chatMessage.getContent());
         entity.setPrivate(true);

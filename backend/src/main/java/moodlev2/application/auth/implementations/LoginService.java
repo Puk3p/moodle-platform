@@ -25,6 +25,11 @@ public class LoginService implements ILoginService {
     private static final Duration ACCESS_TOKEN_VALIDITY = Duration.ofHours(1);
     private static final Duration TEMP_TOKEN_VALIDITY = Duration.ofMinutes(5);
 
+    // A valid BCrypt hash of a random value, compared against when the account is not found so
+    // that authentication timing is constant regardless of account existence.
+    private static final String DUMMY_HASH =
+            "$2a$10$7EqJtq98hPqEX7fNZaFWoOa8n8Q9m0m3p3vJ3n1qQ9k1s5m8n0uK";
+
     private final UserRepositoryPort userRepository;
     private final PasswordHasherPort passwordHasher;
     private final TokenServicePort tokenService;
@@ -45,16 +50,20 @@ public class LoginService implements ILoginService {
         Optional<User> idkUser = userRepository.findByEmail(normalizedEmail);
 
         if (idkUser.isEmpty()) {
+            // Run a dummy hash comparison so the response time does not reveal whether the
+            // account exists, and return the same generic message as a wrong password would.
+            passwordHasher.matches(request.password, DUMMY_HASH);
             throw new IllegalArgumentException("Invalid email or password");
         }
 
         User user = idkUser.get();
-        if (!user.isEnabled()) {
-            throw new IllegalArgumentException("User account is disabled");
-        }
 
         if (!passwordHasher.matches(request.password, user.getPasswordHash())) {
-            throw new IllegalArgumentException("Invalid password");
+            throw new IllegalArgumentException("Invalid email or password");
+        }
+
+        if (!user.isEnabled()) {
+            throw new IllegalArgumentException("User account is disabled");
         }
 
         if (user.isTwoFaEnabled()) {
