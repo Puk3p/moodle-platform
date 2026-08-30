@@ -37,7 +37,7 @@ jobs:
           target: "/tmp/deploy-backend/"
           strip_components: 2
 
-      - name: Configurare AWS, Permisiuni & Restart
+      - name: Config AWS, Permissions & Restart
         uses: appleboy/ssh-action@v1.0.3
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
