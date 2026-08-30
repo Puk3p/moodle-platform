@@ -11,6 +11,9 @@ import {
   faCertificate,
   faBoxArchive,
   faTrophy,
+  faInbox,
+  faCalendarDay,
+  faFolderOpen,
 } from '@fortawesome/free-solid-svg-icons';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import {
@@ -38,6 +41,9 @@ export class DashboardHomeComponent implements OnInit {
   faCertificate = faCertificate;
   faBoxArchive = faBoxArchive;
   faTrophy = faTrophy;
+  faInbox = faInbox;
+  faCalendarDay = faCalendarDay;
+  faFolderOpen = faFolderOpen;
 
   activeCourses: ActiveCourse[] = [];
   completedCourses: CompletedCourse[] = [];
