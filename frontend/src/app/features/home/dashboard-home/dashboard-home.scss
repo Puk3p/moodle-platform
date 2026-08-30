@@ -50,7 +50,7 @@
 .courses-grid {
   margin-top: 16px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 18px;
 }
 
@@ -92,7 +92,7 @@
 
 .course-thumb {
   width: 100%;
-  aspect-ratio: 21 / 9;
+  height: 140px;
   border-radius: 12px;
   background-position: center;
   background-size: cover;
