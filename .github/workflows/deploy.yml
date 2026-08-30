@@ -54,7 +54,10 @@ jobs:
             rm -rf /tmp/deploy-backend
             
             # 2. Descarcă secretele direct la locația EnvironmentFile
-            aws ssm get-parameters-by-path \
+            export AWS_SHARED_CREDENTIALS_FILE="/root/.aws/credentials"
+            export AWS_CONFIG_FILE="/root/.aws/config"
+            /usr/local/bin/aws ssm get-parameters-by-path \
+              --region eu-north-1 \
               --path "/config/app/" \
               --with-decryption \
               --query "Parameters[*].[Name,Value]" \
