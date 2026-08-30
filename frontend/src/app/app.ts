@@ -48,21 +48,7 @@ export class App implements OnInit {
   }
 
   ngOnInit() {
-    let token = null;
-    if (window.location.hash.includes('token=')) {
-      const hash = window.location.hash.substring(1);
-      const urlParams = new URLSearchParams(hash);
-      token = urlParams.get('token');
-    }
 
-    if (token) {
-      this.authService.handleOAuthCallback(token);
-      
-      if (this.authService.isLoggedIn()) {
-         window.history.replaceState({}, document.title, window.location.pathname);
-         this.router.navigate(['/dashboard']);
-      }
-    }
 
     this.router.events.pipe(
       filter((event: any) => event instanceof NavigationEnd)

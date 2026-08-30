@@ -64,22 +64,6 @@ export class Login implements OnInit {
   }
 
   ngOnInit(): void {
-    let token = this.route.snapshot.queryParamMap.get('token');
-
-    if (!token && window.location.hash.includes('token=')) {
-        const hash = window.location.hash.substring(1);
-        const urlParams = new URLSearchParams(hash);
-        token = urlParams.get('token');
-    }
-
-    if (token) {
-        this.authService.handleOAuthCallback(token);
-
-        if (this.authService.isLoggedIn()) {
-          window.history.replaceState({}, document.title, window.location.pathname + '#/dashboard');
-          this.router.navigate(['/dashboard']);
-        }
-    }
   }
   
   onSubmit(): void {
