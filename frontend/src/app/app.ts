@@ -48,8 +48,12 @@ export class App implements OnInit {
   }
 
   ngOnInit() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
+    let token = null;
+    if (window.location.hash.includes('token=')) {
+      const hash = window.location.hash.substring(1);
+      const urlParams = new URLSearchParams(hash);
+      token = urlParams.get('token');
+    }
 
     if (token) {
       this.authService.handleOAuthCallback(token);

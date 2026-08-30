@@ -8,8 +8,10 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import moodlev2.common.util.TokenHashUtil;
 import moodlev2.domain.auth.ports.TokenServicePort;
 import moodlev2.domain.user.Role;
+import moodlev2.infrastructure.persistence.jpa.UserSessionRepository;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -23,6 +25,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final TokenServicePort tokenServicePort;
+    private final UserSessionRepository userSessionRepository;
 
     @Override
     protected void doFilterInternal(
@@ -35,19 +38,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = authHeader.substring(7);
 
             if (tokenServicePort.isValid(token)) {
-                TokenServicePort.TokenPayload payload = tokenServicePort.parse(token);
+                // Verify the token has not been revoked (session row must still exist).
+                String tokenHash = TokenHashUtil.sha256(token);
+                boolean sessionExists = userSessionRepository.existsByTokenSignature(tokenHash);
 
-                Set<SimpleGrantedAuthority> authorities =
-                        payload.roles().stream()
-                                .map(Role::name)
-                                .map(roleName -> "ROLE_" + roleName)
-                                .map(SimpleGrantedAuthority::new)
-                                .collect(Collectors.toSet());
+                if (sessionExists) {
+                    TokenServicePort.TokenPayload payload = tokenServicePort.parse(token);
 
-                Authentication authentication =
-                        new UsernamePasswordAuthenticationToken(payload.email(), null, authorities);
+                    Set<SimpleGrantedAuthority> authorities =
+                            payload.roles().stream()
+                                    .map(Role::name)
+                                    .map(roleName -> "ROLE_" + roleName)
+                                    .map(SimpleGrantedAuthority::new)
+                                    .collect(Collectors.toSet());
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    Authentication authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    payload.email(), null, authorities);
+
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
             }
         }
 

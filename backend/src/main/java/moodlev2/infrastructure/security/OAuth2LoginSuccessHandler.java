@@ -7,10 +7,14 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import moodlev2.common.util.TokenHashUtil;
 import moodlev2.domain.auth.ports.TokenServicePort;
 import moodlev2.domain.user.Role;
 import moodlev2.domain.user.User;
 import moodlev2.domain.user.ports.UserRepositoryPort;
+import moodlev2.infrastructure.persistence.jpa.SpringDataUserRepository;
+import moodlev2.infrastructure.persistence.jpa.UserSessionRepository;
+import moodlev2.infrastructure.persistence.jpa.entity.UserSessionEntity;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -23,6 +27,8 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final TokenServicePort tokenService;
     private final UserRepositoryPort userRepository;
+    private final SpringDataUserRepository jpaUserRepository;
+    private final UserSessionRepository userSessionRepository;
 
     @Value("${app.frontend.url:http://localhost:4200}")
     private String frontendUrl;
@@ -65,7 +71,18 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
         String token = tokenService.generateToken(user, Duration.ofHours(1), Set.of("access:api"));
 
-        response.sendRedirect(frontendUrl + "/login?token=" + token);
+        // Save a session so the JWT filter accepts this token.
+        var userEntity = jpaUserRepository.findByEmail(email).orElse(null);
+        if (userEntity != null) {
+            UserSessionEntity session = new UserSessionEntity();
+            session.setUser(userEntity);
+            session.setIpAddress(request.getRemoteAddr());
+            session.setDeviceName("OAuth2 Login");
+            session.setTokenSignature(TokenHashUtil.sha256(token));
+            userSessionRepository.save(session);
+        }
+
+        response.sendRedirect(frontendUrl + "/login#token=" + token);
     }
 
     private String fistNonNull(String... valori) {

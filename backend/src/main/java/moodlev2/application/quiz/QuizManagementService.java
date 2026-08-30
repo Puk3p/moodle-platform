@@ -10,6 +10,7 @@ import moodlev2.common.exception.NotFoundException;
 import moodlev2.infrastructure.persistence.jpa.*;
 import moodlev2.infrastructure.persistence.jpa.entity.*;
 import moodlev2.web.quiz.dto.CreateQuizDto;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,7 @@ public class QuizManagementService {
     private final CourseModuleRepository moduleRepository;
     private final QuestionRepository questionRepository;
     private final ClassRepository classRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional
     public void createQuiz(CreateQuizDto dto) {
@@ -48,7 +50,9 @@ public class QuizManagementService {
         quiz.setPassingScore(dto.passingScore());
         quiz.setMaxAttempts(dto.maxAttempts());
         quiz.setShuffleOptions(dto.shuffleOptions());
-        quiz.setPassword(dto.password());
+        if (dto.password() != null && !dto.password().isBlank()) {
+            quiz.setPassword(passwordEncoder.encode(dto.password()));
+        }
         quiz.setAvailableFrom(dto.availableFrom());
         quiz.setAvailableTo(dto.availableTo());
         quiz.setGenerationType(dto.generationType());
@@ -176,6 +180,9 @@ public class QuizManagementService {
         quiz.setDescription(dto.description());
         quiz.setDurationMinutes(dto.timeLimitMinutes());
         quiz.setPassingScore(dto.passingScore());
+        if (dto.password() != null && !dto.password().isBlank()) {
+            quiz.setPassword(passwordEncoder.encode(dto.password()));
+        }
 
         quizRepository.save(quiz);
     }

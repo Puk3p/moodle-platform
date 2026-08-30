@@ -17,5 +17,6 @@ public interface TokenServicePort {
 
     boolean isValid(String token);
 
-    record TokenPayload(Long userId, String email, Set<Role> roles, Instant expiresAt) {}
+    record TokenPayload(
+            String jti, Long userId, String email, Set<Role> roles, Instant expiresAt) {}
 }

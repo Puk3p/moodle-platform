@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import moodlev2.application.auth.interfaces.ILoginService;
+import moodlev2.common.util.TokenHashUtil;
 import moodlev2.domain.auth.ports.TokenServicePort;
 import moodlev2.domain.user.Role;
 import moodlev2.domain.user.User;
@@ -140,13 +141,7 @@ public class LoginService implements ILoginService {
         session.setUser(userEntity);
         session.setIpAddress(ipAddress);
         session.setDeviceName(parseUserAgent(userAgent));
-
-        String signature =
-                accessToken.length() > 15
-                        ? accessToken.substring(accessToken.length() - 15)
-                        : accessToken;
-
-        session.setTokenSignature(signature);
+        session.setTokenSignature(TokenHashUtil.sha256(accessToken));
 
         userSessionRepository.save(session);
     }

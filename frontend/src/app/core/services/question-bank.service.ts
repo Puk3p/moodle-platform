@@ -2,13 +2,14 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Category, Question } from '../models/question-bank.model';
+import { API_BASE_URL } from '../config/api-endpoints';
 
 @Injectable({
   providedIn: 'root'
 })
 export class QuestionBankService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:8080/api/question-bank'; 
+  private apiUrl = `${API_BASE_URL}/api/question-bank`;
 
   getCategories(): Observable<Category[]> {
     return this.http.get<Category[]>(`${this.apiUrl}/categories`);
