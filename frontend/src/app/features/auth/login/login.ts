@@ -16,6 +16,7 @@ import { faFacebook, faGoogle } from '@fortawesome/free-brands-svg-icons';
 
 import { AuthService } from '../../../core/services/auth.service';
 import { LoginRequest } from '../../../core/models/auth/login.request';
+import { API_BASE_URL } from '../../../core/config/api-endpoints';
 
 @Component({
   selector: 'app-login',
@@ -65,8 +66,9 @@ export class Login implements OnInit {
   ngOnInit(): void {
     let token = this.route.snapshot.queryParamMap.get('token');
 
-    if (!token) {
-        const urlParams = new URLSearchParams(window.location.search);
+    if (!token && window.location.hash.includes('token=')) {
+        const hash = window.location.hash.substring(1);
+        const urlParams = new URLSearchParams(hash);
         token = urlParams.get('token');
     }
 
@@ -133,7 +135,7 @@ export class Login implements OnInit {
   }
 
   loginWithGoogle(): void {
-    window.location.href = 'http://localhost:8080/api/auth/google';
+    window.location.href = `${API_BASE_URL}/api/auth/google`;
   }
 
   loginWithFacebook(): void {

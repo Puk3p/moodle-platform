@@ -8,6 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 public interface UserSessionRepository extends JpaRepository<UserSessionEntity, Long> {
     List<UserSessionEntity> findAllByUserEmail(String email);
 
+    boolean existsByTokenSignature(String tokenSignature);
+
     @Transactional
     void deleteByIdAndUserEmail(Long id, String email);
 

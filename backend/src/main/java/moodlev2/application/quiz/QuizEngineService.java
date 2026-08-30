@@ -13,6 +13,7 @@ import moodlev2.infrastructure.persistence.jpa.*;
 import moodlev2.infrastructure.persistence.jpa.entity.*;
 import moodlev2.web.quiz.dto.*;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -26,6 +27,7 @@ public class QuizEngineService {
     private final SpringDataUserRepository userRepository;
     private final QuizAttemptRepository quizAttemptRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final PasswordEncoder passwordEncoder;
     private final QuizEngineMapper mapper;
 
     @Transactional
@@ -52,7 +54,7 @@ public class QuizEngineService {
             if (providedPassword == null || providedPassword.isBlank()) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Password is required");
             }
-            if (!dbPassword.trim().equals(providedPassword.trim())) {
+            if (!passwordEncoder.matches(providedPassword.trim(), dbPassword)) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid quiz password");
             }
         }

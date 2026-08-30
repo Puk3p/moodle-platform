@@ -81,15 +81,15 @@ export class AuthService {
   }
   
   private saveToken(token: string): void {
-    localStorage.setItem('token', token);
+    sessionStorage.setItem('token', token);
   }
 
   getToken(): string | null {
-    return localStorage.getItem('token');
+    return sessionStorage.getItem('token');
   }
 
   private removeToken(): void {
-    localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
   }
 
   isLoggedIn(): boolean {
@@ -163,8 +163,9 @@ export class AuthService {
   handleOAuthCallback(manualToken?: string): void {
     let token = manualToken;
 
-    if (!token) {
-      const params = new URLSearchParams(window.location.search);
+    if (!token && window.location.hash.includes('token=')) {
+      const hash = window.location.hash.substring(1); 
+      const params = new URLSearchParams(hash);
       token = params.get('token') || undefined;
     }
 

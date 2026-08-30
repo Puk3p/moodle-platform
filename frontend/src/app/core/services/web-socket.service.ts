@@ -1,7 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { Client } from '@stomp/stompjs';
 import { BehaviorSubject, Subject } from 'rxjs';
-import { HttpClient } from '@angular/common/http'; 
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
+import { API_BASE_URL } from '../config/api-endpoints';
 
 @Injectable({
   providedIn: 'root'
@@ -19,12 +21,19 @@ export class WebSocketService {
   }
 
   private connect() {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     
 
-    const wsUrl = token 
-      ? `ws://localhost:8080/ws/websocket?access_token=${token}`
-      : 'ws://localhost:8080/ws/websocket';
+    // In production wsBaseUrl is empty, so the socket origin is derived from the page:
+    // an https:// page yields wss://, which is required — a ws:// socket on an https
+    // page is blocked as mixed content.
+    const wsOrigin =
+      environment.wsBaseUrl ||
+      `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`;
+
+    const wsUrl = token
+      ? `${wsOrigin}/ws/websocket?access_token=${encodeURIComponent(token)}`
+      : `${wsOrigin}/ws/websocket`;
       
     this.client = new Client({
       brokerURL: wsUrl,
@@ -73,6 +82,6 @@ export class WebSocketService {
   }
 
   public getChatHistory(userEmail: string) {
-    return this.http.get<any[]>(`http://localhost:8080/api/chat/history?email=${userEmail}`);
+    return this.http.get<any[]>(`${API_BASE_URL}/api/chat/history`);
   }
 }

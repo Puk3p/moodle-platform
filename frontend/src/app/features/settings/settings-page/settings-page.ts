@@ -167,5 +167,4 @@ export class SettingsPageComponent implements OnInit {
 
   onResetProfile(): void { console.log('Reset profile (TODO)'); }
   onSaveProfile(): void { console.log('Save profile (TODO)', this.profile); }
-  onSignOutMobile(): void { console.log('Sign out mobile (TODO)'); }
 }

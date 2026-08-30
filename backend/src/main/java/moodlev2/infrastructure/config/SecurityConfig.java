@@ -68,8 +68,6 @@ public class SecurityConfig {
                                         .permitAll()
                                         .requestMatchers("/login/oauth2/**")
                                         .permitAll()
-                                        .requestMatchers("/uploads/**")
-                                        .permitAll()
                                         .requestMatchers("/ws/**")
                                         .permitAll()
                                         .requestMatchers("/actuator/health", "/actuator/info")

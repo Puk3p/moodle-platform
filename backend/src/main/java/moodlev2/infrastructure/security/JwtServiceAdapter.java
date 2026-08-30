@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import moodlev2.domain.auth.ports.TokenServicePort;
 import moodlev2.domain.user.Role;
@@ -61,6 +62,7 @@ public final class JwtServiceAdapter implements TokenServicePort {
 
         JwtBuilder builder =
                 Jwts.builder()
+                        .setId(UUID.randomUUID().toString())
                         .setSubject(String.valueOf(user.getId()))
                         .setIssuer(issuer)
                         .setIssuedAt(Date.from(now))
@@ -83,6 +85,8 @@ public final class JwtServiceAdapter implements TokenServicePort {
 
             Claims claims = jws.getBody();
 
+            String jti = claims.getId();
+
             Long userId = claims.get("uid", Long.class);
             if (userId == null) {
                 throw new JwtException("Invalid user ID in token");
@@ -99,7 +103,7 @@ public final class JwtServiceAdapter implements TokenServicePort {
 
             Instant expiresAt = claims.getExpiration().toInstant();
 
-            return new TokenPayload(userId, email, roles, expiresAt);
+            return new TokenPayload(jti, userId, email, roles, expiresAt);
         } catch (JwtException | IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid token", e);
         }

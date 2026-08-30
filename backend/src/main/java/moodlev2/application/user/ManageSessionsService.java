@@ -4,6 +4,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import moodlev2.common.util.TokenHashUtil;
 import moodlev2.infrastructure.persistence.jpa.UserSessionRepository;
 import moodlev2.web.user.dto.SessionDto;
 import org.springframework.stereotype.Service;
@@ -15,7 +16,7 @@ public class ManageSessionsService {
     private final UserSessionRepository sessionRepository;
 
     public List<SessionDto> getUserSessions(String email, String currentToken) {
-        String currentSignature = currentToken.substring(currentToken.length() - 15);
+        String currentHash = TokenHashUtil.sha256(currentToken);
         DateTimeFormatter formatter =
                 DateTimeFormatter.ofPattern("MMM dd, HH:mm").withZone(ZoneId.systemDefault());
 
@@ -27,7 +28,7 @@ public class ManageSessionsService {
                                         s.getDeviceName(),
                                         s.getIpAddress(),
                                         formatter.format(s.getLastActive()),
-                                        s.getTokenSignature().equals(currentSignature)))
+                                        s.getTokenSignature().equals(currentHash)))
                 .toList();
     }
 
@@ -36,7 +37,7 @@ public class ManageSessionsService {
     }
 
     public void revokeAllOtherSessions(String email, String currentToken) {
-        String currentSignature = currentToken.substring(currentToken.length() - 15);
-        sessionRepository.deleteByUserEmailAndTokenSignatureNot(email, currentSignature);
+        String currentHash = TokenHashUtil.sha256(currentToken);
+        sessionRepository.deleteByUserEmailAndTokenSignatureNot(email, currentHash);
     }
 }
