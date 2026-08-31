@@ -13,6 +13,7 @@ public interface CalendarEventRepository extends JpaRepository<CalendarEventEnti
                     + "LEFT JOIN c.enrollments e "
                     + "LEFT JOIN c.assignedClasses cl "
                     + "WHERE e.user.email = :email "
+                    + "OR c.teacher.email = :email "
                     + "OR cl.id = (SELECT u.clazz.id FROM UserEntity u WHERE u.email = :email)")
     List<CalendarEventEntity> findAllByUserEmail(@Param("email") String email);
 

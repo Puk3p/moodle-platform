@@ -121,8 +121,10 @@
 
         </div>
 
-        <div *ngIf="questions.length === 0" style="padding: 3rem; text-align: center; color: #888;">
-            No questions found in this category.
+        <div *ngIf="questions.length === 0" class="empty-state">
+            <fa-icon [icon]="faSearch" class="empty-icon"></fa-icon>
+            <h4>No Questions Found</h4>
+            <p>This category doesn't have any questions yet.</p>
         </div>
       </div>
 
