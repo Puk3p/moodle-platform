@@ -53,19 +53,20 @@ $red-bg: #fef2f2; $red-text: #b91c1c;
 }
 
 .content-split {
-  display: flex;
+  display: grid;
+  grid-template-columns: 260px 1fr;
   gap: 1.5rem;
   flex: 1;
-  overflow: hidden; 
+  overflow: hidden;
+  align-items: start;
 }
 
 
 .categories-panel {
-  width: 280px;
-  flex-shrink: 0;
   background: $bg-white;
-  border: 1px solid $border-color;
-  border-radius: 1rem;
+  border: 1px solid rgba($border-color, 0.6);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
   display: flex;
   flex-direction: column;
 
@@ -137,21 +138,22 @@ $red-bg: #fef2f2; $red-text: #b91c1c;
 
 
 .questions-panel {
-  flex: 1;
   background: $bg-white;
-  border: 1px solid $border-color;
-  border-radius: 1rem;
+  border: 1px solid rgba($border-color, 0.6);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  min-width: 600px;
+  min-width: 0;
 
   .toolbar {
-    padding: 1rem;
+    padding: 1rem 1.5rem;
     border-bottom: 1px solid $border-color;
     @include flex-center;
     justify-content: space-between;
     gap: 1rem;
+    flex-wrap: wrap;
 
     .search-and-filters {
       display: flex;
@@ -247,11 +249,11 @@ $red-bg: #fef2f2; $red-text: #b91c1c;
   }
 
   
-  .col-question { flex: 3; padding-right: 1rem; }
-  .col-type     { flex: 1; min-width: 120px; }
-  .col-diff     { flex: 1; min-width: 100px; }
-  .col-usage    { flex: 0.5; min-width: 80px; }
-  .col-actions  { flex: 0.5; min-width: 80px; text-align: right; display: flex; justify-content: flex-end; gap: 0.5rem;}
+  .col-question { flex: 3; padding-right: 1rem; min-width: 0; }
+  .col-type     { flex: 0 0 140px; }
+  .col-diff     { flex: 0 0 110px; }
+  .col-usage    { flex: 0 0 90px; }
+  .col-actions  { flex: 0 0 80px; text-align: right; display: flex; justify-content: flex-end; gap: 0.5rem; }
 
   .q-text {
     font-size: 0.875rem;
@@ -316,7 +318,7 @@ $red-bg: #fef2f2; $red-text: #b91c1c;
   }
 
   .pagination-bar {
-    padding: 0.75rem 1.5rem;
+    padding: 1rem 1.5rem;
     border-top: 1px solid $border-color;
     @include flex-center;
     justify-content: space-between;
@@ -341,6 +343,34 @@ $red-bg: #fef2f2; $red-text: #b91c1c;
         &.active { background: $primary-color; color: white; border-color: $primary-color; }
       }
       .dots { width: 32px; text-align: center; color: $text-gray; font-size: 0.75rem; line-height: 32px; }
+    }
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 3.5rem 2rem;
+    color: $text-gray;
+
+    .empty-icon {
+      font-size: 2rem;
+      opacity: 0.3;
+      margin-bottom: 1rem;
+    }
+
+    h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: $text-dark;
+      margin: 0 0 0.25rem 0;
+    }
+
+    p {
+      font-size: 0.875rem;
+      margin: 0;
     }
   }
 }
