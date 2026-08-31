@@ -54,7 +54,7 @@ $red-bg: #fef2f2; $red-text: #b91c1c;
 
 .content-split {
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: 300px 1fr;
   gap: 1.5rem;
   flex: 1;
   overflow: hidden;
@@ -157,14 +157,17 @@ $red-bg: #fef2f2; $red-text: #b91c1c;
 
     .search-and-filters {
       display: flex;
+      align-items: center;
       gap: 1rem;
       flex: 1;
+      min-width: 0;
     }
 
     .search-box {
       position: relative;
-      flex: 1;
-      max-width: 320px;
+      flex: 0 0 auto;
+      width: 260px;
+      min-width: 200px;
       
       .search-icon {
         position: absolute;
