@@ -18,9 +18,9 @@ body {
 }
 
 html, body { height: 100%;
-cursor: url("/public/mouse/Cursor_mic.png"), auto; }
+cursor: url("/mouse/Cursor_mic.png"), auto; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 
 a, button, .btn, [role="button"] {
-  cursor: url("/public/mouse/Pointer_mic.png"), pointer !important;
+  cursor: url("/mouse/Pointer_mic.png"), pointer !important;
 }
