@@ -4,8 +4,10 @@ import java.math.BigDecimal;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import moodlev2.application.course.GetTeacherQuizzesService;
+import moodlev2.application.quiz.ProctorService;
 import moodlev2.application.quiz.QuizEngineService;
 import moodlev2.web.course.dto.teacher.TeacherQuizDto;
+import moodlev2.web.quiz.dto.ProctorReportDto;
 import moodlev2.web.quiz.dto.QuizAttemptListDto;
 import moodlev2.web.quiz.dto.QuizAttemptReviewDto;
 import moodlev2.web.quiz.dto.QuizResultsResponse;
@@ -19,6 +21,7 @@ public class TeacherQuizController {
 
     private final GetTeacherQuizzesService getTeacherQuizzesService;
     private final QuizEngineService quizEngineService;
+    private final ProctorService proctorService;
 
     @GetMapping
     public List<TeacherQuizDto> getQuizzes(Authentication authentication) {
@@ -38,6 +41,12 @@ public class TeacherQuizController {
     @GetMapping("/attempts/{attemptId}/review")
     public QuizAttemptReviewDto getAttemptReview(@PathVariable Long attemptId) {
         return quizEngineService.getAttemptReview(attemptId);
+    }
+
+    /** Proctoring timeline for one attempt: how often the student left the exam surface. */
+    @GetMapping("/attempts/{attemptId}/proctor")
+    public ProctorReportDto getProctorReport(@PathVariable Long attemptId) {
+        return proctorService.report(attemptId);
     }
 
     @PatchMapping("/attempts/{attemptId}/questions/{questionId}/score")

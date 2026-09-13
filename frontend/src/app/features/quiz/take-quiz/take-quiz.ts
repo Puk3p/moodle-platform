@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { QuizzesService } from '../../../core/services/quizzes.service';
+import { ProctorService } from '../../../core/services/proctor.service';
 import { StudentQuestion, StudentOption } from '../../../core/models/quiz-take.model';
 
 
@@ -31,6 +32,7 @@ export class TakeQuizComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private quizService = inject(QuizzesService);
+  proctor = inject(ProctorService);
 
   quizId!: number;
   attemptId!: number;
@@ -77,6 +79,7 @@ export class TakeQuizComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     if (this.timerInterval) clearInterval(this.timerInterval);
+    this.proctor.stop();
     this.saveLocalState();
   }
 
@@ -104,6 +107,8 @@ export class TakeQuizComponent implements OnInit, OnDestroy {
       next: (data) => {
         this.quizTitle = data.title;
         this.attemptId = data.attemptId;
+        // Proctoring is disclosed in the quiz header; see the notice in take-quiz.html.
+        this.proctor.start(this.attemptId);
         this.questions = data.questions || [];
 
         if (this.questions.length === 0) {

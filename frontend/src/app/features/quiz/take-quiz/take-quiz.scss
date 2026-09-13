@@ -238,6 +238,62 @@
   scrollbar-gutter: stable;
 }
 
+/* Disclosure banner. Intentionally calm until something is actually recorded — it
+   should inform, not intimidate a student who has done nothing. */
+.proctor-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--qz-border);
+  border-radius: var(--qz-r);
+  background: var(--qz-surface-sunk);
+
+  &__icon {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 24px; height: 24px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--qz-text) 8%, transparent);
+    color: var(--qz-text-muted);
+    font-size: .7rem;
+  }
+
+  &__text {
+    margin: 0;
+    font-size: .8125rem;
+    line-height: 1.55;
+    color: var(--qz-text-muted);
+    text-wrap: pretty;
+
+    strong { color: var(--qz-text); font-weight: 600; }
+  }
+
+  &__count {
+    flex: 0 0 auto;
+    align-self: center;
+    padding: 4px 9px;
+    border-radius: 999px;
+    font-size: .6875rem;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    background: var(--qz-danger-wash);
+    color: var(--qz-danger);
+  }
+
+  &.has-leaves {
+    border-color: color-mix(in srgb, var(--qz-danger) 30%, transparent);
+
+    .proctor-notice__icon { background: var(--qz-danger-wash); color: var(--qz-danger); }
+  }
+}
+
+@media (max-width: 560px) {
+  .proctor-notice { flex-wrap: wrap; }
+}
+
 .question-card {
   background: var(--qz-surface);
   border: 1px solid var(--qz-border);
