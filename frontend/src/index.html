@@ -3,7 +3,14 @@
 <head>
   <meta charset="utf-8">
   <title>Moodle</title>
-  <base href="./">
+  <!--
+    Must stay absolute. With a relative base ("./") the browser resolves the JS/CSS
+    bundles against the current directory, so any URL below the root (e.g. /take-quiz/1)
+    requests /take-quiz/main-*.js. The SPA fallback answers that with index.html, the
+    browser refuses to run HTML as a module script, and the page renders blank.
+    The Cordova build that originally needed a relative base no longer exists.
+  -->
+  <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
   <script src="https://kit.fontawesome.com/d1053bafa2.js" crossorigin="anonymous"></script>
