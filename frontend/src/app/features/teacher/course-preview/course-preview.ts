@@ -104,13 +104,17 @@ export class CoursePreviewComponent implements OnInit {
 
   
   private openQuizWindow(quizId: number) {
+    // See course-page.ts: serializeUrl() yields the router-internal path, which must be
+    // opened behind a "#" because the app uses withHashLocation(). Without it the new
+    // window lands on an empty hash and gets bounced to /dashboard.
     const url = this.router.serializeUrl(
       this.router.createUrlTree(['/take-quiz', quizId])
     );
+    const target = `${window.location.origin}/#${url}`;
     const width = window.screen.width;
     const height = window.screen.height;
     const features = `width=${width},height=${height},menubar=no,toolbar=no,location=no,status=no,scrollbars=yes,resizable=yes`;
-    window.open(url, '_blank', features);
+    window.open(target, '_blank', features);
   }
 
   

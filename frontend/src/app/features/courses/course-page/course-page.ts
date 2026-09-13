@@ -219,13 +219,20 @@ export class CoursePageComponent implements OnInit {
   }
 
   private openQuizWindow(quizId: number) {
+    // serializeUrl() returns the router's internal path ("/take-quiz/3"). The app uses
+    // withHashLocation(), so that path must be opened behind a "#" — otherwise the new
+    // window loads with an empty hash, matches the '' route, redirects to /login, and
+    // Login's constructor bounces an already-authenticated user to /dashboard. The
+    // attempt has already been created at that point, so the user silently burns an
+    // attempt without ever seeing the quiz.
     const url = this.router.serializeUrl(
       this.router.createUrlTree(['/take-quiz', quizId])
     );
+    const target = `${window.location.origin}/#${url}`;
     const width = window.screen.width;
     const height = window.screen.height;
     const features = `width=${width},height=${height},menubar=no,toolbar=no,location=no,status=no,scrollbars=yes,resizable=yes`;
-    window.open(url, '_blank', features);
+    window.open(target, '_blank', features);
   }
 
   getIconForType(type: string): IconDefinition {
