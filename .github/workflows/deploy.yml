@@ -134,6 +134,21 @@ jobs:
             test -s "$STAGE/index.html" || { echo "staged index.html missing/empty; aborting"; exit 1; }
             grep -q "<app-root" "$STAGE/index.html" || { echo "staged index.html is not the Angular shell; aborting"; exit 1; }
 
+            # Refuse to publish an INCONSISTENT upload: every local bundle index.html
+            # points at must actually be present. Checking only that index.html exists
+            # is not enough — a mismatched HTML/bundle pair serves a blank white page,
+            # because the browser 404s on main-*.js and nothing boots.
+            missing=0
+            for f in $(grep -oE '(src|href)="[^"]*\.(js|css)"' "$STAGE/index.html" \
+                       | sed 's/.*="//;s/"//' | grep -v '^https\?://'); do
+              if [ ! -f "$STAGE/$f" ]; then
+                echo "staged build references a missing asset: $f"
+                missing=1
+              fi
+            done
+            [ "$missing" -eq 0 ] || { echo "inconsistent build; refusing to publish"; exit 1; }
+            echo "staged build is self-consistent"
+
             # Keep the previous release so a bad deploy can be rolled back by hand.
             rm -rf "${LIVE}.prev"
             cp -a "$LIVE" "${LIVE}.prev" 2>/dev/null || true
