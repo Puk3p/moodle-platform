@@ -1,5 +1,6 @@
 package moodlev2.infrastructure.config;
 
+import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import moodlev2.infrastructure.security.JwtAuthenticationFilter;
@@ -7,6 +8,7 @@ import moodlev2.infrastructure.security.OAuth2LoginSuccessHandler;
 import moodlev2.infrastructure.security.RateLimitFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -62,7 +64,14 @@ public class SecurityConfig {
                                                                 "Forbidden")))
                 .authorizeHttpRequests(
                         auth ->
-                                auth.requestMatchers("/api/auth/**")
+                                // Spring Security answers a denial with sendError(), which the
+                                // container re-dispatches to /error. That ERROR dispatch carries
+                                // an empty SecurityContext, so without this it is matched by
+                                // anyRequest().authenticated() and a genuine 403 is reported to
+                                // the client as a misleading 401.
+                                auth.dispatcherTypeMatchers(DispatcherType.ERROR)
+                                        .permitAll()
+                                        .requestMatchers("/api/auth/**")
                                         .permitAll()
                                         .requestMatchers("/oauth2/**")
                                         .permitAll()
@@ -81,6 +90,19 @@ public class SecurityConfig {
                                         .requestMatchers("/api/users/teachers")
                                         .hasAnyRole("TEACHER", "ADMIN")
                                         .requestMatchers("/api/courses/create")
+                                        .hasAnyRole("TEACHER", "ADMIN")
+                                        // Quiz authoring is staff-only. Scoped by HTTP method so
+                                        // the student flows on the same prefix
+                                        // (POST /{id}/start, POST /submit) stay reachable. This
+                                        // duplicates the @PreAuthorize on QuizController on
+                                        // purpose: without it these fall through to the catch-all
+                                        // `authenticated()` and any logged-in student can delete
+                                        // or rewrite any quiz.
+                                        .requestMatchers(HttpMethod.POST, "/api/quizzes/create")
+                                        .hasAnyRole("TEACHER", "ADMIN")
+                                        .requestMatchers(HttpMethod.PUT, "/api/quizzes/*")
+                                        .hasAnyRole("TEACHER", "ADMIN")
+                                        .requestMatchers(HttpMethod.DELETE, "/api/quizzes/*")
                                         .hasAnyRole("TEACHER", "ADMIN")
                                         .requestMatchers("/api/courses/**")
                                         .authenticated()

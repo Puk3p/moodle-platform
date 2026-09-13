@@ -7,6 +7,7 @@ import moodlev2.web.quiz.dto.CreateQuizDto;
 import moodlev2.web.quiz.dto.QuizResultDto;
 import moodlev2.web.quiz.dto.QuizSubmissionDto;
 import moodlev2.web.quiz.dto.StudentQuizViewDto;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,6 +22,7 @@ public class QuizController {
     public record StartQuizRequest(String password) {}
 
     @PostMapping("/create")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public void createQuiz(@RequestBody CreateQuizDto dto) {
         managementService.createQuiz(dto);
     }
@@ -42,11 +44,13 @@ public class QuizController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public void deleteQuiz(@PathVariable Long id) {
         managementService.deleteQuiz(id);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public void updateQuiz(@PathVariable Long id, @RequestBody CreateQuizDto dto) {
         managementService.updateQuiz(id, dto);
     }
