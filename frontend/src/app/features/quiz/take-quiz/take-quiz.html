@@ -13,9 +13,23 @@
       </div>
       <div class="separator"></div>
       
-      <button class="flag-btn" (click)="toggleFlag(currentQuestionIndex)" [class.flagged]="currentQuestion?.isFlagged">
+      <button class="flag-btn"
+              type="button"
+              (click)="toggleFlag(currentQuestionIndex)"
+              [class.flagged]="currentQuestion?.isFlagged"
+              [attr.aria-pressed]="!!currentQuestion?.isFlagged"
+              [attr.aria-label]="currentQuestion?.isFlagged ? 'Unflag this question' : 'Flag this question for review'">
         <span class="material-symbols-outlined">{{ currentQuestion?.isFlagged ? 'flag_filled' : 'flag' }}</span>
       </button>
+    </div>
+
+    <div class="quiz-progress"
+         role="progressbar"
+         [attr.aria-valuenow]="answeredCount"
+         aria-valuemin="0"
+         [attr.aria-valuemax]="questions.length"
+         [attr.aria-label]="answeredCount + ' of ' + questions.length + ' questions answered'">
+      <span [style.width.%]="progressPercent"></span>
     </div>
   </header>
 
@@ -210,18 +224,18 @@
 </ng-template>
 
 <ng-template #loadingTpl>
-  <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh;">
+  <div class="qz-state">
     <ng-container *ngIf="!errorMessage">
-        <i class="fa-solid fa-spinner fa-spin" style="font-size: 40px; color: #ff5100; margin-bottom: 20px;"></i>
-        <p style="font-size: 1.2rem; color: #6b7280;">Loading Quiz...</p>
+      <div class="qz-state__spinner" role="status" aria-label="Loading quiz"></div>
+      <p class="qz-state__text">Loading quiz…</p>
     </ng-container>
-    
-    <div *ngIf="errorMessage" style="text-align: center;">
-        <i class="fa-solid fa-triangle-exclamation" style="font-size: 40px; color: #ef4444; margin-bottom: 20px;"></i>
-        <p style="font-size: 1.2rem; color: #374151; margin-bottom: 20px;">{{ errorMessage }}</p>
-        <button (click)="finishAttempt(true)" style="padding: 10px 20px; background: #374151; color: white; border: none; border-radius: 6px; cursor: pointer;">
-            Close Window
-        </button>
-    </div>
+
+    <ng-container *ngIf="errorMessage">
+      <div class="qz-state__icon" aria-hidden="true">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <p class="qz-state__text" role="alert">{{ errorMessage }}</p>
+      <button type="button" class="qz-state__btn" (click)="finishAttempt(true)">Close window</button>
+    </ng-container>
   </div>
 </ng-template>

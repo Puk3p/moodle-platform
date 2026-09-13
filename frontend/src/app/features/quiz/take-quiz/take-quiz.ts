@@ -80,6 +80,16 @@ export class TakeQuizComponent implements OnInit, OnDestroy {
     this.saveLocalState();
   }
 
+  /** How many questions currently hold an answer — drives the header progress rail. */
+  get answeredCount(): number {
+    return this.questions?.reduce((n, q) => n + (this.isAnswered(q) ? 1 : 0), 0) ?? 0;
+  }
+
+  get progressPercent(): number {
+    const total = this.questions?.length ?? 0;
+    return total === 0 ? 0 : (this.answeredCount / total) * 100;
+  }
+
   get currentQuestion(): StudentQuestion {
     return this.questions && this.questions[this.currentQuestionIndex] 
       ? this.questions[this.currentQuestionIndex] 

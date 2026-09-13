@@ -1,18 +1,92 @@
 @use 'sass:color';
 
-$primary: #ff5100;
-$bg-main: #f8f6f5;
-$bg-card: #ffffff;
-$border: #e5e7eb;
-$text-main: #181310;
-$text-muted: #6b7280;
+/* ===========================================================================
+   Quiz runner — design tokens
+   One accent, used sparingly. Everything else is a calibrated neutral ramp, so
+   the only saturated things on screen are the ones the student must act on:
+   the current question, the selected answer, and the clock when it runs low.
+   =========================================================================== */
 
 :host {
+  --qz-bg:            #f7f7f6;
+  --qz-surface:       #ffffff;
+  --qz-surface-sunk:  #fafaf9;
+  --qz-border:        #e8e7e4;
+  --qz-border-strong: #d6d4d0;
+
+  --qz-text:          #1a1817;
+  --qz-text-muted:    #6f6b66;
+  --qz-text-subtle:   #9b9691;
+
+  --qz-accent:        #ff5100;   /* fills / rings only */
+  --qz-accent-ink:    #bf3d04;   /* accent as TEXT — passes contrast on light */
+  --qz-accent-wash:   #fff4ee;
+
+  --qz-danger:        #dc2626;
+  --qz-danger-wash:   #fef2f2;
+  --qz-warn:          #b45309;
+  --qz-ok:            #15803d;
+
+  --qz-code-bg:       #1e242b;
+  --qz-code-border:   #2d3540;
+
+  --qz-r-sm: 8px;
+  --qz-r:    12px;
+  --qz-r-lg: 16px;
+
+  --qz-shadow: 0 1px 2px rgba(24, 19, 16, .04), 0 4px 16px -8px rgba(24, 19, 16, .10);
+  --qz-ring:   0 0 0 3px rgba(255, 81, 0, .28);
+
   display: block;
-  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
-  font-family: 'Inter', sans-serif;
-  background-color: $bg-main;
+  background: var(--qz-bg);
+  color: var(--qz-text);
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-color-scheme: dark) {
+  :host {
+    --qz-bg:            #131211;
+    --qz-surface:       #1c1a19;
+    --qz-surface-sunk:  #171615;
+    --qz-border:        #2a2725;
+    --qz-border-strong: #3a3633;
+
+    --qz-text:          #f2efec;
+    --qz-text-muted:    #a8a29c;
+    --qz-text-subtle:   #7c7671;
+
+    --qz-accent-ink:    #ff7a3d;
+    --qz-accent-wash:   #2a1a12;
+
+    --qz-danger:        #f87171;
+    --qz-danger-wash:   #2a1516;
+    --qz-warn:          #fbbf24;
+    --qz-ok:            #4ade80;
+
+    --qz-code-bg:       #16191d;
+    --qz-code-border:   #272c33;
+
+    --qz-shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Visible keyboard focus everywhere — the previous styles had none at all. */
+:where(button, input, textarea, label.option-card, .nav-item):focus-visible {
+  outline: none;
+  box-shadow: var(--qz-ring);
+  border-radius: var(--qz-r-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
 }
 
 .quiz-container {
@@ -21,385 +95,727 @@ $text-muted: #6b7280;
   height: 100%;
 }
 
+/* ---------------------------------------------------------------- header -- */
 
 .quiz-header {
-  height: 70px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid $border;
+  flex: 0 0 auto;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 0 24px;
-  z-index: 10;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 clamp(16px, 3vw, 28px);
+  height: 64px;
+  background: color-mix(in srgb, var(--qz-surface) 88%, transparent);
+  backdrop-filter: blur(12px) saturate(140%);
+  border-bottom: 1px solid var(--qz-border);
+  position: relative;
+  z-index: 20;
 
-  .header-left h1 { margin: 0; font-size: 1.1rem; font-weight: 700; color: $text-main; }
-  .subtitle { margin: 0; font-size: 0.8rem; color: $primary; font-weight: 500; }
+  .header-left { min-width: 0; }
 
-  .header-right { display: flex; align-items: center; gap: 16px; }
-  
-  .timer-box { 
-    text-align: right; 
-    .timer-label { display: block; font-size: 0.7rem; text-transform: uppercase; color: $text-muted; }
-    .timer-value { font-family: monospace; font-size: 1.2rem; font-weight: 700; color: $text-main; }
-    .timer-value.warning { color: #ef4444; }
+  h1 {
+    margin: 0;
+    font-size: .975rem;
+    font-weight: 650;
+    letter-spacing: -.015em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
-  .separator { width: 1px; height: 32px; background: $border; }
-  
-  .flag-btn {
-    background: none; border: none; cursor: pointer; color: $text-muted;
-    &:hover { color: $primary; }
-    &.flagged { color: #ef4444; }
+  .subtitle {
+    margin: 2px 0 0;
+    font-size: .75rem;
+    font-weight: 500;
+    color: var(--qz-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    /* quiet "live" pulse instead of shouting in accent colour */
+    &::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--qz-ok);
+      box-shadow: 0 0 0 0 color-mix(in srgb, var(--qz-ok) 60%, transparent);
+      animation: qz-pulse 2.4s ease-out infinite;
+    }
+  }
+
+  .header-right { display: flex; align-items: center; gap: 14px; }
+  .separator { width: 1px; height: 28px; background: var(--qz-border); }
+}
+
+@keyframes qz-pulse {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--qz-ok) 55%, transparent); }
+  70%  { box-shadow: 0 0 0 7px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+/* The clock is the highest-stakes element on screen: tabular figures so digits
+   don't jitter as they tick, and an escalating colour ramp near the end. */
+.timer-box {
+  text-align: right;
+  line-height: 1.15;
+
+  .timer-label {
+    display: block;
+    font-size: .625rem;
+    font-weight: 600;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--qz-text-subtle);
+  }
+
+  .timer-value {
+    font-family: 'Fira Code', ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 1.2rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -.01em;
+    color: var(--qz-text);
+
+    &.warning {
+      color: var(--qz-danger);
+      animation: qz-blink 1.6s steps(1, end) infinite;
+    }
   }
 }
 
+@keyframes qz-blink { 50% { opacity: .55; } }
+
+.flag-btn {
+  display: grid;
+  place-items: center;
+  width: 36px; height: 36px;
+  border: 1px solid transparent;
+  border-radius: var(--qz-r-sm);
+  background: transparent;
+  color: var(--qz-text-subtle);
+  cursor: pointer;
+  transition: background .16s, color .16s, border-color .16s;
+
+  &:hover { background: var(--qz-surface-sunk); color: var(--qz-text); border-color: var(--qz-border); }
+  &.flagged { color: var(--qz-danger); background: var(--qz-danger-wash); border-color: color-mix(in srgb, var(--qz-danger) 24%, transparent); }
+}
+
+/* Thin progress rail hairlined to the header — replaces guessing how far in you are. */
+.quiz-progress {
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 2px;
+  background: transparent;
+
+  span {
+    display: block;
+    height: 100%;
+    background: var(--qz-accent);
+    border-radius: 0 2px 2px 0;
+    transition: width .4s cubic-bezier(.22, 1, .36, 1);
+  }
+}
+
+/* ---------------------------------------------------------------- layout -- */
 
 .quiz-layout {
-  flex: 1;
+  flex: 1 1 auto;
   display: grid;
-  grid-template-columns: 1fr 320px; 
+  grid-template-columns: minmax(0, 1fr) 300px;
   overflow: hidden;
 }
 
-
 .question-area {
-  padding: 40px;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: clamp(20px, 4vw, 44px) clamp(16px, 4vw, 40px) 56px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  max-width: 900px;
-  margin: 0 auto;
+  gap: 20px;
   width: 100%;
+  max-width: 820px;
+  margin-inline: auto;
+  scrollbar-gutter: stable;
 }
 
 .question-card {
-  background: $bg-card;
-  border: 1px solid $border;
-  border-radius: 12px;
-  padding: 32px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  background: var(--qz-surface);
+  border: 1px solid var(--qz-border);
+  border-radius: var(--qz-r-lg);
+  padding: clamp(20px, 3.4vw, 34px);
+  box-shadow: var(--qz-shadow);
 }
 
 .q-header {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid $border;
-  
-  .q-meta { display: flex; align-items: center; gap: 12px; }
-  h3 { margin: 0; font-size: 1.25rem; font-weight: 700; }
-  
-  .type-badge { 
-    font-size: 0.7rem; 
-    background: #e0e7ff; 
-    color: #4338ca; 
-    padding: 3px 8px; 
-    border-radius: 4px; 
-    font-weight: 700; 
-    text-transform: uppercase; 
-    letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 16px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--qz-border);
+
+  .q-meta { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+  h3 {
+    margin: 0;
+    font-size: 1.0625rem;
+    font-weight: 650;
+    letter-spacing: -.02em;
+  }
+
+  .type-badge {
+    flex: 0 0 auto;
+    font-size: .625rem;
+    font-weight: 650;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    border-radius: 6px;
+    color: var(--qz-text-muted);
+    background: var(--qz-surface-sunk);
+    border: 1px solid var(--qz-border);
+  }
+
+  .points-badge {
+    flex: 0 0 auto;
+    font-size: .75rem;
+    font-weight: 550;
+    font-variant-numeric: tabular-nums;
+    color: var(--qz-text-muted);
+    white-space: nowrap;
   }
 }
 
-.q-image img { max-height: 300px; border-radius: 8px; margin-bottom: 24px; border: 1px solid $border; }
-.q-text { font-size: 1.1rem; line-height: 1.6; color: $text-main; margin-bottom: 32px; }
+.q-image img {
+  max-width: 100%;
+  max-height: 320px;
+  border-radius: var(--qz-r);
+  border: 1px solid var(--qz-border);
+  margin-bottom: 20px;
+}
 
+.q-text {
+  margin: 0 0 26px;
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  letter-spacing: -.005em;
+  color: var(--qz-text);
+  text-wrap: pretty;
+}
 
-.options-list { display: flex; flex-direction: column; gap: 12px; }
+/* --------------------------------------------------------------- options -- */
+
+.options-list { display: flex; flex-direction: column; gap: 10px; }
 
 .option-card {
   position: relative;
-  display: flex; align-items: center;
-  padding: 16px;
-  border: 1px solid $border;
-  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  border: 1px solid var(--qz-border);
+  border-radius: var(--qz-r);
+  background: var(--qz-surface);
   cursor: pointer;
-  transition: all 0.2s;
-  background: #fff;
+  transition: border-color .16s, background .16s, transform .16s;
 
-  &:hover { background: #f9fafb; border-color: rgba($primary, 0.5); }
-  
+  &:hover {
+    border-color: var(--qz-border-strong);
+    background: var(--qz-surface-sunk);
+  }
+
+  &:active { transform: scale(.995); }
+
   &.selected {
-    border-color: $primary;
-    background: #fff;
-    .option-marker { background: $primary; color: white; }
-    .active-border { opacity: 1; }
+    border-color: var(--qz-accent);
+    background: var(--qz-accent-wash);
+
+    .option-marker {
+      background: var(--qz-accent);
+      border-color: var(--qz-accent);
+      color: #fff;
+    }
+    .option-text { font-weight: 550; }
   }
 
-  input { display: none; }
+  input { position: absolute; opacity: 0; pointer-events: none; }
 
-  .option-content { display: flex; align-items: center; gap: 16px; width: 100%; z-index: 2; }
-  
+  .option-content { display: flex; align-items: center; gap: 14px; width: 100%; }
+
   .option-marker {
-    width: 32px; height: 32px;
-    background: #f3f4f6;
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: 0.9rem; color: $text-muted;
-    transition: all 0.2s;
+    flex: 0 0 auto;
+    width: 28px; height: 28px;
+    display: grid; place-items: center;
+    border: 1px solid var(--qz-border-strong);
+    border-radius: 7px;
+    background: var(--qz-surface);
+    font-size: .8rem;
+    font-weight: 650;
+    color: var(--qz-text-muted);
+    transition: background .16s, color .16s, border-color .16s;
+
+    &.square { border-radius: 6px; }
   }
 
-  .option-text { font-size: 1rem; font-weight: 500; color: $text-main; }
-
-  .active-border {
-    position: absolute; inset: -1px; border-radius: 12px;
-    border: 2px solid $primary; opacity: 0; pointer-events: none;
-    box-shadow: 0 0 10px rgba(255, 81, 0, 0.15);
-    transition: opacity 0.2s;
-  }
-}
-
-
-.nav-buttons {
-  display: flex; justify-content: space-between; margin-top: 16px;
-  
-  button {
-    display: flex; align-items: center; gap: 8px;
-    padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer;
-    transition: all 0.2s; border: none; font-size: 0.9rem;
+  .option-text {
+    font-size: .9375rem;
+    line-height: 1.5;
+    color: var(--qz-text);
+    text-wrap: pretty;
   }
 
-  .btn-prev { background: white; border: 1px solid $border; color: $text-main; &:hover { background: #f9fafb; } }
-  .btn-next { background: $primary; color: white; &:hover { background: color.adjust($primary, $lightness: -5%); } }
-  .btn-finish { background: #111827; color: white; margin-left: auto; &:hover { background: #000; } }
+  /* legacy hook kept so the template contract doesn't change */
+  .active-border { display: none; }
 }
 
+/* ------------------------------------------------------------------ code -- */
 
-.quiz-navigator {
-  background: rgba(255, 255, 255, 0.5);
-  border-left: 1px solid $border;
-  display: flex; flex-direction: column;
-  padding: 24px;
+.code-wrapper,
+.text-wrapper { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+
+.input-label {
+  font-size: .6875rem;
+  font-weight: 650;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--qz-text-subtle);
 }
-
-.nav-title { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: $text-muted; margin: 0 0 16px 0; }
-
-.grid-nav {
-  display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
-}
-
-.nav-item {
-  aspect-ratio: 1;
-  border-radius: 8px; border: 1px solid $border;
-  background: white; color: $text-muted; font-weight: 600;
-  cursor: pointer; position: relative;
-  &:hover { background: #f3f4f6; }
-
-  &.active { border: 2px solid $primary; color: $primary; background: rgba($primary, 0.05); }
-  &.answered { background: #e5e7eb; color: $text-main; border-color: transparent; }
-  
-  .flag-dot { position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; background: #ef4444; border-radius: 50%; }
-}
-
-.legend {
-  margin-top: 24px; padding-top: 24px; border-top: 1px solid $border;
-  display: flex; flex-direction: column; gap: 8px;
-  
-  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: $text-muted; }
-  .dot { width: 8px; height: 8px; border-radius: 50%; }
-  .dot.active { background: $primary; }
-  .dot.answered { background: #e5e7eb; }
-  .dot.unans { border: 1px solid #ccc; background: white; }
-  .dot.flag { background: #ef4444; }
-}
-
-.nav-footer { margin-top: auto; }
-.btn-submit-all { width: 100%; padding: 14px; background: #111827; color: white; border-radius: 8px; font-weight: 700; border: none; cursor: pointer; &:hover { background: black; } }
-
-
-.code-wrapper {
-  display: flex; flex-direction: column; gap: 8px;
-  width: 100%; 
-}
-.input-label { font-size: 0.9rem; font-weight: 600; color: #374151; }
 
 .code-editor-container {
-  
-  display: block; 
-  background: #263238; 
-  border-radius: 8px;
+  background: var(--qz-code-bg);
+  border: 1px solid var(--qz-code-border);
+  border-radius: var(--qz-r);
   overflow: hidden;
-  border: 1px solid #374151;
   width: 100%;
+
+  /* faux window chrome — three dots, purely to signal "editor" */
+  &::before {
+    content: '';
+    display: block;
+    height: 34px;
+    background:
+      radial-gradient(circle 5px at 18px 17px, #ff5f57 98%, transparent) ,
+      radial-gradient(circle 5px at 38px 17px, #febc2e 98%, transparent),
+      radial-gradient(circle 5px at 58px 17px, #28c840 98%, transparent);
+    background-color: color-mix(in srgb, var(--qz-code-bg) 82%, #fff 4%);
+    border-bottom: 1px solid var(--qz-code-border);
+  }
 }
 
+ngx-codemirror { display: block; width: 100%; }
 
-ngx-codemirror {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-
+/* The old rule pinned this to 450px, so an empty answer rendered as a huge void.
+   Auto height grows with the answer; the scroller caps it so the nav buttons
+   stay reachable without scrolling the whole page. */
 ::ng-deep .CodeMirror {
-  height: 450px !important; 
-  font-family: 'Fira Code', 'Consolas', monospace;
-  font-size: 14px;
+  height: auto !important;
   width: 100% !important;
+  background: transparent !important;
+  font-family: 'Fira Code', ui-monospace, 'SF Mono', Menlo, monospace !important;
+  font-size: 13.5px;
+  line-height: 1.65;
+  padding: 6px 0 10px;
 }
 
-
-.text-wrapper {
-  display: flex; flex-direction: column; gap: 8px;
+::ng-deep .CodeMirror-scroll {
+  min-height: 190px;
+  max-height: 52vh;
 }
+
+::ng-deep .CodeMirror-gutters {
+  background: transparent !important;
+  border-right: 1px solid var(--qz-code-border) !important;
+}
+
+::ng-deep .CodeMirror-linenumber { color: #5b6676 !important; }
+::ng-deep .CodeMirror-cursor { border-left-color: var(--qz-accent) !important; border-left-width: 2px; }
+::ng-deep .CodeMirror-selected { background: rgba(255, 81, 0, .16) !important; }
+::ng-deep .CodeMirror-placeholder { color: #5b6676 !important; }
+
+/* ------------------------------------------------------------ free text --- */
+
 .text-input {
   width: 100%;
-  padding: 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  font-family: inherit;
-  font-size: 1rem;
-  min-height: 120px;
+  min-height: 150px;
+  padding: 14px 16px;
+  border: 1px solid var(--qz-border);
+  border-radius: var(--qz-r);
+  background: var(--qz-surface);
+  color: var(--qz-text);
+  font: inherit;
+  font-size: .9375rem;
+  line-height: 1.65;
   resize: vertical;
   outline: none;
-  transition: border-color 0.2s;
-  &:focus { border-color: #ff5100; box-shadow: 0 0 0 2px rgba(255, 81, 0, 0.1); }
+  transition: border-color .16s, box-shadow .16s;
+
+  &::placeholder { color: var(--qz-text-subtle); }
+  &:focus { border-color: var(--qz-accent); box-shadow: var(--qz-ring); }
 }
 
+/* ------------------------------------------------------------ drag/drop --- */
 
-.drag-drop-list {
-  display: flex; flex-direction: column; gap: 8px;
-}
-.hint { font-size: 0.85rem; color: #6b7280; margin: 0 0 12px 0; display: flex; align-items: center; gap: 6px;}
-
-.draggable-item {
-  display: flex; align-items: center; gap: 12px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  padding: 12px 16px;
-  border-radius: 8px;
-  cursor: grab;
-  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
-  user-select: none;
-  
-  &:hover { border-color: #d1d5db; background: #f9fafb; }
-  &:active { cursor: grabbing; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-
-  .drag-handle { color: #9ca3af; cursor: grab; font-size: 1.2rem;}
-  .drag-content { flex: 1; font-weight: 500; color: #1f2937; }
-}
-
-
-.drag-drop-container {
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-  padding: 16px;
-}
+.drag-drop-container { display: flex; flex-direction: column; gap: 26px; }
 
 .sentence-area {
-  line-height: 2.5; 
-  font-size: 1.15rem;
-  color: #374151;
+  line-height: 2.6;
+  font-size: 1.0625rem;
+  color: var(--qz-text);
 }
 
-.text-segment {
-  white-space: pre-wrap; 
-}
-
+.text-segment { white-space: pre-wrap; }
 
 .blank-zone {
-  display: inline-flex; 
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 120px;
-  min-height: 40px;
-  margin: 0 8px;
+  min-width: 116px;
+  min-height: 38px;
+  margin: 0 6px;
+  padding: 3px;
   vertical-align: middle;
-  background-color: #f3f4f6;
-  border: 2px dashed #d1d5db;
-  border-radius: 8px;
-  padding: 4px;
-  transition: all 0.2s ease;
+  background: var(--qz-surface-sunk);
+  border: 1.5px dashed var(--qz-border-strong);
+  border-radius: var(--qz-r-sm);
+  transition: border-color .16s, background .16s;
 
-  &.cdk-drop-list-dragging {
-      border-color: #ff5100;
-      background-color: #fff7ed;
+  &.cdk-drop-list-dragging,
+  &.cdk-drop-list-receiving {
+    border-color: var(--qz-accent);
+    background: var(--qz-accent-wash);
   }
 }
 
 .placeholder {
-    font-size: 0.8rem;
-    color: #9ca3af;
-    pointer-events: none; 
-    font-weight: 500;
+  font-size: .75rem;
+  font-weight: 500;
+  color: var(--qz-text-subtle);
+  pointer-events: none;
 }
 
-
 .drag-chip {
-  background-color: #fff;
-  border: 1px solid #e5e7eb;
-  padding: 6px 14px;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: #1f2937;
-  cursor: grab;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   display: inline-block;
   white-space: nowrap;
-  
-  &:active {
-      cursor: grabbing;
-      background-color: #fff7ed;
-      border-color: #ff5100;
+  padding: 6px 13px;
+  border: 1px solid var(--qz-border-strong);
+  border-radius: 7px;
+  background: var(--qz-surface);
+  color: var(--qz-text);
+  font-size: .875rem;
+  font-weight: 550;
+  cursor: grab;
+  transition: border-color .16s, transform .16s, box-shadow .16s;
+
+  &:active { cursor: grabbing; }
+}
+
+.options-pool {
+  padding: 18px;
+  background: var(--qz-surface-sunk);
+  border: 1px solid var(--qz-border);
+  border-radius: var(--qz-r);
+
+  .pool-label {
+    margin: 0 0 12px;
+    font-size: .6875rem;
+    font-weight: 650;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--qz-text-subtle);
+  }
+
+  .pool-list { display: flex; flex-wrap: wrap; gap: 10px; min-height: 46px; }
+
+  .pool-item:hover {
+    border-color: var(--qz-accent);
+    color: var(--qz-accent-ink);
+    transform: translateY(-1px);
+    box-shadow: var(--qz-shadow);
   }
 }
 
-
-.options-pool {
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 20px;
-
-    .pool-label {
-        font-size: 0.85rem;
-        font-weight: 700;
-        color: #6b7280;
-        margin-bottom: 12px;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
-    .pool-list {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        min-height: 50px; 
-    }
-
-    .pool-item {
-        border-color: #d1d5db;
-        transition: transform 0.1s;
-        
-        &:hover {
-            border-color: #ff5100;
-            color: #ff5100;
-            transform: translateY(-2px);
-        }
-    }
-}
-
-
 .cdk-drag-preview {
-    background-color: #ff5100;
-    color: white;
-    padding: 8px 16px;
-    border-radius: 6px;
+  padding: 7px 14px;
+  border-radius: 7px;
+  background: var(--qz-accent);
+  color: #fff;
+  font-size: .875rem;
+  font-weight: 600;
+  box-shadow: 0 12px 28px -8px rgba(255, 81, 0, .5);
+  z-index: 9999 !important;
+}
+
+.cdk-drag-placeholder { opacity: .28; }
+.cdk-drag-animating { transition: transform 220ms cubic-bezier(.22, 1, .36, 1); }
+.blank-zone.cdk-drop-list-dragging .drag-chip { transition: transform 220ms cubic-bezier(.22, 1, .36, 1); }
+
+/* ------------------------------------------------------------------ nav --- */
+
+.nav-buttons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 20px;
+    border-radius: var(--qz-r-sm);
+    border: 1px solid transparent;
+    font-family: inherit;
+    font-size: .875rem;
     font-weight: 600;
-    box-shadow: 0 10px 20px rgba(255, 81, 0, 0.3);
-    z-index: 9999 !important;
+    cursor: pointer;
+    transition: background .16s, border-color .16s, color .16s, transform .16s;
+
+    &:active { transform: translateY(1px); }
+    &:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+  }
+
+  .btn-prev {
+    background: var(--qz-surface);
+    border-color: var(--qz-border);
+    color: var(--qz-text);
+    &:hover:not(:disabled) { background: var(--qz-surface-sunk); border-color: var(--qz-border-strong); }
+  }
+
+  .btn-next {
+    margin-left: auto;
+    background: var(--qz-accent);
+    color: #fff;
+    &:hover { background: color.adjust(#ff5100, $lightness: -6%); }
+  }
+
+  .btn-finish {
+    margin-left: auto;
+    background: var(--qz-text);
+    color: var(--qz-bg);
+    &:hover { background: color-mix(in srgb, var(--qz-text) 86%, transparent); }
+  }
 }
 
-.cdk-drag-placeholder {
-    opacity: 0.3;
+/* ------------------------------------------------------------ navigator --- */
+
+.quiz-navigator {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px 20px;
+  background: var(--qz-surface);
+  border-left: 1px solid var(--qz-border);
+  overflow-y: auto;
 }
 
-.cdk-drag-animating {
-    transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+.nav-title {
+  margin: 0;
+  font-size: .6875rem;
+  font-weight: 650;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--qz-text-subtle);
 }
 
-.blank-zone.cdk-drop-list-dragging .drag-chip {
-    transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+.grid-nav {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.nav-item {
+  position: relative;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--qz-border);
+  border-radius: var(--qz-r-sm);
+  background: var(--qz-surface);
+  color: var(--qz-text-muted);
+  font-family: inherit;
+  font-size: .8125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background .16s, border-color .16s, color .16s;
+
+  &:hover { border-color: var(--qz-border-strong); background: var(--qz-surface-sunk); }
+
+  /* answered: filled neutral — reads as "done" without competing for attention */
+  &.answered {
+    background: color-mix(in srgb, var(--qz-text) 10%, transparent);
+    border-color: transparent;
+    color: var(--qz-text);
+  }
+
+  /* current: the only accent in the grid */
+  &.active {
+    border-color: var(--qz-accent);
+    color: var(--qz-accent-ink);
+    background: var(--qz-accent-wash);
+    box-shadow: 0 0 0 1px var(--qz-accent) inset;
+  }
+
+  .flag-dot {
+    position: absolute;
+    top: 4px; right: 4px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--qz-danger);
+  }
+}
+
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding-top: 18px;
+  border-top: 1px solid var(--qz-border);
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: .75rem;
+    color: var(--qz-text-muted);
+  }
+
+  /* shape carries meaning alongside colour, so the legend still works for
+     colour-blind users and in greyscale print */
+  .dot {
+    flex: 0 0 auto;
+    width: 10px; height: 10px;
+    border-radius: 3px;
+    border: 1px solid var(--qz-border-strong);
+    background: var(--qz-surface);
+  }
+  .dot.active   { background: var(--qz-accent-wash); border-color: var(--qz-accent); box-shadow: 0 0 0 1px var(--qz-accent) inset; }
+  .dot.answered { background: color-mix(in srgb, var(--qz-text) 26%, transparent); border-color: transparent; }
+  .dot.unans    { background: var(--qz-surface); }
+  .dot.flag     { background: var(--qz-danger); border-color: transparent; border-radius: 50%; }
+}
+
+.nav-footer { margin-top: auto; }
+
+.btn-submit-all {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--qz-border);
+  border-radius: var(--qz-r-sm);
+  background: var(--qz-surface);
+  color: var(--qz-text);
+  font-family: inherit;
+  font-size: .8125rem;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background .16s, border-color .16s, color .16s;
+
+  &:hover {
+    background: var(--qz-text);
+    border-color: var(--qz-text);
+    color: var(--qz-bg);
+  }
+}
+
+/* --------------------------------------------------------------- states --- */
+
+.qz-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  height: 100dvh;
+  padding: 24px;
+  text-align: center;
+
+  .qz-state__spinner {
+    width: 30px; height: 30px;
+    border: 2.5px solid var(--qz-border);
+    border-top-color: var(--qz-accent);
+    border-radius: 50%;
+    animation: qz-spin .7s linear infinite;
+  }
+
+  .qz-state__icon {
+    display: grid; place-items: center;
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    background: var(--qz-danger-wash);
+    color: var(--qz-danger);
+    font-size: 1.375rem;
+  }
+
+  .qz-state__text { margin: 0; font-size: .9375rem; color: var(--qz-text-muted); max-width: 44ch; text-wrap: pretty; }
+
+  .qz-state__btn {
+    padding: 10px 20px;
+    border: 1px solid var(--qz-border);
+    border-radius: var(--qz-r-sm);
+    background: var(--qz-surface);
+    color: var(--qz-text);
+    font-family: inherit;
+    font-size: .875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .16s;
+    &:hover { background: var(--qz-surface-sunk); }
+  }
+}
+
+@keyframes qz-spin { to { transform: rotate(360deg); } }
+
+/* ----------------------------------------------------------- responsive --- */
+
+/* The old fixed `1fr 320px` never collapsed, so the navigator crushed the
+   question on narrow screens. Below 1040px it becomes a horizontal strip. */
+@media (max-width: 1040px) {
+  :host { height: auto; overflow: visible; }
+
+  .quiz-layout {
+    grid-template-columns: minmax(0, 1fr);
+    overflow: visible;
+  }
+
+  .question-area { overflow: visible; padding-bottom: 32px; }
+
+  .quiz-navigator {
+    order: -1;
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    border-left: none;
+    border-bottom: 1px solid var(--qz-border);
+    overflow-x: auto;
+
+    .nav-content { display: flex; align-items: center; gap: 14px; }
+    .nav-title, .legend { display: none; }
+
+    .grid-nav {
+      display: flex;
+      gap: 6px;
+    }
+
+    .nav-item { width: 34px; aspect-ratio: auto; height: 34px; flex: 0 0 auto; }
+
+    .nav-footer { margin: 0 0 0 auto; }
+    .btn-submit-all { width: auto; white-space: nowrap; padding: 9px 14px; }
+  }
+}
+
+@media (max-width: 560px) {
+  .quiz-header {
+    height: auto;
+    padding: 10px 16px;
+    flex-wrap: wrap;
+    row-gap: 8px;
+
+    h1 { font-size: .9rem; }
+    .timer-box .timer-value { font-size: 1.05rem; }
+  }
+
+  .nav-buttons {
+    button { flex: 1 1 auto; justify-content: center; padding: 12px 14px; }
+    .btn-next, .btn-finish { margin-left: 0; }
+  }
 }
