@@ -1,57 +1,40 @@
 /* ===========================================================================
-   Resources — shares the token language introduced on the quiz runner so the
-   two pages read as one product. Accent is reserved for the active filter and
-   focus; file types are distinguished by icon + a muted tint, never by a loud
-   fill competing with the content.
+   Resources
+
+   Light only, on purpose. The app shell (sidebar, top bar) has no dark theme,
+   so honouring prefers-color-scheme here turned the page into a black panel
+   inside a white app on any machine set to dark. Until the shell gains a theme,
+   every surface in this feature stays light.
    =========================================================================== */
 
 :host {
-  --rs-bg:            #f7f7f6;
+  --rs-bg:            #faf9f8;
   --rs-surface:       #ffffff;
-  --rs-surface-sunk:  #fafaf9;
-  --rs-border:        #e8e7e4;
-  --rs-border-strong: #d6d4d0;
+  --rs-surface-sunk:  #f6f5f3;
+  --rs-border:        #ecebe8;
+  --rs-border-strong: #dcdad5;
 
-  --rs-text:          #1a1817;
-  --rs-text-muted:    #6f6b66;
-  --rs-text-subtle:   #9b9691;
+  --rs-text:          #1c1917;
+  --rs-text-muted:    #78716c;
+  --rs-text-subtle:   #a8a29e;
 
   --rs-accent:        #ff5100;
-  --rs-accent-ink:    #bf3d04;
-  --rs-accent-wash:   #fff4ee;
+  --rs-accent-ink:    #c2410c;
+  --rs-accent-wash:   #fff4ed;
 
-  --rs-r-sm: 8px;
-  --rs-r:    12px;
-  --rs-r-lg: 16px;
+  --rs-r-sm: 10px;
+  --rs-r:    14px;
+  --rs-r-lg: 20px;
 
-  --rs-shadow:       0 1px 2px rgba(24, 19, 16, .04);
-  --rs-shadow-hover: 0 1px 2px rgba(24, 19, 16, .05), 0 10px 24px -12px rgba(24, 19, 16, .22);
-  --rs-ring:         0 0 0 3px rgba(255, 81, 0, .28);
+  --rs-shadow:       0 1px 2px rgba(28, 25, 23, .04);
+  --rs-shadow-hover: 0 2px 4px rgba(28, 25, 23, .04), 0 12px 28px -14px rgba(28, 25, 23, .28);
+  --rs-ring:         0 0 0 3px rgba(255, 81, 0, .22);
 
   display: block;
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   color: var(--rs-text);
+  background: var(--rs-bg);
   -webkit-font-smoothing: antialiased;
-}
-
-@media (prefers-color-scheme: dark) {
-  :host {
-    --rs-bg:            #131211;
-    --rs-surface:       #1c1a19;
-    --rs-surface-sunk:  #171615;
-    --rs-border:        #2a2725;
-    --rs-border-strong: #3a3633;
-
-    --rs-text:          #f2efec;
-    --rs-text-muted:    #a8a29c;
-    --rs-text-subtle:   #7c7671;
-
-    --rs-accent-ink:    #ff7a3d;
-    --rs-accent-wash:   #2a1a12;
-
-    --rs-shadow:       0 1px 2px rgba(0, 0, 0, .4);
-    --rs-shadow-hover: 0 1px 2px rgba(0, 0, 0, .4), 0 12px 28px -14px rgba(0, 0, 0, .8);
-  }
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -70,7 +53,7 @@
 }
 
 .resources-page {
-  padding: clamp(20px, 3.4vw, 36px) clamp(16px, 3.4vw, 40px) 56px;
+  padding: clamp(20px, 3.2vw, 34px) clamp(16px, 3.2vw, 38px) 64px;
   background: var(--rs-bg);
   min-height: calc(100vh - 56px);
 }
@@ -91,15 +74,14 @@
 
     h1 {
       margin: 0;
-      /* was 2.3rem/900 — oversized and heavy against a page of small cards */
-      font-size: clamp(1.5rem, 2.6vw, 1.875rem);
+      font-size: clamp(1.5rem, 2.5vw, 1.8rem);
       font-weight: 700;
       letter-spacing: -.03em;
     }
 
     p {
       margin: 5px 0 0;
-      font-size: .9rem;
+      font-size: .875rem;
       color: var(--rs-text-muted);
     }
   }
@@ -124,20 +106,21 @@
     border-radius: 999px;
     border: 1px solid var(--rs-border);
     background: var(--rs-surface);
-    padding: 8px 34px 8px 14px;
+    padding: 9px 34px 9px 15px;
     font-family: inherit;
     font-size: .8125rem;
     font-weight: 500;
     color: var(--rs-text);
     cursor: pointer;
-    transition: border-color .16s, background .16s;
+    box-shadow: var(--rs-shadow);
+    transition: border-color .16s;
 
     &:hover { border-color: var(--rs-border-strong); }
   }
 
   .chevron {
     position: absolute;
-    right: 13px;
+    right: 14px;
     font-size: .6rem;
     color: var(--rs-text-subtle);
     pointer-events: none;
@@ -151,11 +134,12 @@
   background: var(--rs-surface);
   border: 1px solid var(--rs-border);
   border-radius: 999px;
+  box-shadow: var(--rs-shadow);
 
   .pill {
     border: none;
     border-radius: 999px;
-    padding: 6px 14px;
+    padding: 7px 15px;
     font-family: inherit;
     font-size: .8125rem;
     font-weight: 550;
@@ -166,13 +150,10 @@
 
     &:hover:not(.active) { background: var(--rs-surface-sunk); color: var(--rs-text); }
 
-    /* Selected state reads as selected without a saturated orange slab: the
-       accent is carried by text + a soft wash, which sits far better beside
-       the neutral cards below. */
     &.active {
       background: var(--rs-accent-wash);
       color: var(--rs-accent-ink);
-      box-shadow: 0 0 0 1px color-mix(in srgb, var(--rs-accent) 35%, transparent) inset;
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--rs-accent) 30%, transparent) inset;
     }
   }
 }
@@ -180,19 +161,17 @@
 .search-wrapper {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 14px;
-  min-width: 200px;
-  max-width: 280px;
+  gap: 9px;
+  padding: 0 15px;
+  min-width: 210px;
+  max-width: 290px;
   background: var(--rs-surface);
   border: 1px solid var(--rs-border);
   border-radius: 999px;
+  box-shadow: var(--rs-shadow);
   transition: border-color .16s, box-shadow .16s;
 
-  &:focus-within {
-    border-color: var(--rs-accent);
-    box-shadow: var(--rs-ring);
-  }
+  &:focus-within { border-color: var(--rs-accent); box-shadow: var(--rs-ring); }
 
   .icon { font-size: .8rem; color: var(--rs-text-subtle); }
 
@@ -202,31 +181,28 @@
     border: none;
     outline: none;
     background: transparent;
-    padding: 9px 0;
+    padding: 10px 0;
     font-family: inherit;
     font-size: .8125rem;
     color: var(--rs-text);
 
     &::placeholder { color: var(--rs-text-subtle); }
-    &::-webkit-search-cancel-button { cursor: pointer; }
+    &:focus-visible { box-shadow: none; }
   }
-
-  /* the wrapper already owns the ring */
-  input:focus-visible { box-shadow: none; }
 }
 
 /* ---------------------------------------------------------------- lists --- */
 
 .courses-list {
-  margin-top: 28px;
+  margin-top: 30px;
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 34px;
 }
 
 .course-heading {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 14px;
@@ -234,8 +210,8 @@
   h2 {
     margin: 0;
     display: flex;
-    align-items: baseline;
-    gap: 9px;
+    align-items: center;
+    gap: 10px;
     flex-wrap: wrap;
     min-width: 0;
     font-size: .9375rem;
@@ -246,12 +222,12 @@
   .course-code {
     font-size: .6875rem;
     font-weight: 650;
-    letter-spacing: .05em;
-    padding: 3px 7px;
-    border-radius: 6px;
-    background: var(--rs-surface-sunk);
-    border: 1px solid var(--rs-border);
-    color: var(--rs-text-muted);
+    letter-spacing: .04em;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: var(--rs-accent-wash);
+    color: var(--rs-accent-ink);
+    border: 1px solid color-mix(in srgb, var(--rs-accent) 18%, transparent);
   }
 
   .course-name { color: var(--rs-text); }
@@ -264,23 +240,22 @@
   }
 }
 
-/* 240px floor stops long filenames from being crushed; auto-fill keeps rows
-   tidy at any width instead of the old single overflowing strip. */
 .files-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(255px, 1fr));
   gap: 12px;
 }
 
 /* ---------------------------------------------------------------- cards --- */
 
 .file-card {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 13px;
   width: 100%;
-  min-width: 0;                /* lets the flex children shrink instead of overflowing */
-  padding: 12px 13px;
+  min-width: 0;
+  padding: 14px;
   text-align: left;
   background: var(--rs-surface);
   border: 1px solid var(--rs-border);
@@ -288,14 +263,15 @@
   box-shadow: var(--rs-shadow);
   cursor: pointer;
   font-family: inherit;
-  transition: border-color .16s, box-shadow .16s, transform .16s;
+  transition: border-color .18s, box-shadow .18s, transform .18s;
 
   &:hover {
     border-color: var(--rs-border-strong);
     box-shadow: var(--rs-shadow-hover);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
 
-    .file-action { color: var(--rs-accent-ink); opacity: 1; }
+    .file-icon { transform: scale(1.04) rotate(-2deg); }
+    .file-action { color: var(--rs-accent-ink); opacity: 1; transform: none; }
   }
 
   &:active { transform: translateY(0); }
@@ -305,40 +281,33 @@
   flex: 0 0 auto;
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  font-size: 1rem;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  font-size: 1.05rem;
   background: var(--rs-surface-sunk);
   color: var(--rs-text-muted);
-  border: 1px solid var(--rs-border);
+  transition: transform .18s;
 
-  /* Muted tints — enough to tell types apart at a glance, quiet enough that a
-     grid of twenty files doesn't look like confetti. */
-  &.pdf    { background: #fef2f2; color: #b91c1c; border-color: #fee2e2; }
-  &.doc    { background: #eff6ff; color: #1d4ed8; border-color: #dbeafe; }
-  &.slides { background: #fffbeb; color: #b45309; border-color: #fef3c7; }
-  &.zip    { background: #f0fdf4; color: #15803d; border-color: #dcfce7; }
-  &.video  { background: #f5f3ff; color: #6d28d9; border-color: #ede9fe; }
-  &.link   { background: #f8fafc; color: #475569; border-color: #e2e8f0; }
-}
-
-@media (prefers-color-scheme: dark) {
-  .file-icon {
-    &.pdf    { background: #2a1516; color: #fca5a5; border-color: #3a1d1e; }
-    &.doc    { background: #10203a; color: #93c5fd; border-color: #172c4d; }
-    &.slides { background: #2a1e08; color: #fcd34d; border-color: #3a2a0c; }
-    &.zip    { background: #0d2417; color: #86efac; border-color: #133220; }
-    &.video  { background: #1e1638; color: #c4b5fd; border-color: #2a1f4d; }
-    &.link   { background: #191b1f; color: #cbd5e1; border-color: #24272d; }
-  }
+  /* Soft pastel tints per family — enough personality to scan a grid quickly,
+     restrained enough that twenty files don't look like confetti. */
+  &.pdf    { background: linear-gradient(145deg, #fff1f1, #ffe4e4); color: #dc2626; }
+  &.doc    { background: linear-gradient(145deg, #eff6ff, #dbeafe); color: #2563eb; }
+  &.slides { background: linear-gradient(145deg, #fff7ed, #ffedd5); color: #ea580c; }
+  &.sheet  { background: linear-gradient(145deg, #f0fdf4, #dcfce7); color: #16a34a; }
+  &.zip    { background: linear-gradient(145deg, #fefce8, #fef9c3); color: #ca8a04; }
+  &.video  { background: linear-gradient(145deg, #faf5ff, #f3e8ff); color: #9333ea; }
+  &.audio  { background: linear-gradient(145deg, #fdf2f8, #fce7f3); color: #db2777; }
+  &.image  { background: linear-gradient(145deg, #ecfeff, #cffafe); color: #0891b2; }
+  &.code   { background: linear-gradient(145deg, #f8fafc, #e2e8f0); color: #475569; }
+  &.link   { background: linear-gradient(145deg, #f5f3ff, #ede9fe); color: #6d28d9; }
 }
 
 .file-info {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  min-width: 0;                /* the actual fix for the clipped filenames */
+  min-width: 0;          /* the fix for clipped filenames */
   flex: 1 1 auto;
 }
 
@@ -348,8 +317,6 @@
   line-height: 1.4;
   color: var(--rs-text);
 
-  /* Filenames are long and unbroken (Course_Syllabus_Fall2024.pdf). Wrap to two
-     lines and ellipsis beyond, rather than spilling past the card edge. */
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -366,16 +333,17 @@
   color: var(--rs-text-subtle);
   white-space: nowrap;
 
-  .file-type { font-weight: 550; }
+  .file-type { font-weight: 550; color: var(--rs-text-muted); }
   .file-size { font-variant-numeric: tabular-nums; }
 }
 
 .file-action {
   flex: 0 0 auto;
+  align-self: center;
   font-size: .8rem;
   color: var(--rs-text-subtle);
-  opacity: .65;
-  transition: color .16s, opacity .16s;
+  opacity: .55;
+  transition: color .18s, opacity .18s, transform .18s;
 }
 
 /* -------------------------------------------------------- empty/loading --- */
@@ -385,7 +353,7 @@
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  padding: 56px 24px;
+  padding: 60px 24px;
   text-align: center;
   background: var(--rs-surface);
   border: 1px dashed var(--rs-border-strong);
@@ -394,11 +362,11 @@
   &__icon {
     display: grid;
     place-items: center;
-    width: 44px; height: 44px;
+    width: 48px; height: 48px;
     border-radius: 50%;
-    background: var(--rs-surface-sunk);
-    color: var(--rs-text-subtle);
-    font-size: 1.1rem;
+    background: var(--rs-accent-wash);
+    color: var(--rs-accent-ink);
+    font-size: 1.15rem;
   }
 
   &__title { margin: 4px 0 0; font-size: .9375rem; font-weight: 600; }
@@ -420,14 +388,14 @@
   background: linear-gradient(
     90deg,
     var(--rs-surface-sunk) 25%,
-    color-mix(in srgb, var(--rs-border) 60%, var(--rs-surface-sunk)) 37%,
+    #eeece9 37%,
     var(--rs-surface-sunk) 63%
   );
   background-size: 400% 100%;
   animation: rs-shimmer 1.4s ease-in-out infinite;
 
   &--heading { width: 220px; height: 16px; margin-bottom: 14px; border-radius: 6px; }
-  &--card    { height: 64px; }
+  &--card    { height: 70px; }
 }
 
 @keyframes rs-shimmer {
@@ -440,11 +408,9 @@
 @media (max-width: 760px) {
   .resources-header {
     align-items: flex-start;
-
     .filters { width: 100%; }
   }
 
   .search-wrapper { flex: 1 1 100%; max-width: none; }
-
   .files-grid { grid-template-columns: 1fr; }
 }

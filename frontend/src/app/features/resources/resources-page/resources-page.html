@@ -86,7 +86,7 @@
           "
           (click)="onOpenFile(file)"
         >
-          <span class="file-icon" [ngClass]="file.type" aria-hidden="true">
+          <span class="file-icon" [ngClass]="groupFor(file.type)" aria-hidden="true">
             <fa-icon [icon]="iconFor(file.type)"></fa-icon>
           </span>
 

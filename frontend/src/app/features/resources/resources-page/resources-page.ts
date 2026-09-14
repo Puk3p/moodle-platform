@@ -7,6 +7,10 @@ import {
   faChevronDown,
   faDownload,
   faFileArchive,
+  faFileAudio,
+  faFileCode,
+  faFileExcel,
+  faFileImage,
   faFileLines,
   faFilePdf,
   faFilePowerpoint,
@@ -37,31 +41,70 @@ export class ResourcesPageComponent {
   faDownload = faDownload;
   faArrowUpRightFromSquare = faArrowUpRightFromSquare;
 
-  private readonly typeIcons: Record<string, IconDefinition> = {
+  /**
+   * Keyed on the real values the API sends (module_items.file_type): pdf, pptx, docx,
+   * zip, link, video — plus the rest of the upload allow-list, so a newly uploaded
+   * .xlsx or .png doesn't silently fall back to a blank document icon.
+   */
+  private readonly typeGroups: Record<string, string> = {
+    pdf: 'pdf',
+    doc: 'doc', docx: 'doc', txt: 'doc', md: 'doc', rtf: 'doc',
+    ppt: 'slides', pptx: 'slides',
+    xls: 'sheet', xlsx: 'sheet', csv: 'sheet',
+    zip: 'zip', rar: 'zip', '7z': 'zip',
+    mp4: 'video', mov: 'video', avi: 'video', video: 'video',
+    mp3: 'audio', wav: 'audio',
+    png: 'image', jpg: 'image', jpeg: 'image', gif: 'image', webp: 'image', svg: 'image',
+    java: 'code', py: 'code', c: 'code', cpp: 'code', h: 'code', cs: 'code',
+    js: 'code', ts: 'code', json: 'code', xml: 'code', sql: 'code',
+    link: 'link',
+  };
+
+  private readonly groupIcons: Record<string, IconDefinition> = {
     pdf: faFilePdf,
     doc: faFileWord,
     slides: faFilePowerpoint,
+    sheet: faFileExcel,
     zip: faFileArchive,
     video: faFileVideo,
+    audio: faFileAudio,
+    image: faFileImage,
+    code: faFileCode,
     link: faLink,
   };
 
+  private readonly groupLabels: Record<string, string> = {
+    pdf: 'PDF',
+    doc: 'Document',
+    slides: 'Slides',
+    sheet: 'Spreadsheet',
+    zip: 'Archive',
+    video: 'Video',
+    audio: 'Audio',
+    image: 'Image',
+    code: 'Code',
+    link: 'Link',
+  };
+
+  /** Normalises a raw file_type into one of the visual groups above. */
+  groupFor(type: string | undefined): string {
+    return this.typeGroups[(type ?? '').toLowerCase()] ?? 'file';
+  }
+
   /** Real icon per resource type; unknown types fall back to a generic document. */
   iconFor(type: string | undefined): IconDefinition {
-    return this.typeIcons[(type ?? '').toLowerCase()] ?? faFileLines;
+    return this.groupIcons[this.groupFor(type)] ?? faFileLines;
   }
 
   /** Short label shown under the title, so the type is readable as text too. */
   typeLabel(type: string | undefined): string {
-    switch ((type ?? '').toLowerCase()) {
-      case 'pdf': return 'PDF';
-      case 'doc': return 'Document';
-      case 'slides': return 'Slides';
-      case 'zip': return 'Archive';
-      case 'video': return 'Video';
-      case 'link': return 'Link';
-      default: return 'File';
+    const group = this.groupFor(type);
+    if (group !== 'file') {
+      return this.groupLabels[group];
     }
+    // Unknown extension: show it verbatim rather than a vague "File".
+    const raw = (type ?? '').trim().toUpperCase();
+    return raw.length > 0 && raw.length <= 5 ? raw : 'File';
   }
 
   /** Links leave the site; everything else downloads. Drives the trailing icon. */
