@@ -8,6 +8,7 @@
     <div class="filters">
       <div class="term-select">
         <select
+          aria-label="Filter by term"
           [value]="selectedTerm()"
           (change)="onTermChange($any($event.target).value)"
         >
@@ -15,22 +16,24 @@
             Term: {{ term }}
           </option>
         </select>
-        <span class="chevron">▾</span>
+        <fa-icon class="chevron" [icon]="faChevronDown" aria-hidden="true"></fa-icon>
       </div>
 
-      <div class="scope-toggle">
+      <div class="scope-toggle" role="group" aria-label="Course scope">
         <button
           type="button"
           class="pill"
           [class.active]="courseScope() === 'current'"
+          [attr.aria-pressed]="courseScope() === 'current'"
           (click)="setScope('current')"
         >
-          Current courses
+          Current
         </button>
         <button
           type="button"
           class="pill"
           [class.active]="courseScope() === 'all'"
+          [attr.aria-pressed]="courseScope() === 'all'"
           (click)="setScope('all')"
         >
           All courses
@@ -38,10 +41,11 @@
       </div>
 
       <div class="search-wrapper">
-        <span class="icon">🔍</span>
+        <fa-icon class="icon" [icon]="faMagnifyingGlass" aria-hidden="true"></fa-icon>
         <input
-          type="text"
-          placeholder="Search files, topics..."
+          type="search"
+          aria-label="Search files and topics"
+          placeholder="Search files, topics…"
           [value]="searchText()"
           (input)="onSearch($any($event.target).value)"
         />
@@ -49,53 +53,71 @@
     </div>
   </section>
 
-  <div class="loading" *ngIf="loading()">
-    Loading resources…
-  </div>
+  <!-- Skeleton rather than a bare word, so the page doesn't collapse then jump. -->
+  <section class="courses-list" *ngIf="loading()" aria-busy="true">
+    <div class="course-section" *ngFor="let s of [1, 2]">
+      <div class="skeleton skeleton--heading"></div>
+      <div class="files-grid">
+        <div class="skeleton skeleton--card" *ngFor="let c of [1, 2, 3, 4]"></div>
+      </div>
+    </div>
+  </section>
 
   <section class="courses-list" *ngIf="!loading()">
-    <section
-      class="course-section"
-      *ngFor="let course of filteredCourses()"
-    >
-      <h2>
-        {{ course.courseCode }}: {{ course.courseName }}
-      </h2>
+    <section class="course-section" *ngFor="let course of filteredCourses()">
+      <header class="course-heading">
+        <h2>
+          <span class="course-code">{{ course.courseCode }}</span>
+          <span class="course-name">{{ course.courseName }}</span>
+        </h2>
+        <span class="course-count">
+          {{ course.files.length }} {{ course.files.length === 1 ? 'item' : 'items' }}
+        </span>
+      </header>
 
       <div class="files-grid">
         <button
           type="button"
           class="file-card"
           *ngFor="let file of course.files"
-          (click)="onOpenFile(file)" 
+          [attr.title]="file.title"
+          [attr.aria-label]="
+            (isExternal(file) ? 'Open ' : 'Download ') + file.title + ', ' + typeLabel(file.type)
+          "
+          (click)="onOpenFile(file)"
         >
-          <div class="file-icon" [ngClass]="file.type">
-            <span class="icon-text">
-              {{
-                file.type === 'pdf'
-                  ? 'PDF'
-                  : file.type === 'doc'
-                  ? 'DOC'
-                  : file.type === 'slides'
-                  ? 'PPT'
-                  : file.type === 'zip'
-                  ? 'ZIP'
-                  : file.type === 'video'
-                  ? 'VID'
-                  : 'LINK'
-              }}
+          <span class="file-icon" [ngClass]="file.type" aria-hidden="true">
+            <fa-icon [icon]="iconFor(file.type)"></fa-icon>
+          </span>
+
+          <span class="file-info">
+            <span class="file-title">{{ file.title }}</span>
+            <span class="file-meta">
+              <span class="file-type">{{ typeLabel(file.type) }}</span>
+              <span class="dot" *ngIf="file.sizeLabel" aria-hidden="true">·</span>
+              <span class="file-size" *ngIf="file.sizeLabel">{{ file.sizeLabel }}</span>
             </span>
-          </div>
-          <div class="file-info">
-            <p class="file-title">{{ file.title }}</p>
-            <p class="file-size">{{ file.sizeLabel }}</p>
-          </div>
+          </span>
+
+          <!-- Tells you what the click will do before you make it. -->
+          <fa-icon
+            class="file-action"
+            [icon]="isExternal(file) ? faArrowUpRightFromSquare : faDownload"
+            aria-hidden="true"
+          ></fa-icon>
         </button>
       </div>
     </section>
-    
-    <div *ngIf="filteredCourses().length === 0" class="no-results">
-        <p>No resources found matching your criteria.</p>
+
+    <div *ngIf="filteredCourses().length === 0" class="empty-state">
+      <span class="empty-state__icon" aria-hidden="true">
+        <fa-icon [icon]="faFolderOpen"></fa-icon>
+      </span>
+      <p class="empty-state__title">No resources found</p>
+      <p class="empty-state__hint">
+        Nothing matches your current filters. Try a different term, switch to
+        <strong>All courses</strong>, or clear the search.
+      </p>
     </div>
   </section>
 </div>
