@@ -108,69 +108,72 @@
 /* --- responsive + accessibility --------------------------------------- */
 
 @mixin auth-hero-responsive {
-  /* --- phone + tablet: hero stacks on top of the form ------------------ */
-  @media (max-width: 899px) {
-    /* The hero becomes the card's head, so the card sheds its own top chrome
-       and the two read as one surface rather than a banner stuck on a box. */
-    .auth-card {
-      border-radius: 1rem;
-      overflow: hidden;
-    }
-
-    .auth-hero { border-radius: 1rem 1rem 0 0; }
+  /* One layout everywhere: the hero sits at the top of the card and fades into
+     the form beneath it. The two-column desktop split was tried and dropped —
+     side by side reads as a marketing page, and stacking keeps one visual idea
+     across phone and desktop instead of two designs to maintain. */
+  .auth-card {
+    border-radius: 1rem;
+    overflow: hidden;              /* clip the hero to the card's corners */
   }
+
+  .auth-hero { border-radius: 1rem 1rem 0 0; }
 
   @media (max-width: 600px) {
-    .brand-header { display: none; }   /* the crest already says Moodle V2 */
+    .brand-header { display: none; }   /* the crest already carries the mark */
   }
 
-  /* --- desktop: two columns ------------------------------------------- */
-  /* The card was a 440px column floating in a wide empty page. Splitting it
-     gives the hero the horizontal space that was going to waste, instead of
-     stretching a phone banner across a monitor. */
-  @media (min-width: 900px) {
-    .auth-card {
-      max-width: 880px;
-      overflow: hidden;
-      display: grid;
-      grid-template-columns: 340px minmax(0, 1fr);
-      /* rows: tabs / body / footer — the hero spans all three */
-      grid-template-rows: auto 1fr auto;
+  /* --- fit the viewport ------------------------------------------------ */
+  /* Target: 1920x1080 with no scrollbar. The hero is the only elastic part,
+     so it gets a capped height and crops top/bottom via `slice`, keeping the
+     crest (y=150) and the badge ring centred. Height is clamped against the
+     viewport so shorter windows shrink the art rather than push the Sign In
+     button off-screen. */
+  /* Measured at 1920x1080: the page came to 1120px and scrolled by 40. Browser
+     chrome eats another ~80-120 of a 1080 screen, so trimming to exactly 1080
+     would still scroll in a real window. These cuts bring it to ~930, which
+     clears typical chrome with room to spare. The hero absorbs the largest
+     share because it is decoration; the form keeps its breathing room. */
+  /* The actual cause of the scrollbar, measured: .auth-container is content-box
+     with min-height:100vh AND vertical padding, so its box came to 1080+32=1112
+     while its children summed to only 820. border-box makes 100vh mean the
+     viewport, padding included — which is what the layout always intended. */
+  .auth-container { box-sizing: border-box; }
+
+  @media (min-width: 601px) {
+    .auth-container {
+      min-height: 100dvh;
+      justify-content: center;
+      padding-block: 1rem;
     }
 
-    /* Explicit placement rather than source order, because the 2FA state
-       removes the tabs and footer via *ngIf; named columns keep the form in
-       the right half whichever children are present. */
-    .auth-hero   { grid-column: 1; grid-row: 1 / -1; height: 100%; }
-    .auth-tabs   { grid-column: 2; grid-row: 1; }
-    .auth-body   { grid-column: 2; grid-row: 2; }
-    .auth-footer { grid-column: 2; grid-row: 3; }
+    .brand-header { margin-bottom: .75rem; }
 
-    /* The scene is a wide composition; a tall narrow panel cannot center-crop it
-       without losing the badges (measured: at 340x640 only viewBox x 108-267
-       survived, cropping 4 of the 5). So desktop does not crop at all — the sky
-       moves to a CSS gradient sized to the panel, and the SVG scene floats on
-       top at its natural ratio, vertically centred.
-       This also drops the white bottom stop, which only exists so the stacked
-       mobile hero can melt into the form beneath it. Side by side, the panel
-       should stay orange to its bottom edge. */
+    /* With the box model fixed there is ~260px of slack at 1080, so the hero
+       keeps a generous band rather than the emergency 190px. */
     .auth-hero {
-      display: flex;
-      align-items: center;
-      background: linear-gradient(180deg, #c2500f 0%, #e0692a 52%, #f4863f 100%);
+      height: clamp(150px, 22vh, 240px);
+
+      svg { width: 100%; height: 100%; }
     }
 
-    /* Slightly oversized so the scene fills the panel rather than floating as a
-       small emblem. 120% crops ~37 viewBox units per side; the outermost badges
-       sit at x=74 and x=300 with r=19, so they still clear the edge. Going much
-       past this starts eating them. */
-    .auth-hero svg {
-      width: 120%;
-      height: auto;
-      margin-inline: -10%;
+    .auth-body {
+      padding-top: 1.25rem;                /* was 2rem */
+      padding-bottom: 1.25rem;
+      gap: 1rem;                           /* was 1.5rem */
     }
 
-    .hero-sky { display: none; }
+    .divider { margin-block: .25rem; }
+
+    .auth-footer {
+      padding-top: 1rem;                   /* was 1.5rem */
+      padding-bottom: 1rem;
+    }
+
+    .copyright {
+      margin-block: .5rem 0;
+      padding-bottom: 0;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
