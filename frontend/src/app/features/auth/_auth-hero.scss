@@ -158,6 +158,21 @@
   .auth-card {
     border-radius: 1rem;
     overflow: hidden;          /* clip the hero to the card's corners */
+
+    /* The 1px border traced the OUTER 16px curve while overflow:hidden clips
+       children to the INNER 15px curve, so a hairline of near-white border
+       (#e2e8f0) sat outside the orange in each top corner — the "white bits"
+       in the corners. Measured with elementFromPoint: the corner pixels hit
+       the page background and then the hero directly, never the card's fill,
+       so the border was the only thing left painting there.
+
+       Removing it also settles an R10 violation: the card had a border AND a
+       shadow. One elevation language — here the shadow, layered and low-alpha
+       — so the hero now runs clean into the corner. */
+    border: none;
+    box-shadow:
+      0 1px 2px rgba(28, 25, 23, 0.05),
+      0 14px 34px -14px rgba(28, 25, 23, 0.20);
   }
 
   @media (max-width: 600px) {
