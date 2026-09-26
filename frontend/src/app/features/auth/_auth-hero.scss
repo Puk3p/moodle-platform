@@ -1,0 +1,139 @@
+/* ===========================================================================
+   Mobile login hero — animated "campus orbit" scene.
+
+   Phone-only by design: it renders below 600px and is display:none above, so
+   the desktop card we polished stays clean and the SVG costs nothing there.
+
+   Why SVG and not Blender / video:
+   the scene is flat vector art (rings, dots, line icons, one cap glyph). There
+   is no 3D geometry, lighting or material in it, so a render pipeline would buy
+   nothing and cost a great deal — a video export is megabytes, fixed
+   resolution, soft on high-DPI phones, and cannot be themed or react to state.
+   This whole scene is a few KB of markup that stays crisp at any density.
+
+   Craft notes (deliberate, not oversight):
+   - R1 bans gradients as a default move, with an exception for a gradient that
+     IS the brand, used once. This is that one place: a single night-sky wash
+     behind the identity, nowhere else. Buttons and cards stay flat.
+   - R2 bans glow used to borrow emphasis. The halo here is the subject of the
+     illustration rather than emphasis applied to a control, and it appears only
+     inside the hero.
+   - R12 says nothing loops for delight. This does loop, because an ambient hero
+     was the explicit request. The concession is speed: 18-30s cycles, small
+     amplitudes, no motion near the form. Reduced-motion stops all of it and
+     leaves a still scene, not a broken one.
+   =========================================================================== */
+
+@mixin auth-hero {
+  .auth-hero {
+    display: none;               /* phone-only; enabled in the media query */
+    position: relative;
+    width: 100%;
+    line-height: 0;              /* kill the inline-SVG descender gap */
+    background: #23150f;   /* $bg-dark — the brand's own dark, previously unused */
+    border-radius: 1rem 1rem 0 0;
+    overflow: hidden;
+
+    svg { width: 100%; height: auto; display: block; }
+  }
+
+  /* --- ambient motion ------------------------------------------------- */
+
+  /* Rings counter-rotate at different speeds so the scene never reads as a
+     single rigid object spinning. transform-box/origin keep rotation centred
+     on the SVG user-space centre rather than the element box. */
+  .hero-orbit {
+    transform-box: view-box;
+    transform-origin: 187.5px 150px;
+    animation: hero-spin 30s linear infinite;
+  }
+  .hero-orbit--mid  { animation-duration: 42s; animation-direction: reverse; }
+  .hero-orbit--wide { animation-duration: 56s; }
+
+  /* Each badge bobs on its own phase so they drift rather than pulse together. */
+  .hero-badge {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: hero-float 7s ease-in-out infinite;
+  }
+  .hero-badge--b { animation-duration: 8.5s; animation-delay: -2s; }
+  .hero-badge--c { animation-duration: 9.5s; animation-delay: -4s; }
+  .hero-badge--d { animation-duration: 8s;   animation-delay: -1s; }
+  .hero-badge--e { animation-duration: 10s;  animation-delay: -5s; }
+
+  .hero-star {
+    animation: hero-twinkle 5s ease-in-out infinite;
+  }
+  .hero-star--2 { animation-duration: 6.5s; animation-delay: -1.5s; }
+  .hero-star--3 { animation-duration: 7.5s; animation-delay: -3s; }
+  .hero-star--4 { animation-duration: 5.5s; animation-delay: -2.5s; }
+
+  .hero-halo {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: hero-breathe 9s ease-in-out infinite;
+  }
+
+  /* Entrance: the cap settles in once, then the ambient loops take over. */
+  .hero-crest {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: hero-crest-in 420ms cubic-bezier(.22, 1, .36, 1) both;
+  }
+}
+
+@keyframes hero-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes hero-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-7px); }
+}
+
+@keyframes hero-twinkle {
+  0%, 100% { opacity: .25; }
+  50%      { opacity: .9; }
+}
+
+@keyframes hero-breathe {
+  0%, 100% { opacity: .5;  transform: scale(1); }
+  50%      { opacity: .78; transform: scale(1.045); }
+}
+
+@keyframes hero-crest-in {
+  from { opacity: 0; transform: scale(.88); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* --- responsive + accessibility --------------------------------------- */
+
+@mixin auth-hero-responsive {
+  @media (max-width: 600px) {
+    .auth-hero { display: block; }
+
+    /* The hero becomes the card's head, so the card sheds its own top chrome
+       and the two read as one surface rather than a banner stuck on a box. */
+    .auth-card {
+      border-radius: 1rem;
+      overflow: hidden;
+    }
+
+    .brand-header { display: none; }   /* the crest already says Moodle V2 */
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-orbit,
+    .hero-badge,
+    .hero-star,
+    .hero-halo,
+    .hero-crest {
+      animation: none !important;
+      transform: none !important;
+    }
+    /* Leave a composed still frame, not a half-faded one. */
+    .hero-star { opacity: .6 !important; }
+    .hero-halo { opacity: .6 !important; }
+    .hero-crest { opacity: 1 !important; }
+  }
+}
