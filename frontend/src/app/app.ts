@@ -11,13 +11,14 @@ import { filter } from 'rxjs/operators';
 
 import { AuthService } from './core/services/auth.service';
 import { WebSocketService } from './core/services/web-socket.service'; 
+import { AuthHeroComponent } from './features/auth/auth-hero/auth-hero';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   templateUrl: './app.html',
   styleUrl: './app.scss',
-  imports: [
+  imports: [AuthHeroComponent, 
     RouterOutlet, MatSidenavModule, MatToolbarModule, MatListModule, 
     MatIconModule, MatButtonModule, RouterLink, RouterLinkActive,
     NgIf, NgClass, NgFor, FormsModule, DatePipe

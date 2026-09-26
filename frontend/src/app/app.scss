@@ -368,29 +368,41 @@ $app-border: rgba(148, 163, 184, 0.45);
     padding-bottom: calc(env(safe-area-inset-bottom) + 8px);
   }
   
+  /* The flat orange block with a cap glyph is replaced by the login screen's
+     animated scene, so the drawer and the sign-in page read as one product.
+     The scene supplies the colour, so the header itself stays transparent. */
   .sidenav-header {
-   
-    height: auto; 
-    
- 
-    padding-top: calc(env(safe-area-inset-top) + 30px); 
-    padding-bottom: 20px;
-    
-    background-color: #f95306;
-    color: white;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    
-    .mobile-logo-icon { 
-      font-size: 40px; 
-      margin-bottom: 10px; 
+    flex: 0 0 auto;
+    position: relative;
+    display: block;
+    padding: 0;
+    background: none;
+
+    app-auth-hero {
+      display: block;
+
+      /* Capped so the header stays a header. `slice` crops top and bottom,
+         keeping the crest (viewBox y=150) centred, and the component's fade
+         melts the band into the white list below it. */
+      height: calc(env(safe-area-inset-top) + 132px);
+
+      /* Shallower than the 48% default so the fade begins below the crest
+         instead of bisecting it. */
+      --hero-fade-depth: 26%;
     }
-    
-    h2 { 
-      margin: 0; 
-      font-family: Roboto, sans-serif; 
+
+    /* Flows below the scene rather than overlaying it. Overlaid at bottom:10px
+       it collided with the crest — measured a -10px gap, i.e. a 10px overlap.
+       Because the scene fades to white at its foot, a dark wordmark sitting
+       directly beneath it reads as one continuous panel anyway. */
+    .sidenav-wordmark {
+      margin: 0;
+      padding: 0 16px 14px;
+      text-align: center;
+      font-size: 1.0625rem;
+      font-weight: 650;
+      letter-spacing: -0.01em;
+      color: #1c1917;
     }
   }
 

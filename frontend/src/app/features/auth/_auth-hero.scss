@@ -118,6 +118,28 @@
 
   :host svg { width: 100%; height: auto; display: block; }
 
+  /* The SVG's own fade lives at the bottom of its viewBox (y=300). Any host that
+     caps the height crops before reaching it, so the band would butt hard against
+     whatever sits below. This reproduces the fade at the host's real bottom edge,
+     whatever the crop.
+
+     Unconditional on purpose: at the full 375:300 ratio the SVG is already white
+     down there, so the overlay is invisible — but it means every consumer gets
+     the fade, including the mobile drawer header, which never matched the
+     desktop-only media query this used to live in. */
+  :host::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0 0;
+    /* Tunable: 48% suits login's 200px band, but a shorter host (the drawer
+       header at 132px) would have the fade starting at the crest's centre and
+       washing out half the cap. Custom properties cross the encapsulation
+       boundary, so each consumer can set its own depth. */
+    height: var(--hero-fade-depth, 48%);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, #ffffff 92%);
+    pointer-events: none;
+  }
+
   /* On a phone the scene renders at its natural 375:300 ratio. On wider screens
      that becomes a 352px slab on a 440px card and swamps the form, so it is
      capped to a band; `slice` crops top and bottom, keeping the crest (y=150)
@@ -126,18 +148,6 @@
     :host { height: 200px; }
     :host svg { height: 100%; }
 
-    /* The SVG's own fade sits at the bottom of its viewBox (y=300). Cropping to
-       a 200px band never reaches it — at 440x200 only y 65-235 is visible — so
-       the band would butt hard against the tabs. This reproduces the fade at the
-       band's real bottom edge, whatever the crop. */
-    :host::after {
-      content: '';
-      position: absolute;
-      inset: auto 0 0 0;
-      height: 48%;
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, #ffffff 92%);
-      pointer-events: none;
-    }
   }
 }
 

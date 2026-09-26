@@ -29,8 +29,10 @@
 
   <mat-sidenav #sidenav mode="over" class="mobile-sidenav">
     <div class="sidenav-header">
-      <div class="mobile-logo-icon"><i class="fa-solid fa-graduation-cap"></i></div>
-      <h2>Moodle V2</h2>
+      <!-- Same scene as the login screen, reused via the shared component.
+           Decorative: the wordmark below carries the meaning. -->
+      <app-auth-hero aria-hidden="true"></app-auth-hero>
+      <h2 class="sidenav-wordmark">Moodle V2</h2>
     </div>
 
     <mat-nav-list>
