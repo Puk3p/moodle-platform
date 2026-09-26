@@ -1,0 +1,7 @@
+/* The hero component owns the scene and its own sizing. Page-level rules
+   (card clipping, brand header) live with the pages — see auth-hero-page. */
+@use '../auth-hero' as hero;
+
+@include hero.auth-hero-host;
+@include hero.auth-hero-scene;
+@include hero.auth-hero-reduced-motion;

@@ -10,6 +10,7 @@ $text-muted: #64748b;
 $input-bg: #f8fafc; 
 
 @use '../auth-motion' as motion;
+@use '../auth-hero' as hero;
 
 
 :host {
@@ -320,4 +321,5 @@ label {
 /* Shared auth motion & interaction states — see ../_auth-motion.scss */
 :host {
   @include motion.auth-motion($primary, $border-color, $text-main);
+  @include hero.auth-hero-page;
 }

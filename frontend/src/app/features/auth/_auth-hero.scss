@@ -24,17 +24,7 @@
      leaves a still scene, not a broken one.
    =========================================================================== */
 
-@mixin auth-hero {
-  .auth-hero {
-    display: block;
-    position: relative;
-    width: 100%;
-    line-height: 0;              /* kill the inline-SVG descender gap */
-    background: #c2500f;   /* matches the sky top stop, so no flash before paint */
-    overflow: hidden;
-
-    svg { width: 100%; height: auto; display: block; }
-  }
+@mixin auth-hero-scene {
 
   /* --- ambient motion ------------------------------------------------- */
 
@@ -107,57 +97,66 @@
 
 /* --- responsive + accessibility --------------------------------------- */
 
-@mixin auth-hero-responsive {
-  /* The card keeps the proportions it always had — original padding, gaps and
-     type. The only addition is the hero band across the top, clipped to the
-     card's corners and fading into the form beneath it, exactly as on mobile.
-     An earlier pass trimmed paddings all over to chase a scrollbar; that was
-     the wrong fix (see the box-sizing note below) and has been reverted. */
-  .auth-card {
-    border-radius: 1rem;
-    overflow: hidden;              /* clip the hero to the card's corners */
+/* Styles for the hero component's own host element. Kept here beside the scene
+   and the keyframes so the whole hero is described in one file. */
+@mixin auth-hero-host {
+  :host {
+    display: block;
+    position: relative;
+    width: 100%;
+    line-height: 0;            /* kill the inline-SVG descender gap */
+    background: #c2500f;       /* sky top stop — no colour flash before paint */
+    overflow: hidden;
+    border-radius: 1rem 1rem 0 0;
   }
 
-  .auth-hero { border-radius: 1rem 1rem 0 0; }
+  :host svg { width: 100%; height: auto; display: block; }
+
+  /* On a phone the scene renders at its natural 375:300 ratio. On wider screens
+     that becomes a 352px slab on a 440px card and swamps the form, so it is
+     capped to a band; `slice` crops top and bottom, keeping the crest (y=150)
+     and the badge ring centred. */
+  @media (min-width: 601px) {
+    :host { height: 200px; }
+    :host svg { height: 100%; }
+
+    /* The SVG's own fade sits at the bottom of its viewBox (y=300). Cropping to
+       a 200px band never reaches it — at 440x200 only y 65-235 is visible — so
+       the band would butt hard against the tabs. This reproduces the fade at the
+       band's real bottom edge, whatever the crop. */
+    :host::after {
+      content: '';
+      position: absolute;
+      inset: auto 0 0 0;
+      height: 48%;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, #ffffff 92%);
+      pointer-events: none;
+    }
+  }
+}
+
+/* Page-level rules. These touch elements that belong to the login/register
+   templates, not to the hero component, so view encapsulation means they have to
+   be applied by the page rather than the component. */
+@mixin auth-hero-page {
+  .auth-card {
+    border-radius: 1rem;
+    overflow: hidden;          /* clip the hero to the card's corners */
+  }
 
   @media (max-width: 600px) {
     .brand-header { display: none; }   /* the crest already carries the mark */
   }
 
-  /* Kept from the scroll investigation because it is a genuine bug, not a
-     layout tweak: .auth-container is content-box with min-height:100vh AND
-     vertical padding, so its box measured 1080+32=1112 while its children
-     summed to 820. It overflowed by 32px regardless of content — it would
-     scroll with an empty card. border-box makes 100vh mean the viewport,
-     padding included, which is what the layout always intended. */
+  /* A real bug rather than a layout preference: .auth-container is content-box
+     with min-height:100vh AND vertical padding, so its box measured 1080+32=1112
+     while its children summed to 820 — it overflowed by 32px regardless of
+     content, and would scroll with an empty card. border-box makes 100vh mean
+     the viewport, padding included. */
   .auth-container { box-sizing: border-box; }
+}
 
-  /* On a phone the hero renders at its natural 375:300 ratio. On wider screens
-     that becomes a 352px slab on a 440px card, which would dominate the form,
-     so it is capped to a band. `slice` crops top and bottom, keeping the crest
-     (y=150) and the badge ring centred. */
-  @media (min-width: 601px) {
-    .auth-hero {
-      height: 200px;
-      position: relative;
-
-      svg { width: 100%; height: 100%; }
-
-      /* The SVG's own fade lives at the bottom of its viewBox (y=300). Cropping
-         to a 200px band never reaches it — at 440x200 only y 65-235 is visible —
-         so the band would butt hard against the tabs. This reproduces the fade
-         at the band's real bottom edge, independent of how much is cropped. */
-      &::after {
-        content: '';
-        position: absolute;
-        inset: auto 0 0 0;
-        height: 48%;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, #ffffff 92%);
-        pointer-events: none;
-      }
-    }
-  }
-
+@mixin auth-hero-reduced-motion {
   @media (prefers-reduced-motion: reduce) {
     .hero-orbit,
     .hero-badge,

@@ -3,12 +3,13 @@ import { CommonModule } from '@angular/common';
 import { AbstractControl, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { AuthHeroComponent } from '../auth-hero/auth-hero';
 
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [
+  imports: [AuthHeroComponent, 
     CommonModule,
     ReactiveFormsModule,
     RouterLink

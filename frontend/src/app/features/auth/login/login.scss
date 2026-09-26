@@ -463,6 +463,5 @@ label {
 
 /* Phone-only animated hero — see ../_auth-hero.scss */
 :host {
-  @include hero.auth-hero;
-  @include hero.auth-hero-responsive;
+  @include hero.auth-hero-page;
 }

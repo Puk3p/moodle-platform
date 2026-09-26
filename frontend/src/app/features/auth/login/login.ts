@@ -17,11 +17,12 @@ import { faFacebook, faGoogle } from '@fortawesome/free-brands-svg-icons';
 import { AuthService } from '../../../core/services/auth.service';
 import { LoginRequest } from '../../../core/models/auth/login.request';
 import { API_BASE_URL } from '../../../core/config/api-endpoints';
+import { AuthHeroComponent } from '../auth-hero/auth-hero';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [
+  imports: [AuthHeroComponent, 
     CommonModule,
     ReactiveFormsModule,
     RouterLink,
