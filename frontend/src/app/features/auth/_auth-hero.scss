@@ -108,10 +108,11 @@
 /* --- responsive + accessibility --------------------------------------- */
 
 @mixin auth-hero-responsive {
-  /* One layout everywhere: the hero sits at the top of the card and fades into
-     the form beneath it. The two-column desktop split was tried and dropped —
-     side by side reads as a marketing page, and stacking keeps one visual idea
-     across phone and desktop instead of two designs to maintain. */
+  /* The card keeps the proportions it always had — original padding, gaps and
+     type. The only addition is the hero band across the top, clipped to the
+     card's corners and fading into the form beneath it, exactly as on mobile.
+     An earlier pass trimmed paddings all over to chase a scrollbar; that was
+     the wrong fix (see the box-sizing note below) and has been reverted. */
   .auth-card {
     border-radius: 1rem;
     overflow: hidden;              /* clip the hero to the card's corners */
@@ -123,56 +124,37 @@
     .brand-header { display: none; }   /* the crest already carries the mark */
   }
 
-  /* --- fit the viewport ------------------------------------------------ */
-  /* Target: 1920x1080 with no scrollbar. The hero is the only elastic part,
-     so it gets a capped height and crops top/bottom via `slice`, keeping the
-     crest (y=150) and the badge ring centred. Height is clamped against the
-     viewport so shorter windows shrink the art rather than push the Sign In
-     button off-screen. */
-  /* Measured at 1920x1080: the page came to 1120px and scrolled by 40. Browser
-     chrome eats another ~80-120 of a 1080 screen, so trimming to exactly 1080
-     would still scroll in a real window. These cuts bring it to ~930, which
-     clears typical chrome with room to spare. The hero absorbs the largest
-     share because it is decoration; the form keeps its breathing room. */
-  /* The actual cause of the scrollbar, measured: .auth-container is content-box
-     with min-height:100vh AND vertical padding, so its box came to 1080+32=1112
-     while its children summed to only 820. border-box makes 100vh mean the
-     viewport, padding included — which is what the layout always intended. */
+  /* Kept from the scroll investigation because it is a genuine bug, not a
+     layout tweak: .auth-container is content-box with min-height:100vh AND
+     vertical padding, so its box measured 1080+32=1112 while its children
+     summed to 820. It overflowed by 32px regardless of content — it would
+     scroll with an empty card. border-box makes 100vh mean the viewport,
+     padding included, which is what the layout always intended. */
   .auth-container { box-sizing: border-box; }
 
+  /* On a phone the hero renders at its natural 375:300 ratio. On wider screens
+     that becomes a 352px slab on a 440px card, which would dominate the form,
+     so it is capped to a band. `slice` crops top and bottom, keeping the crest
+     (y=150) and the badge ring centred. */
   @media (min-width: 601px) {
-    .auth-container {
-      min-height: 100dvh;
-      justify-content: center;
-      padding-block: 1rem;
-    }
-
-    .brand-header { margin-bottom: .75rem; }
-
-    /* With the box model fixed there is ~260px of slack at 1080, so the hero
-       keeps a generous band rather than the emergency 190px. */
     .auth-hero {
-      height: clamp(150px, 22vh, 240px);
+      height: 200px;
+      position: relative;
 
       svg { width: 100%; height: 100%; }
-    }
 
-    .auth-body {
-      padding-top: 1.25rem;                /* was 2rem */
-      padding-bottom: 1.25rem;
-      gap: 1rem;                           /* was 1.5rem */
-    }
-
-    .divider { margin-block: .25rem; }
-
-    .auth-footer {
-      padding-top: 1rem;                   /* was 1.5rem */
-      padding-bottom: 1rem;
-    }
-
-    .copyright {
-      margin-block: .5rem 0;
-      padding-bottom: 0;
+      /* The SVG's own fade lives at the bottom of its viewBox (y=300). Cropping
+         to a 200px band never reaches it — at 440x200 only y 65-235 is visible —
+         so the band would butt hard against the tabs. This reproduces the fade
+         at the band's real bottom edge, independent of how much is cropped. */
+      &::after {
+        content: '';
+        position: absolute;
+        inset: auto 0 0 0;
+        height: 48%;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, #ffffff 92%);
+        pointer-events: none;
+      }
     }
   }
 
