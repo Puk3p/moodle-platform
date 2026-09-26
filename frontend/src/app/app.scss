@@ -341,7 +341,32 @@ $app-border: rgba(148, 163, 184, 0.45);
 
 .mobile-sidenav {
   width: 280px;
-  background-color: white;
+  background-color: #fffefd;   /* R7: warm off-white, not pure #fff */
+
+  /* The drawer is a column: header, scrolling nav, then logout pinned to the
+     foot. Previously every item — including Log Out — sat in one flat list, so
+     a destructive action lived one thumb-width from "Resources". */
+  display: flex;
+  flex-direction: column;
+
+  /* Material inserts its own .mat-drawer-inner-container between the drawer and
+     our content, and it is not a flex item. Without this the flex chain breaks
+     there: mat-nav-list measured 304px inside an 804px drawer, so `margin-top:
+     auto` on the logout row had no free space to consume and resolved to 0.
+     Scoped under .mobile-sidenav so it cannot affect other drawers. */
+  ::ng-deep .mat-drawer-inner-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  mat-nav-list {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    padding-bottom: calc(env(safe-area-inset-bottom) + 8px);
+  }
   
   .sidenav-header {
    
@@ -370,16 +395,34 @@ $app-border: rgba(148, 163, 184, 0.45);
   }
 
   .menu-icon { margin-right: 15px; color: #757575; font-size: 18px; }
-  .logout-item { color: #d32f2f; .menu-icon { color: #d32f2f; } }
+  /* margin-top:auto does the pinning — the flex column above gives it the
+     free space to push against. Separated by a hairline so it reads as a
+     different class of action, not the sixth nav item. */
+  .logout-item {
+    margin-top: auto;
+    border-top: 1px solid $app-border;
+    color: #c0392b;                          /* R7: from the warm ramp */
+    cursor: pointer;
+
+    .menu-icon { color: #c0392b; }
+
+    /* R11 */
+    &:hover { background-color: rgba(192, 57, 43, 0.06); }
+    &:active { background-color: rgba(192, 57, 43, 0.12); }
+    &:focus-visible {
+      outline: none;
+      box-shadow: inset 0 0 0 2px rgba(192, 57, 43, 0.55);
+    }
+  }
   
   .mobile-teacher-section {
-      border-top: 1px solid #eee;
-      margin-top: 10px;
-      padding-top: 10px;
+      border-top: 1px solid $app-border;
+      margin-top: 8px;
+      padding-top: 8px;
       .mobile-section-title {
           padding-left: 16px;
           font-size: 12px;
-          color: #999;
+          color: #8b8178;
           text-transform: uppercase;
           font-weight: bold;
       }
@@ -449,28 +492,71 @@ $app-border: rgba(148, 163, 184, 0.45);
      the sticky positioning, the notch safe-area padding and the shadow. The bar
      fell back to Angular Material's default primary (indigo #3F51B5), which is
      why the phone layout looked like a different product. */
+  /* Compact app bar. The previous one was min-height:80px plus 20px/25px
+     padding — roughly 105px pinned to the top of an 812px phone, which is why
+     it read as heavy and always-in-the-way. 56px is the platform-standard
+     height, and it now retracts on scroll-down and returns on scroll-up, so
+     reading a course page gets the full screen back. */
   .mobile-toolbar {
     position: sticky;
     top: 0;
-    z-index: 1000;
 
-    /* Clears the notch / status bar on phones that report a safe area. */
-    padding-top: calc(env(safe-area-inset-top) + 20px) !important;
-    padding-bottom: 25px !important;
+    /* R6: own stacking context, so a small local z-index is enough and this
+       stops competing with the 1000s elsewhere in the app. */
+    isolation: isolate;
+    z-index: 20;
 
+    min-height: 56px;
     height: auto !important;
-    min-height: 80px;
+
+    /* R8: 4px scale throughout, plus the notch allowance. */
+    padding-top: calc(env(safe-area-inset-top) + 4px) !important;
+    padding-bottom: 4px !important;
+    padding-inline: 4px !important;
 
     display: flex;
     align-items: center;
+    gap: 4px;
 
-    /* Also set as a custom property: Material themes the toolbar through
-       --mat-toolbar-container-background-color, which would otherwise win. */
+    /* Material themes the toolbar through this custom property; setting only
+       background-color loses to it. */
     --mat-toolbar-container-background-color: #{$app-primary};
     --mat-toolbar-container-text-color: #ffffff;
     background-color: $app-primary;
     color: #fff;
-    box-shadow: 0 4px 10px -3px rgba(0, 0, 0, 0.2);
+
+    /* R10: one hairline instead of a 0.2-alpha drop shadow. A saturated bar
+       against an off-white page already reads as elevated; the shadow was
+       doing nothing except adding weight. */
+    box-shadow: inset 0 -1px 0 rgba(23, 16, 12, 0.12);
+
+    /* R12: transform only, 200ms, ease-out. */
+    transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+
+    &.is-hidden {
+      transform: translateY(-100%);
+    }
+
+    .toolbar-title {
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    /* R11: Material's ripple is not a focus indicator. */
+    button:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.6);
+    }
+  }
+
+  /* R12: a reduced experience, not a broken one — the bar simply stays put
+     rather than sliding, so nothing moves unexpectedly. */
+  @media (prefers-reduced-motion: reduce) {
+    .mobile-toolbar {
+      transition: none;
+      &.is-hidden { transform: none; }
+    }
   }
 }
 

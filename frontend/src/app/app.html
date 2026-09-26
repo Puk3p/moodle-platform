@@ -50,8 +50,6 @@
         <i class="fa-solid fa-folder-open menu-icon"></i> <span class="menu-text">Resources</span>
       </a>
 
-      <div class="spacer"></div>
-
       <div *ngIf="authService.hasRole('TEACHER')" class="mobile-teacher-section">
         <p class="mobile-section-title">Teacher Tools</p>
         <a mat-list-item routerLink="/manage-courses" (click)="sidenav.close()">
@@ -73,11 +71,13 @@
 
     <!-- No color="primary": Material would theme this indigo. The brand colour is
          applied in app.scss instead. -->
-    <mat-toolbar class="mobile-toolbar mobile-only" *ngIf="!isQuizRoute">
+    <mat-toolbar class="mobile-toolbar mobile-only"
+                 [class.is-hidden]="isBarHidden"
+                 *ngIf="!isQuizRoute">
       <button mat-icon-button (click)="sidenav.toggle()">
         <span class="material-symbols-outlined">menu</span>
       </button>
-      <span>Moodle V2</span>
+      <span class="toolbar-title">Moodle V2</span>
       <span class="spacer"></span>
       <button mat-icon-button routerLink="/settings">
          <span class="material-symbols-outlined">account_circle</span>

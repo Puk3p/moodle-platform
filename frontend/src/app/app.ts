@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { NgIf, NgClass, NgFor, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -23,13 +23,59 @@ import { WebSocketService } from './core/services/web-socket.service';
     NgIf, NgClass, NgFor, FormsModule, DatePipe
   ]
 })
-export class App implements OnInit {
+export class App implements OnInit, OnDestroy {
   public authService = inject(AuthService);
   private router = inject(Router);
   public webSocketService = inject(WebSocketService);
 
   isQuizRoute = false; 
   notificationCount = 0;
+
+  /**
+   * The compact app bar retracts while scrolling down and returns on the first
+   * upward scroll, so content gets the full screen without the bar becoming
+   * unreachable. Bound to .mobile-toolbar via [class.is-hidden].
+   */
+  isBarHidden = false;
+  private lastScrollTop = 0;
+
+  /** Below this the page has barely moved; hiding there feels twitchy. */
+  private static readonly BAR_HIDE_AFTER_PX = 72;
+  /** Ignore jitter and momentum wobble. */
+  private static readonly BAR_SCROLL_DELTA_PX = 6;
+
+  private scrollHandler = (event: Event) => this.onAnyScroll(event);
+
+  /**
+   * Scroll events do not bubble, and which element actually scrolls differs by
+   * route (sometimes the sidenav content, sometimes the document, sometimes an
+   * inner pane). A capture-phase listener on the document catches all of them,
+   * which a template (scroll) binding on one element cannot.
+   */
+  private onAnyScroll(event: Event): void {
+    const target = event.target as HTMLElement | Document;
+    const el: Element | null =
+      target instanceof Document
+        ? document.scrollingElement
+        : (target as HTMLElement);
+
+    if (!el) {
+      return;
+    }
+
+    const top = el.scrollTop;
+    const delta = top - this.lastScrollTop;
+
+    if (Math.abs(delta) < App.BAR_SCROLL_DELTA_PX) {
+      return;
+    }
+
+    // Near the top the bar is always shown, whichever way the scroll is going,
+    // so it can never end up stranded off-screen.
+    this.isBarHidden = top > App.BAR_HIDE_AFTER_PX && delta > 0;
+    this.lastScrollTop = top;
+  }
+
   isChatOpen = false;
   
   messages: any[] = [];
@@ -48,6 +94,9 @@ export class App implements OnInit {
   }
 
   ngOnInit() {
+    // capture:true — scroll does not bubble (see onAnyScroll)
+    document.addEventListener('scroll', this.scrollHandler, true);
+
 
 
     this.router.events.pipe(
@@ -218,5 +267,9 @@ export class App implements OnInit {
   scrollToBottom() {
     const chatContainer = document.querySelector('.chat-messages');
     if (chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+  }
+
+  ngOnDestroy(): void {
+    document.removeEventListener('scroll', this.scrollHandler, true);
   }
 }
