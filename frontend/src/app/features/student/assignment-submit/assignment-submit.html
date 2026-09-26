@@ -4,9 +4,7 @@
     <nav class="breadcrumbs">
       <a class="link">My Courses</a>
       <span class="sep">chevron_right</span>
-      <a class="link">{{ courseCode }}</a>
-      <span class="sep">chevron_right</span>
-      <span class="current">Assignment</span>
+      <span class="current">{{ assignmentData?.title || 'Assignment' }}</span>
     </nav>
 
     <div class="header-content">
@@ -36,8 +34,13 @@
       
       <div class="card-header">
         <div class="info">
-          <h3>{{ courseCode }} · {{ assignmentData.title }}</h3>
-          <p>Please review the instructions below.</p>
+          <!-- The page <h1> already names the assignment; repeating it here said
+               nothing. Surfaces the submission type instead, which the student
+               otherwise has to infer from the accepted-formats hint. -->
+          <h3>Submission details</h3>
+          <p>{{ assignmentData.submissionType === 'TEXT' ? 'Online text only.'
+                : assignmentData.submissionType === 'FILE' ? 'File upload only.'
+                : 'Upload files, add online text, or both.' }}</p>
         </div>
         <div class="points-badge">
           <span class="material-symbols-outlined">military_tech</span>

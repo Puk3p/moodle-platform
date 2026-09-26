@@ -76,7 +76,7 @@ $text-muted: #6b7280;
       font-weight: 700;
       font-size: 0.875rem;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease;
       &:hover { background: #f9fafb; transform: translateX(-2px); }
       span { font-size: 1.2rem; }
     }
@@ -155,7 +155,11 @@ $text-muted: #6b7280;
 
   .status-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    /* Was repeat(auto-fit, minmax(200px, 1fr)). At the card's 591px only two
+       columns fit (3 x 200 = 600), so the third item dropped to a second row
+       and left a visibly empty cell beside it. Three explicit columns instead,
+       stacking on narrow screens. */
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     border: 1px solid $border;
     border-radius: 0.75rem;
     overflow: hidden;
@@ -204,7 +208,7 @@ $text-muted: #6b7280;
     justify-content: center;
     cursor: pointer;
     background: rgba(249, 250, 251, 0.5);
-    transition: all 0.2s;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease;
 
     &:hover { background: rgba($primary, 0.05); border-color: $primary; }
 
@@ -268,8 +272,11 @@ $text-muted: #6b7280;
     background: #f3f4f6;
     border-radius: 0.75rem;
     padding: 1rem;
+    /* Browsers default textarea to monospace; this is prose, not code. */
+    font-family: inherit;
     font-size: 0.9rem;
-    resize: none;
+    line-height: 1.6;
+    resize: vertical;
     &:focus { outline: none; background: white; border-color: $primary; box-shadow: 0 0 0 1px $primary; }
   }
 }
@@ -297,7 +304,7 @@ $text-muted: #6b7280;
     display: flex; align-items: center; gap: 0.5rem;
     cursor: pointer;
     box-shadow: 0 4px 6px -1px rgba($primary, 0.2);
-    transition: all 0.2s;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease;
     &:hover { background: color.adjust($primary, $lightness: -5%); transform: translateY(-1px); }
     &:disabled { opacity: 0.7; cursor: not-allowed; }
   }
@@ -345,7 +352,7 @@ $text-muted: #6b7280;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    transition: all 0.2s;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease;
 
     &.submitted {
         background: #f0fdf4; 
@@ -393,4 +400,77 @@ $text-muted: #6b7280;
     font-weight: 700;
     text-transform: uppercase;
     color: #6b7280;
+}
+
+/* ---------------------------------------------------------------- states -- */
+
+/* R11: the page had one `outline: none` and zero focus-visible rules, so it was
+   not keyboard-navigable in any visible way. */
+:where(button, a, textarea, .drop-zone):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(249, 83, 6, 0.28);
+  border-radius: 0.5rem;
+}
+
+.drop-zone {
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease;
+
+  &:hover { border-color: $primary; background: rgba(249, 83, 6, 0.03); }
+}
+
+.btn-submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ------------------------------------------------------------ responsive -- */
+
+/* The page had no media queries at all, so on a phone the header, the status
+   strip and the footer actions all stayed at desktop proportions. */
+@media (max-width: 720px) {
+  .page-container { padding: 1rem; }
+
+  .header-content {
+    flex-direction: column;
+    align-items: stretch;
+
+    h1 { font-size: 1.5rem; }
+
+    .back-btn { align-self: flex-start; }
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .status-grid {
+    grid-template-columns: 1fr;
+
+    .status-item {
+      /* the single-row right-hand rules become row separators once stacked */
+      border-right: none;
+      border-bottom: 1px solid $border;
+      &:last-child { border-bottom: none; }
+    }
+  }
+
+  .card-footer {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 0.75rem;
+
+    .right-actions { width: 100%; }
+    .btn-submit, .btn-cancel { width: 100%; justify-content: center; }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
