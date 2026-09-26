@@ -443,26 +443,34 @@ $app-border: rgba(148, 163, 184, 0.45);
   }
 
   
+  /* This block was nested inside a duplicate `.mobile-toolbar {` selector, so it
+     compiled to `.mobile-toolbar .mobile-toolbar` — a toolbar inside a toolbar,
+     which never exists in the DOM. Every rule here was dead: the brand colour,
+     the sticky positioning, the notch safe-area padding and the shadow. The bar
+     fell back to Angular Material's default primary (indigo #3F51B5), which is
+     why the phone layout looked like a different product. */
   .mobile-toolbar {
-      .mobile-toolbar {
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-      
-      padding-top: calc(env(safe-area-inset-top) + 20px) !important;
-      
-      padding-bottom: 25px !important; 
-      
-      height: auto !important;
-      min-height: 80px; 
-      
-      display: flex;
-      align-items: center; 
-      
-      background-color: #f95306;
-      color: white;
-      box-shadow: 0 4px 10px -3px rgba(0, 0, 0, 0.2);
-  }
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+
+    /* Clears the notch / status bar on phones that report a safe area. */
+    padding-top: calc(env(safe-area-inset-top) + 20px) !important;
+    padding-bottom: 25px !important;
+
+    height: auto !important;
+    min-height: 80px;
+
+    display: flex;
+    align-items: center;
+
+    /* Also set as a custom property: Material themes the toolbar through
+       --mat-toolbar-container-background-color, which would otherwise win. */
+    --mat-toolbar-container-background-color: #{$app-primary};
+    --mat-toolbar-container-text-color: #ffffff;
+    background-color: $app-primary;
+    color: #fff;
+    box-shadow: 0 4px 10px -3px rgba(0, 0, 0, 0.2);
   }
 }
 

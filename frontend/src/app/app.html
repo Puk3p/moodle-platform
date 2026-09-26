@@ -71,7 +71,9 @@
 
   <mat-sidenav-content class="main-content-wrapper">
 
-    <mat-toolbar color="primary" class="mobile-toolbar mobile-only" *ngIf="!isQuizRoute">
+    <!-- No color="primary": Material would theme this indigo. The brand colour is
+         applied in app.scss instead. -->
+    <mat-toolbar class="mobile-toolbar mobile-only" *ngIf="!isQuizRoute">
       <button mat-icon-button (click)="sidenav.toggle()">
         <span class="material-symbols-outlined">menu</span>
       </button>
