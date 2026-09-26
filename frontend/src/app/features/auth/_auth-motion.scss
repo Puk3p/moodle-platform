@@ -1,0 +1,211 @@
+/* ===========================================================================
+   Shared motion for the auth screens (login / register / 2FA).
+
+   One partial because both pages render the same skeleton; duplicating it would
+   guarantee they drift apart. Pulled in with `@use` so each component keeps its
+   own view-encapsulation scoping.
+
+   Built against the `craft` rules:
+   - R12 Motion is physics, not decoration. Everything is 120–250ms, ease-out
+     for entering. Nothing loops for delight — the only looping animation is the
+     submit spinner, which is information (work is happening), not ornament.
+   - R1/R2 No gradients, no glow. An earlier draft had blurred radial-gradient
+     blobs drifting behind the card; that is decoration borrowed instead of
+     earned, so it is gone. Depth comes from the neutral ramp and a hairline.
+   - R3 Named transition properties only, never `transition: all`.
+   - R11 Every interactive element gets hover / focus-visible / active /
+     disabled, and the async surface gets a real loading state.
+
+   Keyframes are prefixed `auth-` for readability. Angular 20 with emulated
+   encapsulation does rewrite them per component (verified in the built output:
+   `_ngcontent-ng-c3385567380_auth-spin`), so the prefix is belt-and-braces
+   rather than strictly required — but it keeps devtools legible and survives
+   any switch to ViewEncapsulation.None.
+   =========================================================================== */
+
+$auth-ease-out: cubic-bezier(.22, 1, .36, 1);  // entering: decelerates, settles
+$auth-ease-in:  cubic-bezier(.55, 0, 1, .45);  // leaving
+
+/* ------------------------------------------------------------- keyframes -- */
+
+/* transform + opacity only, so these stay on the compositor and never trigger
+   layout on the lab machines. */
+@keyframes auth-rise {
+  from { opacity: 0; transform: translate3d(0, 8px, 0); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes auth-card-in {
+  from { opacity: 0; transform: translate3d(0, 12px, 0); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Error feedback, not delight: one shot, short, and it stops. Kept despite R12's
+   ban on bouncing because a failed sign-in needs to be felt as well as read —
+   the shake is the message, not ornament on top of it. */
+@keyframes auth-shake {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  20%      { transform: translate3d(-5px, 0, 0); }
+  40%      { transform: translate3d(4px, 0, 0); }
+  60%      { transform: translate3d(-2px, 0, 0); }
+  80%      { transform: translate3d(1px, 0, 0); }
+}
+
+@keyframes auth-spin { to { transform: rotate(360deg); } }
+
+/* --------------------------------------------------------------- mixins -- */
+
+/* Entrance driven by :nth-of-type so the templates stay untouched.
+   Budget: card lands at 240ms, last field at ~440ms. A login form must be
+   typable almost immediately — the earlier 1.17s version was showing off at
+   the user's expense. */
+@mixin auth-entrance {
+  .brand-header { animation: auth-rise 200ms $auth-ease-out both; }
+  .auth-card    { animation: auth-card-in 240ms $auth-ease-out 40ms both; }
+  .copyright    { animation: auth-rise 200ms $auth-ease-out 300ms both; }
+
+  .auth-body > .text-center,
+  .auth-body > .auth-form > label,
+  .auth-body > .auth-form > .submit-btn,
+  .auth-body > .divider,
+  .auth-body > .google-btn {
+    animation: auth-rise 180ms $auth-ease-out both;
+  }
+
+  .auth-body > .text-center                      { animation-delay: 140ms; }
+  .auth-body > .auth-form > label:nth-of-type(1) { animation-delay: 180ms; }
+  .auth-body > .auth-form > label:nth-of-type(2) { animation-delay: 220ms; }
+  .auth-body > .auth-form > label:nth-of-type(3) { animation-delay: 260ms; }
+  .auth-body > .auth-form > label:nth-of-type(4) { animation-delay: 300ms; }
+  .auth-body > .auth-form > .submit-btn          { animation-delay: 340ms; }
+  .auth-body > .divider                          { animation-delay: 380ms; }
+  .auth-body > .google-btn                       { animation-delay: 420ms; }
+}
+
+/* R11: every state designed, no browser defaults, no unreplaced outline:none. */
+@mixin auth-interactions($accent: #f95306, $border: #e2e8f0, $text: #0f172a) {
+  .input-wrapper {
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease,
+      background-color 150ms ease;
+
+    .icon { transition: color 150ms ease; }
+
+    /* A focus ring is a designed state (R11), not glow-for-emphasis (R2): it
+       exists only while focused and marks where keyboard input is going. */
+    &:focus-within {
+      border-color: $accent;
+      box-shadow: 0 0 0 3px rgba($accent, .16);
+
+      .icon { color: $accent; }
+    }
+  }
+
+  .submit-btn {
+    position: relative;
+    transition:
+      transform 150ms $auth-ease-out,
+      background-color 150ms ease,
+      opacity 150ms ease;
+
+    .arrow { transition: transform 150ms $auth-ease-out; }
+
+    &:hover:not(:disabled) {
+      transform: translateY(-1px);
+      .arrow { transform: translateX(3px); }
+    }
+
+    &:active:not(:disabled) { transform: translateY(0); }
+
+    &:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba($accent, .35);
+    }
+
+    /* Inert, not broken. */
+    &:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+    /* Designed loading state: the wait reads as progress rather than a dead button. */
+    &.loading::after {
+      content: '';
+      position: absolute;
+      top: 50%; right: 1.1rem;
+      width: 14px; height: 14px;
+      margin-top: -7px;
+      border: 2px solid rgba(#fff, .35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: auth-spin 600ms linear infinite;
+    }
+  }
+
+  .google-btn {
+    transition:
+      transform 150ms $auth-ease-out,
+      border-color 150ms ease,
+      background-color 150ms ease;
+
+    &:hover { transform: translateY(-1px); }
+    &:active { transform: translateY(0); }
+    &:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba($accent, .28); }
+  }
+
+  .tab {
+    transition: color 150ms ease, background-color 150ms ease;
+    &:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba($accent, .28); }
+  }
+
+  .toggle-pass {
+    transition: color 150ms ease;
+    &:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba($accent, .28); border-radius: 6px; }
+  }
+
+  .forgot-link,
+  .auth-footer a {
+    transition: color 150ms ease;
+    &:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba($accent, .28); border-radius: 4px; }
+  }
+
+  .error-alert { animation: auth-shake 320ms ease-out both; }
+  .error-text  { animation: auth-rise 150ms ease-out both; }
+}
+
+/* --------------------------------------------------------- accessibility -- */
+
+/* R12: a real reduced experience, not a broken one. States and the spinner
+   survive; movement does not. Vestibular disorders make drifting/sliding motion
+   genuinely unpleasant, and nobody can skip a login screen. */
+@mixin auth-reduced-motion {
+  @media (prefers-reduced-motion: reduce) {
+    .brand-header,
+    .auth-card,
+    .copyright,
+    .auth-body > .text-center,
+    .auth-body > .auth-form > label,
+    .auth-body > .auth-form > .submit-btn,
+    .auth-body > .divider,
+    .auth-body > .google-btn,
+    .error-alert,
+    .error-text {
+      animation: none !important;
+      opacity: 1 !important;
+      transform: none !important;
+    }
+
+    .submit-btn:hover:not(:disabled),
+    .google-btn:hover { transform: none !important; }
+
+    .submit-btn .arrow { transition: none !important; }
+
+    /* Spinner is information — keep it, slow it. */
+    .submit-btn.loading::after { animation-duration: 1.2s; }
+  }
+}
+
+/* Single entry point so each component file stays a one-line include. */
+@mixin auth-motion($accent: #f95306, $border: #e2e8f0, $text: #0f172a) {
+  @include auth-entrance;
+  @include auth-interactions($accent, $border, $text);
+  @include auth-reduced-motion;
+}

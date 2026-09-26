@@ -9,6 +9,8 @@ $text-main: #0f172a;
 $text-muted: #64748b; 
 $input-bg: #f8fafc; 
 
+@use '../auth-motion' as motion;
+
 
 :host {
   display: block;
@@ -79,7 +81,7 @@ $input-bg: #f8fafc;
     border: none;
     cursor: pointer;
     border-bottom: 2px solid transparent;
-    transition: all 0.2s;
+      transition: color 150ms ease, border-bottom-color 150ms ease;
 
     &.active {
       color: $primary;
@@ -159,7 +161,7 @@ label {
     font-weight: 500;
     color: $text-main;
     outline: none;
-    transition: all 0.2s;
+      transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
     box-sizing: border-box;
 
     &::placeholder { color: #94a3b8; }
@@ -215,8 +217,8 @@ label {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  box-shadow: 0 0 20px -5px rgba(249, 83, 6, 0.3);
-  transition: all 0.2s;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+    transition: background-color 150ms ease, transform 150ms ease, opacity 150ms ease;
 
   &:hover:not(:disabled) {
     background-color: $primary-hover;
@@ -313,4 +315,9 @@ label {
     background: transparent;
     padding-bottom: 3rem; 
   }
+}
+
+/* Shared auth motion & interaction states — see ../_auth-motion.scss */
+:host {
+  @include motion.auth-motion($primary, $border-color, $text-main);
 }

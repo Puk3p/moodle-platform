@@ -66,7 +66,7 @@
               </span>
             </label>
 
-            <button type="submit" class="submit-btn" [disabled]="form.invalid || isSubmitting">
+            <button type="submit" class="submit-btn" [class.loading]="isSubmitting" [disabled]="form.invalid || isSubmitting">
               <span *ngIf="!isSubmitting">Sign In</span>
               <span *ngIf="!isSubmitting" class="material-symbols-outlined arrow">arrow_forward</span>
               <span *ngIf="isSubmitting">Checking credentials...</span>
@@ -111,7 +111,7 @@
                 </div>
             </label>
 
-            <button type="button" class="submit-btn" (click)="onVerifyTwoFa()" [disabled]="twoFaControl.invalid || isSubmitting">
+            <button type="button" class="submit-btn" [class.loading]="isSubmitting" (click)="onVerifyTwoFa()" [disabled]="twoFaControl.invalid || isSubmitting">
               <span *ngIf="!isSubmitting">Verify Code</span>
               <span *ngIf="!isSubmitting" class="material-symbols-outlined arrow">check</span>
               <span *ngIf="isSubmitting">Verifying...</span>
