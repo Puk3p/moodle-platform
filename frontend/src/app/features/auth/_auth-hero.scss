@@ -107,7 +107,13 @@
     line-height: 0;            /* kill the inline-SVG descender gap */
     background: #c2500f;       /* sky top stop — no colour flash before paint */
     overflow: hidden;
-    border-radius: 1rem 1rem 0 0;
+
+    /* Deliberately NO border-radius here. .auth-card is `border-radius: 1rem`
+       with a 1px border, so its inner curve is 15px, not 16px. Rounding the hero
+       to 1rem as well made the hero's corner tighter than the card's inner
+       corner, and the card's white background showed through as a sliver in each
+       top corner. The card already has overflow:hidden, which clips children to
+       that inner curve — one source of rounding, and it always matches. */
   }
 
   :host svg { width: 100%; height: auto; display: block; }
