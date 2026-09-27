@@ -13,4 +13,11 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessageEntity, 
     @Query(
             "SELECT m FROM ChatMessageEntity m WHERE m.isPrivate = true AND (m.sender = :email OR m.recipient = :email) ORDER BY m.timestamp ASC")
     List<ChatMessageEntity> findChatHistory(@Param("email") String email);
+
+    /** Everyone this user has exchanged a private message with. */
+    @Query(
+            "SELECT DISTINCT CASE WHEN m.sender = :email THEN m.recipient ELSE m.sender END "
+                    + "FROM ChatMessageEntity m "
+                    + "WHERE m.isPrivate = true AND (m.sender = :email OR m.recipient = :email)")
+    List<String> findConversationPartners(@Param("email") String email);
 }

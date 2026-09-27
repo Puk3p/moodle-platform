@@ -6,7 +6,7 @@ import { FontAwesomeModule } from '@fortawesome/angular-fontawesome';
 import { 
   faSearch, faPlus, faEllipsisVertical, faListOl, 
   faClock, faRotateRight, faEye, faPen, faChevronDown, 
-  faTrash, faXmark, faCheck 
+  faTrash, faXmark, faCheck, faCommentSlash
 } from '@fortawesome/free-solid-svg-icons';
 
 import { QuizzesService } from '../../../core/services/quizzes.service'; 
@@ -29,7 +29,7 @@ export class ManageQuizzesComponent implements OnInit {
   faSearch = faSearch; faPlus = faPlus; faEllipsisVertical = faEllipsisVertical;
   faListOl = faListOl; faClock = faClock; faRotateRight = faRotateRight;
   faEye = faEye; faPen = faPen; faChevronDown = faChevronDown; 
-  faTrash = faTrash; faXmark = faXmark; faCheck = faCheck;
+  faTrash = faTrash; faXmark = faXmark; faCheck = faCheck; faCommentSlash = faCommentSlash;
 
   
   allQuizzes: Quiz[] = [];
@@ -66,6 +66,7 @@ export class ManageQuizzesComponent implements OnInit {
     maxAttempts: 1,
     passingScore: 50,
     shuffleOptions: false,
+    blockMessaging: false,
     password: '',
     availableFrom: '',
     availableTo: '',
@@ -162,7 +163,7 @@ export class ManageQuizzesComponent implements OnInit {
     this.quizData = {
       title: '', description: '', courseId: null, moduleId: null,
       timeLimitMinutes: 30, maxAttempts: 1, passingScore: 50, shuffleOptions: false,
-      password: '', availableFrom: '', availableTo: '',
+      blockMessaging: false, password: '', availableFrom: '', availableTo: '',
       generationType: 'MANUAL',
       assignedClassIds: [],
       specificQuestionIds: [],
@@ -242,6 +243,7 @@ export class ManageQuizzesComponent implements OnInit {
         maxAttempts: this.quizData.maxAttempts,
         passingScore: this.quizData.passingScore,
         shuffleOptions: this.quizData.shuffleOptions,
+        blockMessaging: this.quizData.blockMessaging,
         password: this.quizData.password,
         
         

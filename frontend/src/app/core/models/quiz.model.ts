@@ -8,4 +8,6 @@ export interface Quiz {
   durationMinutes: number;
   attemptsLabel: string;
   lastUpdated: string;
+  /** Students cannot use messaging while an attempt on this quiz is open. */
+  blockMessaging: boolean;
 }

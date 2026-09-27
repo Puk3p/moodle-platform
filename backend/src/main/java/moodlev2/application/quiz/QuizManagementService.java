@@ -56,6 +56,7 @@ public class QuizManagementService {
         quiz.setAvailableFrom(dto.availableFrom());
         quiz.setAvailableTo(dto.availableTo());
         quiz.setGenerationType(dto.generationType());
+        quiz.setBlockMessaging(Boolean.TRUE.equals(dto.blockMessaging()));
         quiz.setStatus("PUBLISHED");
 
         if (dto.assignedClassIds() != null && !dto.assignedClassIds().isEmpty()) {
@@ -182,6 +183,9 @@ public class QuizManagementService {
         quiz.setPassingScore(dto.passingScore());
         if (dto.password() != null && !dto.password().isBlank()) {
             quiz.setPassword(passwordEncoder.encode(dto.password()));
+        }
+        if (dto.blockMessaging() != null) {
+            quiz.setBlockMessaging(dto.blockMessaging());
         }
 
         quizRepository.save(quiz);

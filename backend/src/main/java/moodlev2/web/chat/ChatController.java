@@ -1,42 +1,53 @@
 package moodlev2.web.chat;
 
-import java.security.Principal;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import moodlev2.application.chat.ChatService;
-import moodlev2.web.chat.dto.ChatMessage;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.Payload;
+import moodlev2.web.chat.dto.ChatContactDto;
+import moodlev2.web.chat.dto.ChatMessageDto;
+import moodlev2.web.chat.dto.ChatStatusDto;
+import moodlev2.web.chat.dto.SendMessageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
-@Controller
+/**
+ * Chat over REST. Sending is here rather than on the WebSocket so every write passes the JWT filter
+ * (including session revocation) and the same rules as the reads; the socket is receive-only. The
+ * caller's identity always comes from the verified security context, never from the request.
+ */
+@RestController
+@RequestMapping("/api/chat")
+@RequiredArgsConstructor
 public class ChatController {
 
-    @Autowired private ChatService chatService;
+    private final ChatService chatService;
 
-    /**
-     * Returns the chat history for the authenticated caller only. The identity is taken from the
-     * verified security context, never from a client-supplied parameter, so users cannot read one
-     * another's private conversations.
-     */
-    @GetMapping("/api/chat/history")
-    @ResponseBody
-    public ResponseEntity<List<ChatMessage>> getChatHistory(Authentication authentication) {
-        List<ChatMessage> history = chatService.getChatHistory(authentication.getName());
-        return ResponseEntity.ok(history);
+    /** Always answers, so the client can decide whether to show the chat at all. */
+    @GetMapping("/status")
+    public ChatStatusDto status(Authentication authentication) {
+        return chatService.status(authentication.getName());
     }
 
-    @MessageMapping("/chat.sendPrivate")
-    public void sendPrivateMessage(@Payload ChatMessage chatMessage, Principal principal) {
-        if (principal == null) {
-            // Unauthenticated socket: reject silently rather than trusting the payload.
-            return;
-        }
-        // The sender is bound to the authenticated WebSocket principal to prevent spoofing.
-        chatService.sendPrivateMessage(principal.getName(), chatMessage);
+    @GetMapping("/contacts")
+    public List<ChatContactDto> contacts(Authentication authentication) {
+        return chatService.contacts(authentication.getName());
+    }
+
+    @GetMapping("/history")
+    public List<ChatMessageDto> history(Authentication authentication) {
+        return chatService.history(authentication.getName());
+    }
+
+    @PostMapping("/messages")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ChatMessageDto send(
+            @RequestBody SendMessageRequest request, Authentication authentication) {
+        return chatService.send(authentication.getName(), request.recipient(), request.content());
     }
 }

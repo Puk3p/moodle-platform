@@ -1,87 +1,102 @@
 import { Injectable, inject } from '@angular/core';
-import { Client } from '@stomp/stompjs';
-import { BehaviorSubject, Subject } from 'rxjs';
-import { HttpClient } from '@angular/common/http';
+import { Client, IMessage } from '@stomp/stompjs';
+import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { API_BASE_URL } from '../config/api-endpoints';
+import { AuthService } from './auth.service';
+import { ChatMessage, ChatStatus } from '../models/chat.model';
 
+/**
+ * The live connection. Receive-only: the server refuses every frame a client publishes, so
+ * sending goes through ChatService over REST.
+ *
+ * The socket follows the session: it opens on login, closes on logout, and reopens with the
+ * new token if the user changes. The token is re-read on every (re)connect attempt.
+ */
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class WebSocketService {
-  private http = inject(HttpClient); 
-  
-  public client!: Client;
-  public unreadMessagesCount = new BehaviorSubject<number>(0);
-  
-  public privateMessageReceived = new Subject<any>();
+  private auth = inject(AuthService);
+
+  private client: Client | null = null;
+
+  private readonly messageSubject = new Subject<ChatMessage>();
+  private readonly statusSubject = new Subject<ChatStatus>();
+  private readonly connectedSubject = new BehaviorSubject<boolean>(false);
+
+  /** Messages sent to or by the current user, from any of their tabs or devices. */
+  readonly messages$: Observable<ChatMessage> = this.messageSubject.asObservable();
+  /** Pushed when a quiz locks or unlocks messaging for the current user. */
+  readonly chatStatus$: Observable<ChatStatus> = this.statusSubject.asObservable();
+  /** True while connected; each transition to true is a chance to catch up on anything missed. */
+  readonly connected$: Observable<boolean> = this.connectedSubject.asObservable();
 
   constructor() {
-    this.connect();
+    this.auth.currentUser$.subscribe((user) => {
+      this.disconnect();
+      if (user && typeof window !== 'undefined') {
+        this.connect();
+      }
+    });
   }
 
-  private connect() {
-    const token = sessionStorage.getItem('token');
-    
-
-    // In production wsBaseUrl is empty, so the socket origin is derived from the page:
-    // an https:// page yields wss://, which is required — a ws:// socket on an https
-    // page is blocked as mixed content.
-    const wsOrigin =
-      environment.wsBaseUrl ||
-      `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`;
-
-    const wsUrl = token
-      ? `${wsOrigin}/ws/websocket?access_token=${encodeURIComponent(token)}`
-      : `${wsOrigin}/ws/websocket`;
-      
-    this.client = new Client({
-      brokerURL: wsUrl,
+  private connect(): void {
+    const client = new Client({
       reconnectDelay: 5000,
-      connectHeaders: {
-        Authorization: `Bearer ${token}`
+      // Called before every attempt, including reconnects, so a new login's token is used and a
+      // logged-out tab stops trying.
+      beforeConnect: async () => {
+        const token = this.auth.getToken();
+        if (!token) {
+          await client.deactivate();
+          return;
+        }
+        client.brokerURL = this.socketUrl(token);
       },
-      debug: (str) => console.log('STOMP: ' + str),
     });
 
-    this.client.onConnect = (frame) => {
-      console.log('CHAT PRIVAT CONECTAT!');
-      
-      this.client.subscribe('/user/queue/private', (message) => {
-        if (message.body) {
-          const parsedMessage = JSON.parse(message.body);
-          parsedMessage.isPrivate = true; 
-          
-          this.privateMessageReceived.next(parsedMessage);
-          this.unreadMessagesCount.next(this.unreadMessagesCount.value + 1);
-        }
-      });
+    client.onConnect = () => {
+      client.subscribe('/user/queue/private', (frame) => this.forward(frame, this.messageSubject));
+      client.subscribe('/user/queue/chat-status', (frame) =>
+        this.forward(frame, this.statusSubject),
+      );
+      this.connectedSubject.next(true);
     };
+    client.onWebSocketClose = () => this.connectedSubject.next(false);
+    client.onStompError = (frame) => console.error('Chat connection error:', frame.headers['message']);
 
-    this.client.onStompError = (frame) => {
-      console.error('EROARE STOMP:', frame.headers['message']);
-    };
+    this.client = client;
+    client.activate();
+  }
 
-    if (typeof window !== 'undefined') {
-      this.client.activate();
+  private disconnect(): void {
+    if (this.client) {
+      this.client.deactivate();
+      this.client = null;
+    }
+    this.connectedSubject.next(false);
+  }
+
+  private forward<T>(frame: IMessage, target: Subject<T>): void {
+    if (!frame.body) {
+      return;
+    }
+    try {
+      target.next(JSON.parse(frame.body) as T);
+    } catch {
+      console.error('Unreadable chat frame');
     }
   }
 
-  public sendPrivateMessage(content: string, sender: string, recipientEmail: string) {
-    if (this.client && this.client.connected) {
-      this.client.publish({
-        destination: '/app/chat.sendPrivate',
-        body: JSON.stringify({
-          sender: sender,
-          content: content,
-          recipient: recipientEmail,
-          type: 'CHAT'
-        })
-      });
-    }
-  }
-
-  public getChatHistory(userEmail: string) {
-    return this.http.get<any[]>(`${API_BASE_URL}/api/chat/history`);
+  /**
+   * In production wsBaseUrl is empty and the origin comes from the page: an https:// page
+   * yields wss://, which is required (a ws:// socket on an https page is blocked as mixed
+   * content). Browsers cannot set headers on a WebSocket upgrade, hence the query parameter.
+   */
+  private socketUrl(token: string): string {
+    const origin =
+      environment.wsBaseUrl ||
+      `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`;
+    return `${origin}/ws/websocket?access_token=${encodeURIComponent(token)}`;
   }
 }

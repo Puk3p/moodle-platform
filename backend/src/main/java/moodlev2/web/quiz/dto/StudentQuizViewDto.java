@@ -7,7 +7,9 @@ public record StudentQuizViewDto(
         Long quizId,
         String title,
         Integer timeLimitMinutes,
-        List<StudentQuestionDto> questions) {
+        List<StudentQuestionDto> questions,
+        // Disclosed to the student up-front, like proctoring: messaging is off until they submit.
+        boolean messagingBlocked) {
     public record StudentQuestionDto(
             Long id, String text, Integer points, String type, List<StudentOptionDto> options) {}
 

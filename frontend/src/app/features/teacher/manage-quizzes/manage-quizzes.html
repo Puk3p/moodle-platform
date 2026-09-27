@@ -65,6 +65,9 @@
           <div class="stat-item"><fa-icon [icon]="faListOl"></fa-icon> {{ quiz.questionsCount }} Qs</div>
           <div class="stat-item"><fa-icon [icon]="faClock"></fa-icon> {{ quiz.durationMinutes }}m</div>
           <div class="stat-item"><fa-icon [icon]="faRotateRight"></fa-icon> {{ quiz.attemptsLabel }}</div>
+          <div class="stat-item" *ngIf="quiz.blockMessaging" title="Students cannot use messaging while an attempt is open">
+            <fa-icon [icon]="faCommentSlash"></fa-icon> No messaging
+          </div>
         </div>
       </div>
       <div class="card-footer">
@@ -195,6 +198,18 @@
                     </label>
                 </div>
             </div>
+
+            <div class="form-group checkbox-wrapper stacked">
+                <label class="checkbox-label">
+                    <input type="checkbox" [(ngModel)]="quizData.blockMessaging" aria-describedby="block-messaging-hint">
+                    Turn off messaging during attempts
+                </label>
+                <p id="block-messaging-hint" class="hint-small">
+                    While a student’s attempt is open, messages disappear for them and the server refuses
+                    any messaging request, until they submit or the time limit (plus 5 minutes) runs out.
+                    Anything you send them in the meantime is waiting when they finish.
+                </p>
+            </div>
             
             <div class="form-row">
                 <div class="form-group half">
@@ -293,6 +308,10 @@
                     <span class="value">
                         {{ quizData.generationType === 'MANUAL' ? quizData.specificQuestionIds.length : totalRandomQuestions }}
                     </span>
+                </div>
+                <div class="review-item">
+                    <span class="label">Messaging:</span>
+                    <span class="value">{{ quizData.blockMessaging ? 'Off during attempts' : 'Available' }}</span>
                 </div>
                 <div class="review-item" *ngIf="quizData.password">
                     <span class="label">Password Protection:</span>

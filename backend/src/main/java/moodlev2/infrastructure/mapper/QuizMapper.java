@@ -33,7 +33,8 @@ public class QuizMapper {
                 entity.getQuestionsCount(),
                 entity.getDurationMinutes(),
                 attemptsLabel,
-                lastUpdated);
+                lastUpdated,
+                entity.isBlockMessaging());
     }
 
     private String calculateTimeAgo(Instant time) {

@@ -18,6 +18,8 @@ public record CreateQuizDto(
         List<Long> assignedClassIds,
         String generationType,
         List<Long> specificQuestionIds,
-        List<RandomRuleDto> randomRules) {
+        List<RandomRuleDto> randomRules,
+        // Boxed so an update that omits it leaves the stored value alone.
+        Boolean blockMessaging) {
     public record RandomRuleDto(Long categoryId, String difficulty, int count) {}
 }

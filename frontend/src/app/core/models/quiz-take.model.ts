@@ -22,6 +22,8 @@ export interface StudentQuizView {
   title: string;
   timeLimitMinutes: number;
   questions: StudentQuestion[];
+  /** Messaging is switched off for this student until the attempt is submitted. */
+  messagingBlocked: boolean;
 }
 
 export interface QuizSubmission {

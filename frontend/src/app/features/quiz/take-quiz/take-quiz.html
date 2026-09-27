@@ -46,6 +46,10 @@
           <strong>This attempt is proctored.</strong>
           Leaving this window or switching tabs is recorded and shown to your teacher.
           The quiz cannot see other tabs, your browsing history, or which sites you visit.
+          <ng-container *ngIf="messagingBlocked">
+            <strong>Messaging is off until you submit</strong> — messages sent to you meanwhile
+            will be waiting afterwards.
+          </ng-container>
         </p>
         <span class="proctor-notice__count" *ngIf="proctor.leaveCount > 0">
           {{ proctor.leaveCount }} {{ proctor.leaveCount === 1 ? 'exit' : 'exits' }} recorded

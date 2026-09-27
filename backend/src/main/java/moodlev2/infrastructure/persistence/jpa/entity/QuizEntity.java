@@ -52,6 +52,10 @@ public class QuizEntity {
     @Column(name = "access_password")
     private String password;
 
+    /** While a student's attempt on this quiz is live, messaging is unavailable to them. */
+    @Column(name = "block_messaging", nullable = false)
+    private boolean blockMessaging = false;
+
     @Column(name = "available_from")
     private LocalDateTime availableFrom;
 

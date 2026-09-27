@@ -10,6 +10,8 @@ import org.springframework.data.repository.query.Param;
 public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
     Optional<CourseEntity> findByCode(String code);
 
+    List<CourseEntity> findAllByTeacherId(Long teacherId);
+
     @Query(
             "SELECT c FROM CourseEntity c JOIN EnrollmentEntity e ON c.id = e.course.id WHERE e.user.email = :email")
     List<CourseEntity> findAllByUserEmail(String email);

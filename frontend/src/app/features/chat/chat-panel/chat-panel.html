@@ -1,0 +1,147 @@
+<section class="chat" role="dialog" aria-modal="false"
+         [attr.aria-label]="active() ? 'Conversation with ' + fullName(active()!) : 'Messages'">
+
+  <header class="chat-head">
+    @if (active(); as contact) {
+      <button type="button" class="chat-icon-btn" (click)="back()" aria-label="Back to all conversations">
+        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+      </button>
+      <span class="chat-avatar chat-avatar--small" [attr.data-role]="contact.role" aria-hidden="true">
+        {{ initials(contact) }}
+      </span>
+      <div class="chat-head-text">
+        <h2 class="chat-title">{{ fullName(contact) }}</h2>
+        <p class="chat-subtitle">{{ describe(contact) }}</p>
+      </div>
+    } @else {
+      <div class="chat-head-text">
+        <h2 class="chat-title">Messages</h2>
+        <p class="chat-subtitle">Between you and your teachers or students</p>
+      </div>
+    }
+    <button type="button" class="chat-icon-btn" (click)="close()" aria-label="Close messages">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+  </header>
+
+  @if (!active()) {
+    <div class="chat-search">
+      <label class="visually-hidden" for="chat-search">Find a person</label>
+      <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+      <input #searchInput id="chat-search" type="search" autocomplete="off"
+             placeholder="Search by name or course"
+             [ngModel]="query()" (ngModelChange)="query.set($event)">
+    </div>
+
+    <div class="chat-body">
+      @switch (chat.loadState()) {
+        @case ('error') {
+          <div class="chat-state" role="alert">
+            <p class="chat-state-title">Messages didn’t load</p>
+            <p class="chat-state-text">Check your connection, then try again.</p>
+            <button type="button" class="chat-text-btn" (click)="chat.load()">Try again</button>
+          </div>
+        }
+        @case ('ready') {
+          @if (rows().length) {
+            <ul class="chat-list">
+              @for (row of rows(); track row.contact.email) {
+                <li>
+                  <button type="button" class="chat-row" (click)="open(row.contact)"
+                          [class.has-unread]="row.unread > 0">
+                    <span class="chat-avatar" [attr.data-role]="row.contact.role" aria-hidden="true">
+                      {{ initials(row.contact) }}
+                    </span>
+                    <span class="chat-row-main">
+                      <span class="chat-row-top">
+                        <span class="chat-row-name">{{ fullName(row.contact) }}</span>
+                        @if (row.last) {
+                          <time class="chat-row-time" [attr.datetime]="row.last.timestamp">
+                            {{ isToday(row.last.timestamp) ? (row.last.timestamp | date: 'HH:mm') : (row.last.timestamp | date: 'd MMM') }}
+                          </time>
+                        }
+                      </span>
+                      <span class="chat-row-bottom">
+                        <span class="chat-row-preview">
+                          @if (row.last) {
+                            @if (chat.isMine(row.last)) { <span class="chat-row-you">You: </span> }{{ row.last.content }}
+                          } @else {
+                            {{ describe(row.contact) }}
+                          }
+                        </span>
+                        @if (row.unread > 0) {
+                          <span class="chat-unread" [attr.aria-label]="row.unread + ' unread'">{{ row.unread }}</span>
+                        }
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              }
+            </ul>
+          } @else if (query()) {
+            <div class="chat-state">
+              <p class="chat-state-title">No one matches “{{ query() }}”</p>
+              <p class="chat-state-text">Try a first name, last name or course code.</p>
+            </div>
+          } @else {
+            <div class="chat-state">
+              <i class="fa-regular fa-comments chat-state-icon" aria-hidden="true"></i>
+              <p class="chat-state-title">No one to message yet</p>
+              <p class="chat-state-text">
+                Teachers and students appear here once you share a course.
+              </p>
+            </div>
+          }
+        }
+        @default {
+          <ul class="chat-list" aria-busy="true" aria-label="Loading conversations">
+            @for (i of [1, 2, 3, 4]; track i) {
+              <li class="chat-row chat-row--skeleton" aria-hidden="true">
+                <span class="chat-avatar"></span>
+                <span class="chat-row-main">
+                  <span class="skeleton-line skeleton-line--name"></span>
+                  <span class="skeleton-line"></span>
+                </span>
+              </li>
+            }
+          </ul>
+        }
+      }
+    </div>
+  } @else {
+    <div class="chat-thread" #threadScroll aria-live="polite">
+      @for (message of thread(); track message.id; let i = $index) {
+        @if (startsNewDay(i)) {
+          <p class="chat-day"><span>{{ dayLabel(message.timestamp) }}</span></p>
+        }
+        <div class="chat-msg" [class.is-mine]="chat.isMine(message)">
+          <p class="chat-bubble">{{ message.content }}</p>
+          <time class="chat-msg-time" [attr.datetime]="message.timestamp">{{ message.timestamp | date: 'HH:mm' }}</time>
+        </div>
+      } @empty {
+        <div class="chat-state">
+          <p class="chat-state-title">No messages yet</p>
+          <p class="chat-state-text">Say hello to {{ active()!.firstName || fullName(active()!) }}.</p>
+        </div>
+      }
+    </div>
+
+    @if (sendError()) {
+      <p class="chat-send-error" role="alert">{{ sendError() }}</p>
+    }
+
+    <form class="chat-composer" (ngSubmit)="send()">
+      <label class="visually-hidden" for="chat-input">Message {{ fullName(active()!) }}</label>
+      <textarea #composer id="chat-input" name="draft" rows="1"
+                placeholder="Write a message"
+                maxlength="2000"
+                [(ngModel)]="draft"
+                (keydown.enter)="onComposerEnter($event)"></textarea>
+      <button type="submit" class="chat-send" [disabled]="!canSend()"
+              [attr.aria-label]="sending() ? 'Sending' : 'Send message'">
+        <i class="fa-solid" [class.fa-paper-plane]="!sending()" [class.fa-spinner]="sending()"
+           [class.fa-spin]="sending()" aria-hidden="true"></i>
+      </button>
+    </form>
+  }
+</section>

@@ -18,7 +18,8 @@ public class QuizEngineMapper {
                 quiz.getDurationMinutes(),
                 quiz.getQuestions().stream()
                         .map(q -> mapQuestionForStudent(q, quiz.isShuffleOptions()))
-                        .toList());
+                        .toList(),
+                quiz.isBlockMessaging());
     }
 
     private StudentQuizViewDto.StudentQuestionDto mapQuestionForStudent(

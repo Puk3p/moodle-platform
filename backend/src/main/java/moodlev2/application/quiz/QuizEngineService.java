@@ -12,6 +12,7 @@ import moodlev2.infrastructure.mapper.QuizEngineMapper;
 import moodlev2.infrastructure.persistence.jpa.*;
 import moodlev2.infrastructure.persistence.jpa.entity.*;
 import moodlev2.web.quiz.dto.*;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,7 @@ public class QuizEngineService {
     private final EnrollmentRepository enrollmentRepository;
     private final PasswordEncoder passwordEncoder;
     private final QuizEngineMapper mapper;
+    private final ApplicationEventPublisher events;
 
     @Transactional
     public StudentQuizViewDto startAttempt(Long quizId, String userEmail, String providedPassword) {
@@ -46,6 +48,7 @@ public class QuizEngineService {
                 quizAttemptRepository.findByQuizIdAndUserIdAndStatus(
                         quizId, user.getId(), "IN_PROGRESS");
         if (existingAttempt.isPresent()) {
+            events.publishEvent(new QuizAttemptChangedEvent(userEmail, quiz.isBlockMessaging()));
             return mapper.toStudentView(quiz, existingAttempt.get().getId());
         }
 
@@ -79,6 +82,7 @@ public class QuizEngineService {
         attempt.setScore(BigDecimal.ZERO);
 
         attemptRepository.save(attempt);
+        events.publishEvent(new QuizAttemptChangedEvent(userEmail, quiz.isBlockMessaging()));
 
         return mapper.toStudentView(quiz, attempt.getId());
     }
@@ -166,6 +170,7 @@ public class QuizEngineService {
         attempt.setScore(totalScore);
 
         attemptRepository.save(attempt);
+        events.publishEvent(new QuizAttemptChangedEvent(userEmail, quiz.isBlockMessaging()));
 
         boolean passed =
                 totalScore.intValue()

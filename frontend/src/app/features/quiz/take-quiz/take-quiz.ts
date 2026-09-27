@@ -37,6 +37,8 @@ export class TakeQuizComponent implements OnInit, OnDestroy {
   quizId!: number;
   attemptId!: number;
   quizTitle = 'Loading Quiz...';
+  /** Set by the teacher per quiz; the server enforces it, this only tells the student. */
+  messagingBlocked = false;
   
   questions: StudentQuestion[] = [];
   currentQuestionIndex = 0;
@@ -107,6 +109,7 @@ export class TakeQuizComponent implements OnInit, OnDestroy {
       next: (data) => {
         this.quizTitle = data.title;
         this.attemptId = data.attemptId;
+        this.messagingBlocked = data.messagingBlocked;
         // Proctoring is disclosed in the quiz header; see the notice in take-quiz.html.
         this.proctor.start(this.attemptId);
         this.questions = data.questions || [];
