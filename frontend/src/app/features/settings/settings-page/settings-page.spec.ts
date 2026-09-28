@@ -71,6 +71,23 @@ describe('SettingsPage', () => {
     expect(text).not.toContain('Class');
   });
 
+  it('builds the teacher card from exactly the same components as the student card', () => {
+    render(teacher);
+    const card = (fixture.nativeElement as HTMLElement).querySelector('.identity')!;
+    const classesUsed = new Set(
+      [...card.querySelectorAll('[class]')].flatMap((el) => [...el.classList]),
+    );
+    const studentComponents = ['identity', 'identity-main', 'identity-avatar', 'identity-text', 'identity-email',
+      'role-badge', 'facts', 'fact', 'numeric', 'courses', 'course-list', 'course', 'course-code',
+      'course-text', 'course-name', 'course-meta', 'identity-note'];
+
+    // Icon-font and framework classes are shared plumbing, not components.
+    const components = [...classesUsed].filter((c) => !/^(fa|ng)-/.test(c));
+
+    expect(components.filter((c) => !studentComponents.includes(c))).toEqual([]);
+    expect(card.querySelectorAll('a, button').length).toBe(0);
+  });
+
   it('shows a student their class, ID and courses, never teaching tools', () => {
     const text = render(student);
 

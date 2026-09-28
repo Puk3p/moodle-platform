@@ -1,6 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { UserService } from '../../../core/services/user.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -13,15 +12,17 @@ type LoadState = 'loading' | 'ready' | 'error';
 const PASSWORD_MIN = 8;
 
 /**
- * Account settings. The top card is shaped by role: a student sees their class, student ID and
- * enrolled courses; a teacher sees the courses they teach. Name and email are read-only here
+ * Account settings. Students and teachers get the same page and the same components; only the
+ * content of the top card differs: a student sees their class, student ID and enrolled courses, a
+ * teacher (who has neither a class nor a student ID) sees the courses they teach and their
+ * students. Name and email are read-only here
  * because there is no endpoint to change them, so the page says so instead of offering a Save
  * button that does nothing.
  */
 @Component({
   selector: 'app-settings-page',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule],
   templateUrl: './settings-page.html',
   styleUrl: './settings-page.scss',
 })
@@ -265,8 +266,8 @@ export class SettingsPageComponent implements OnInit {
     return /mobile|android|iphone|ipad/i.test(session.deviceName);
   }
 
-  statusLabel(status: string): string {
-    return status?.toUpperCase() === 'PUBLISHED' ? 'Published' : 'Draft';
+  isDraft(status: string): boolean {
+    return status?.toUpperCase() !== 'PUBLISHED';
   }
 }
 

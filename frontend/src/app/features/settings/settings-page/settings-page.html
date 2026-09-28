@@ -28,12 +28,12 @@
       @if (profile(); as p) {
         <section class="identity" aria-labelledby="identity-name">
           <div class="identity-main">
-            <span class="identity-avatar" [attr.data-role]="p.role" aria-hidden="true">{{ initials() }}</span>
+            <span class="identity-avatar" aria-hidden="true">{{ initials() }}</span>
             <div class="identity-text">
               <h2 id="identity-name">{{ fullName() }}</h2>
               <p class="identity-email">{{ p.email }}</p>
             </div>
-            <span class="role-badge" [attr.data-role]="p.role">{{ roleLabel() }}</span>
+            <span class="role-badge">{{ roleLabel() }}</span>
           </div>
 
           @if (p.role === 'STUDENT' && p.student; as s) {
@@ -96,14 +96,9 @@
                       <span class="course-text">
                         <span class="course-name">{{ c.name }}</span>
                         <span class="course-meta">
-                          {{ c.term }} · {{ c.studentCount }} {{ c.studentCount === 1 ? 'student' : 'students' }}
+                          {{ c.term }} · {{ c.studentCount }} {{ c.studentCount === 1 ? 'student' : 'students' }}{{ isDraft(c.status) ? ' · Draft' : '' }}
                         </span>
                       </span>
-                      <span class="status-badge" [attr.data-status]="statusLabel(c.status)">{{ statusLabel(c.status) }}</span>
-                      <a class="course-link" [routerLink]="['/manage-courses', c.code, 'students']"
-                         [attr.aria-label]="'Students in ' + c.code">
-                        Students <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
-                      </a>
                     </li>
                   }
                 </ul>
