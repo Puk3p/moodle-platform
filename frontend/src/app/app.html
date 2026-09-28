@@ -159,7 +159,8 @@
             </button>
 
             <div class="profile" routerLink="/settings">
-             <div class="avatar"></div>
+             <div class="avatar"
+                  [style.background-image]="pictures.url() ? 'url(' + pictures.url() + ')' : null"></div>
             <div class="profile-text">
              <div class="name">{{ authService.currentUserValue?.firstName }} {{ authService.currentUserValue?.lastName }}</div>
              <div class="subtitle">{{ authService.hasRole('TEACHER') ? 'Teacher' : 'Student' }}</div>

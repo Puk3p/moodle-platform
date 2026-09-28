@@ -11,8 +11,19 @@
 
     <div class="profile-content">
       <div class="avatar-block">
-        <div class="avatar"></div>
-        <button type="button" class="link-button">Change picture</button>
+        <div class="avatar"
+             [style.background-image]="pictures.url() ? 'url(' + pictures.url() + ')' : null"></div>
+        <input #pictureInput type="file" accept="image/jpeg,image/png" hidden
+               (change)="onPictureSelected($event)" />
+        <button type="button" class="link-button" [disabled]="pictureBusy"
+                (click)="pictureInput.click()">
+          {{ pictureBusy ? 'Uploading…' : 'Change picture' }}
+        </button>
+        <button *ngIf="pictures.url() && !pictureBusy" type="button" class="link-button"
+                (click)="onRemovePicture()">Remove picture</button>
+        <p class="picture-hint" role="status" [class.is-error]="pictureError">
+          {{ pictureMessage || 'JPG or PNG, up to 2 MB.' }}
+        </p>
       </div>
 
       <div class="profile-form">

@@ -10,6 +10,7 @@ import { filter } from 'rxjs/operators';
 
 import { AuthService } from './core/services/auth.service';
 import { ChatService } from './core/services/chat.service';
+import { ProfilePictureService } from './core/services/profile-picture.service';
 import { AuthHeroComponent } from './features/auth/auth-hero/auth-hero';
 import { ChatPanelComponent } from './features/chat/chat-panel/chat-panel';
 
@@ -28,6 +29,7 @@ export class App implements OnInit, OnDestroy {
   public authService = inject(AuthService);
   private router = inject(Router);
   public chat = inject(ChatService);
+  public pictures = inject(ProfilePictureService);
 
   isQuizRoute = false;
 

@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { UserService } from '../../../core/services/user.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Session } from '../../../core/sessions/session.model';
+import { ProfilePictureService } from '../../../core/services/profile-picture.service';
 
 @Component({
   selector: 'app-settings-page',
@@ -17,6 +18,11 @@ export class SettingsPageComponent implements OnInit {
   private userService = inject(UserService);
   private authService = inject(AuthService);
   private cdr = inject(ChangeDetectorRef);
+  pictures = inject(ProfilePictureService);
+
+  pictureBusy = false;
+  pictureMessage = '';
+  pictureError = false;
 
   userName = 'Loading...';
   userRole = 'Student';
@@ -171,6 +177,50 @@ export class SettingsPageComponent implements OnInit {
       },
       error: (err) => console.error('Error verifying code', err)
     });
+  }
+
+  onPictureSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = ''; // so choosing the same file again still fires (change)
+    if (!file) {
+      return;
+    }
+
+    const problem = ProfilePictureService.problemWith(file);
+    if (problem) {
+      this.showPictureMessage(problem, true);
+      return;
+    }
+
+    this.pictureBusy = true;
+    this.showPictureMessage('', false);
+    this.pictures.upload(file).subscribe({
+      next: () => {
+        this.pictureBusy = false;
+        this.showPictureMessage('Picture updated.', false);
+      },
+      error: (err) => {
+        this.pictureBusy = false;
+        this.showPictureMessage(err.error?.error || 'The picture could not be uploaded.', true);
+      },
+    });
+  }
+
+  onRemovePicture(): void {
+    if (!confirm('Remove your profile picture?')) {
+      return;
+    }
+    this.pictures.remove().subscribe({
+      next: () => this.showPictureMessage('Picture removed.', false),
+      error: () => this.showPictureMessage('The picture could not be removed.', true),
+    });
+  }
+
+  private showPictureMessage(message: string, isError: boolean): void {
+    this.pictureMessage = message;
+    this.pictureError = isError;
+    this.cdr.detectChanges();
   }
 
   onResetProfile(): void { console.log('Reset profile (TODO)'); }
