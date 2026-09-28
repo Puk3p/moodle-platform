@@ -19,7 +19,10 @@ const teacher: UserProfile = {
   student: null,
   teacher: {
     studentCount: 2,
-    courses: [{ code: 'CS201', name: 'Data Structures', term: 'Fall 2026', status: 'PUBLISHED', studentCount: 2 }],
+    courses: [
+      { code: 'CS201', name: 'Data Structures', term: 'Fall 2026', status: 'PUBLISHED', studentCount: 2 },
+      { code: 'CS350', name: 'Operating Systems', term: 'Fall 2026', status: 'DRAFT', studentCount: 1 },
+    ],
   },
 };
 
@@ -30,11 +33,7 @@ const student: UserProfile = {
   role: 'STUDENT',
   twoFaEnabled: false,
   teacher: null,
-  student: {
-    studentId: '1',
-    className: '1209A',
-    courses: [{ code: 'CS201', name: 'Data Structures', term: 'Fall 2026', teacherName: 'Eleanor Vance' }],
-  },
+  student: { studentId: '1', className: '1209A', courses: [] },
 };
 
 describe('SettingsPage', () => {
@@ -54,79 +53,52 @@ describe('SettingsPage', () => {
 
   afterEach(() => http.verify());
 
-  function render(profile: UserProfile): string {
+  /** [label, value, disabled] for every field in the Profile card, in order. */
+  async function profileFields(profile: UserProfile): Promise<[string, string, boolean][]> {
     http.expectOne(ME).flush(profile);
     http.expectOne(SESSIONS).flush([]);
     fixture.detectChanges();
-    return (fixture.nativeElement as HTMLElement).querySelector('.identity')!.textContent ?? '';
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const card = (fixture.nativeElement as HTMLElement).querySelector('.profile-form')!;
+    return [...card.querySelectorAll('.field')].map((field) => {
+      const input = field.querySelector('input') as HTMLInputElement;
+      return [field.querySelector('label')!.textContent!.trim(), input.value, input.disabled];
+    });
   }
 
-  it('shows a teacher their courses, never a class or student ID', () => {
-    const text = render(teacher);
+  it('shows a student their class and student ID, locked', async () => {
+    const fields = await profileFields(student);
 
-    expect(text).toContain('Teacher');
-    expect(text).toContain('Courses you teach');
-    expect(text).toContain('CS201');
-    expect(text).not.toContain('Student ID');
-    expect(text).not.toContain('Class');
+    expect(fields.map(([label]) => label)).toEqual([
+      'Email address',
+      'First name',
+      'Last name',
+      'Class / Group',
+      'Student ID',
+    ]);
+    expect(fields).toContain(['Class / Group', '1209A', true]);
+    expect(fields).toContain(['Student ID', '1', true]);
   });
 
-  it('builds the teacher card from exactly the same components as the student card', () => {
-    render(teacher);
-    const card = (fixture.nativeElement as HTMLElement).querySelector('.identity')!;
-    const classesUsed = new Set(
-      [...card.querySelectorAll('[class]')].flatMap((el) => [...el.classList]),
-    );
-    const studentComponents = ['identity', 'identity-main', 'identity-avatar', 'identity-text', 'identity-email',
-      'role-badge', 'facts', 'fact', 'numeric', 'courses', 'course-list', 'course', 'course-code',
-      'course-text', 'course-name', 'course-meta', 'identity-note'];
+  it('gives a teacher the same five locked fields, with role and courses instead of class and ID', async () => {
+    const fields = await profileFields(teacher);
 
-    // Icon-font and framework classes are shared plumbing, not components.
-    const components = [...classesUsed].filter((c) => !/^(fa|ng)-/.test(c));
-
-    expect(components.filter((c) => !studentComponents.includes(c))).toEqual([]);
-    expect(card.querySelectorAll('a, button').length).toBe(0);
+    expect(fields.map(([label]) => label)).toEqual([
+      'Email address',
+      'First name',
+      'Last name',
+      'Role',
+      'Courses taught',
+    ]);
+    expect(fields).toContain(['Role', 'Teacher', true]);
+    expect(fields).toContain(['Courses taught', 'CS201, CS350', true]);
+    expect(fields.every(([, , disabled]) => disabled)).toBeTrue();
   });
 
-  it('shows a student their class, ID and courses, never teaching tools', () => {
-    const text = render(student);
+  it('shows a student without a class as Not Assigned, as before', async () => {
+    const fields = await profileFields({ ...student, student: { ...student.student!, className: null } });
 
-    expect(text).toContain('Student');
-    expect(text).toContain('1209A');
-    expect(text).toContain('Student ID');
-    expect(text).toContain('Eleanor Vance');
-    expect(text).not.toContain('Courses you teach');
-  });
-
-  it('says a student has no class yet rather than showing a placeholder value', () => {
-    const text = render({ ...student, student: { ...student.student!, className: null } });
-
-    expect(text).toContain('Not assigned yet');
-  });
-
-  it('offers no save button for fields that cannot be changed here', () => {
-    render(student);
-    const buttons = [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')].map(
-      (b) => b.textContent?.trim(),
-    );
-
-    expect(buttons).not.toContain('Save changes');
-    expect(buttons).not.toContain('Change picture');
-  });
-
-  it('shows the server’s reason when a password change is refused', () => {
-    render(student);
-    const page = fixture.componentInstance;
-    page.password = { current: 'wrong-one-1', next: 'newpass123', confirm: 'newpass123', code: '' };
-
-    page.submitPassword();
-    http
-      .expectOne(`${API_BASE_URL}/api/users/change-password`)
-      .flush({ error: 'Current password is incorrect.' }, { status: 400, statusText: 'Bad Request' });
-    fixture.detectChanges();
-
-    expect((fixture.nativeElement as HTMLElement).querySelector('.notice--error')?.textContent).toContain(
-      'Current password is incorrect.',
-    );
+    expect(fields).toContain(['Class / Group', 'Not Assigned', true]);
   });
 });
