@@ -1,213 +1,342 @@
-<div class="settings-page">
-  <section class="settings-header">
-    <div class="settings-title">
-      <h1>Settings</h1>
-      <p>Manage your profile, security, and preferences for your Moodle V2 account.</p>
+<div class="settings">
+  <header class="settings-head">
+    <h1>Settings</h1>
+    <p>Your account, how you sign in, and the devices you’re signed in on.</p>
+  </header>
+
+  <!-- ── Who you are: the one part of this page that differs by role ─────── -->
+  @switch (profileState()) {
+    @case ('loading') {
+      <section class="identity identity--loading" aria-busy="true" aria-label="Loading your profile">
+        <div class="identity-main">
+          <span class="identity-avatar"></span>
+          <div class="skeleton-stack">
+            <span class="skeleton skeleton--title"></span>
+            <span class="skeleton"></span>
+          </div>
+        </div>
+      </section>
+    }
+    @case ('error') {
+      <section class="identity identity--error" role="alert">
+        <p class="state-title">Your profile didn’t load</p>
+        <p class="state-text">Check your connection, then try again.</p>
+        <button type="button" class="btn btn--quiet" (click)="loadProfile()">Try again</button>
+      </section>
+    }
+    @case ('ready') {
+      @if (profile(); as p) {
+        <section class="identity" aria-labelledby="identity-name">
+          <div class="identity-main">
+            <span class="identity-avatar" [attr.data-role]="p.role" aria-hidden="true">{{ initials() }}</span>
+            <div class="identity-text">
+              <h2 id="identity-name">{{ fullName() }}</h2>
+              <p class="identity-email">{{ p.email }}</p>
+            </div>
+            <span class="role-badge" [attr.data-role]="p.role">{{ roleLabel() }}</span>
+          </div>
+
+          @if (p.role === 'STUDENT' && p.student; as s) {
+            <dl class="facts">
+              <div class="fact">
+                <dt>Class</dt>
+                <dd [class.fact-missing]="!s.className">{{ s.className ?? 'Not assigned yet' }}</dd>
+              </div>
+              <div class="fact">
+                <dt>Student ID</dt>
+                <dd class="numeric">{{ s.studentId }}</dd>
+              </div>
+              <div class="fact">
+                <dt>Courses</dt>
+                <dd class="numeric">{{ s.courses.length }}</dd>
+              </div>
+            </dl>
+
+            <div class="courses">
+              <h3>Your courses</h3>
+              @if (s.courses.length) {
+                <ul class="course-list">
+                  @for (c of s.courses; track c.code) {
+                    <li class="course">
+                      <span class="course-code">{{ c.code }}</span>
+                      <span class="course-text">
+                        <span class="course-name">{{ c.name }}</span>
+                        <span class="course-meta">
+                          {{ c.teacherName ? c.teacherName + ' · ' : '' }}{{ c.term }}
+                        </span>
+                      </span>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <p class="empty-line">You’re not enrolled in any courses yet. They appear here once a teacher adds you or your class.</p>
+              }
+            </div>
+          }
+
+          @if (p.role === 'TEACHER' && p.teacher; as t) {
+            <dl class="facts">
+              <div class="fact">
+                <dt>Courses</dt>
+                <dd class="numeric">{{ t.courses.length }}</dd>
+              </div>
+              <div class="fact">
+                <dt>Students</dt>
+                <dd class="numeric">{{ t.studentCount }}</dd>
+              </div>
+            </dl>
+
+            <div class="courses">
+              <h3>Courses you teach</h3>
+              @if (t.courses.length) {
+                <ul class="course-list">
+                  @for (c of t.courses; track c.code) {
+                    <li class="course">
+                      <span class="course-code">{{ c.code }}</span>
+                      <span class="course-text">
+                        <span class="course-name">{{ c.name }}</span>
+                        <span class="course-meta">
+                          {{ c.term }} · {{ c.studentCount }} {{ c.studentCount === 1 ? 'student' : 'students' }}
+                        </span>
+                      </span>
+                      <span class="status-badge" [attr.data-status]="statusLabel(c.status)">{{ statusLabel(c.status) }}</span>
+                      <a class="course-link" [routerLink]="['/manage-courses', c.code, 'students']"
+                         [attr.aria-label]="'Students in ' + c.code">
+                        Students <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                      </a>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <p class="empty-line">No courses are assigned to you yet. A course appears here once you’re set as its teacher.</p>
+              }
+            </div>
+          }
+
+          <p class="identity-note">
+            <i class="fa-regular fa-circle-question" aria-hidden="true"></i>
+            Your name and email come from your school’s records. To change them, contact an administrator.
+          </p>
+        </section>
+      }
+    }
+  }
+
+  <!-- ── Password ─────────────────────────────────────────────────────────── -->
+  <section class="card" aria-labelledby="password-title">
+    <div class="card-head">
+      <h2 id="password-title">Password</h2>
+      <p>Use one you don’t use anywhere else.</p>
     </div>
-  </section>
 
-  <section class="settings-card profile-card">
-    <h2>Profile</h2>
+    <form class="form" (ngSubmit)="submitPassword()" novalidate>
+      <!-- Lets password managers pair the new password with this account. -->
+      <input type="email" class="visually-hidden" autocomplete="username" [value]="profile()?.email ?? ''"
+             tabindex="-1" aria-hidden="true" readonly>
 
-    <div class="profile-content">
-      <div class="avatar-block">
-        <div class="avatar"></div>
-        <button type="button" class="link-button">Change picture</button>
+      <div class="field">
+        <label for="pw-current">Current password</label>
+        <input id="pw-current" name="current" type="password" autocomplete="current-password"
+               [(ngModel)]="password.current" (ngModelChange)="onPasswordInput()">
       </div>
 
-      <div class="profile-form">
-        <div class="field full-width">
-          <label>Email address</label>
-          <input type="email" [(ngModel)]="profile.email" name="email" disabled />
-        </div>
-
-        <div class="field">
-          <label>First name</label>
-          <input type="text" [(ngModel)]="profile.firstName" name="firstName" disabled />
-        </div>
-
-        <div class="field">
-          <label>Last name</label>
-          <input type="text" [(ngModel)]="profile.lastName" name="lastName" disabled />
-        </div>
-
-        <div class="field">
-          <label>Class / Group</label>
-          <input type="text" [(ngModel)]="profile.classGroup" name="classGroup" disabled />
-        </div>
-
-        <div class="field">
-          <label>Student ID</label>
-          <input type="text" [(ngModel)]="profile.studentId" name="studentId" disabled />
-        </div>
+      <div class="field">
+        <label for="pw-new">New password</label>
+        <input id="pw-new" name="next" type="password" autocomplete="new-password"
+               aria-describedby="pw-rules"
+               [(ngModel)]="password.next" (ngModelChange)="onPasswordInput()">
+        <ul id="pw-rules" class="rules">
+          <li [class.met]="meetsLength">
+            <i class="fa-solid" [class.fa-check]="meetsLength" [class.fa-circle]="!meetsLength" aria-hidden="true"></i>
+            At least {{ passwordMin }} characters
+          </li>
+          <li [class.met]="meetsMix">
+            <i class="fa-solid" [class.fa-check]="meetsMix" [class.fa-circle]="!meetsMix" aria-hidden="true"></i>
+            Letters and numbers
+          </li>
+        </ul>
       </div>
-    </div>
 
-    <div class="card-footer">
-      <button type="button" class="ghost-button">Reset changes</button>
-      <button type="button" class="primary-button" (click)="onSaveProfile()">Save changes</button>
-    </div>
-  </section>
+      <div class="field">
+        <label for="pw-confirm">Confirm new password</label>
+        <input id="pw-confirm" name="confirm" type="password" autocomplete="new-password"
+               [attr.aria-invalid]="confirmMismatch" [attr.aria-describedby]="confirmMismatch ? 'pw-confirm-error' : null"
+               [(ngModel)]="password.confirm" (ngModelChange)="onPasswordInput()">
+        @if (confirmMismatch) {
+          <p id="pw-confirm-error" class="field-error">Doesn’t match the new password.</p>
+        }
+      </div>
 
-  <section class="settings-card security-card">
-    <h2>Account Security</h2>
-    <div class="security-content">
-      <div class="password-section">
-        <h3>Password</h3>
-        <p class="helper-text">
-          Update your password regularly to keep your account secure.
+      @if (twoFaEnabled()) {
+        <div class="field field--code">
+          <label for="pw-code">Code from your authenticator app</label>
+          <input id="pw-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code"
+                 maxlength="6" pattern="[0-9]*" class="code-input"
+                 [(ngModel)]="password.code" (ngModelChange)="onPasswordInput()">
+          <p class="field-hint">Two-factor authentication is on, so changing your password needs a code too.</p>
+        </div>
+      }
+
+      @if (passwordError()) {
+        <p class="notice notice--error" role="alert">{{ passwordError() }}</p>
+      }
+      @if (passwordSaved()) {
+        <p class="notice notice--success" role="status">
+          Password updated. Devices already signed in stay signed in — sign them out below if you need to.
         </p>
+      }
 
-        <div class="password-form">
-          <div class="password-row">
-            <label>Current password</label>
-            <input type="password" [(ngModel)]="passwordForm.current" placeholder="••••••••" />
-          </div>
-
-          <div class="password-row">
-            <label>New password</label>
-            <input type="password" [(ngModel)]="passwordForm.newPassword" />
-          </div>
-
-          <div class="password-row">
-            <label>Confirm new password</label>
-            <input type="password" [(ngModel)]="passwordForm.confirm" />
-          </div>
-
-          <div class="password-row" *ngIf="is2faEnabled" style="border-top: 1px dashed #e5e7eb; padding-top: 15px; margin-top: 5px;">
-            <label style="color: #ff5200; font-weight: 600;">Security Check: 2FA Code</label>
-            <p class="helper-text" style="margin-bottom: 8px;">Enter code from your authenticator app to authorize this change.</p>
-            <input type="text" 
-                   [(ngModel)]="passwordForm.twoFaCode" 
-                   placeholder="123456" 
-                   maxlength="6" 
-                   style="width: 120px; text-align: center; letter-spacing: 2px; font-weight: bold;" />
-          </div>
-
-          <div class="password-actions">
-            <button type="button" class="secondary-button" (click)="onUpdatePassword()">Update password</button>
-          </div>
-        </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn--primary" [disabled]="!canSubmitPassword">
+          {{ passwordSaving() ? 'Updating…' : 'Update password' }}
+        </button>
       </div>
+    </form>
+  </section>
 
-      <div class="divider"></div>
+  <!-- ── Two-factor authentication ────────────────────────────────────────── -->
+  <section class="card" aria-labelledby="twofa-title">
+    <div class="card-head card-head--row">
+      <div>
+        <h2 id="twofa-title">Two-factor authentication</h2>
+        <p>Sign-in also asks for a code from an app on your phone, so a stolen password isn’t enough.</p>
+      </div>
+      <span class="state-badge" [attr.data-on]="twoFaEnabled()">{{ twoFaEnabled() ? 'On' : 'Off' }}</span>
+    </div>
 
-      <div class="twofa-section">
-        <div class="twofa-header">
-          <div>
-            <h3>Two-Factor Authentication (2FA)</h3>
-            <p class="helper-text">
-              Add an extra layer of security by requiring a code from an authenticator app
-              when you sign in.
-            </p>
-          </div>
-          <span class="badge" 
-                [class.badge-success]="is2faEnabled" 
-                [class.badge-muted]="!is2faEnabled">
-            {{ is2faEnabled ? 'Enabled' : 'Disabled' }}
-          </span>
-        </div>
-
-        <div class="twofa-body">
-          <div class="twofa-actions" *ngIf="!is2faEnabled && !show2faSetup" style="margin-top: 1rem;">
-             <button type="button" class="primary-button" (click)="onEnable2FA()">Enable 2FA</button>
-          </div>
-
-          <div class="setup-container" *ngIf="show2faSetup">
-            <div class="steps">
-              <div class="step">
-                <span class="step-number">1</span>
-                <p>
-                  Scan this QR code with your authenticator app (Google/Microsoft Authenticator).
-                </p>
-              </div>
-              
-              <div class="qr-display" style="margin: 1.5rem 0; text-align: center;">
-                  <img [src]="qrCodeImage" alt="QR Code" style="width: 180px; height: 180px; border: 1px solid #e5e7eb; padding: 10px; border-radius: 8px;" *ngIf="qrCodeImage" />
-                  <p *ngIf="!qrCodeImage" style="color: #6b7280;">Generating QR Code...</p>
-                  <p class="helper-text" style="font-size: 0.8rem; margin-top: 10px; font-family: monospace; background: #f3f4f6; padding: 4px 8px; border-radius: 4px; display: inline-block;">Secret: {{ secretKey }}</p>
-              </div>
-
-              <div class="step">
-                <span class="step-number">2</span>
-                <p>Enter the 6-digit code from your app to verify and enable.</p>
-              </div>
-
-              <div class="verify-row" style="display: flex; gap: 12px; align-items: center; margin-top: 12px;">
-                  <input type="text" [(ngModel)]="verificationCode" placeholder="123456" maxlength="6" style="width: 140px; text-align: center; letter-spacing: 3px; font-size: 1.1rem; font-weight: 600;" />
-                  <button type="button" class="primary-button" (click)="onConfirm2FA()">Verify & Enable</button>
-              </div>
+    @if (twoFaEnabled()) {
+      @if (twoFaJustEnabled()) {
+        <p class="notice notice--success" role="status">
+          Two-factor authentication is on. Next time you sign in, have your authenticator app ready.
+        </p>
+      } @else {
+        <p class="card-text">You’ll enter a code from your authenticator app each time you sign in.</p>
+      }
+    } @else if (twoFaSetup(); as setup) {
+      <ol class="steps">
+        <li class="step">
+          <span class="step-number" aria-hidden="true">1</span>
+          <div class="step-body">
+            <p class="step-title">Scan this code with an authenticator app</p>
+            <p class="step-text">Google Authenticator, Microsoft Authenticator or any TOTP app works.</p>
+            <img class="qr" [src]="setup.qr" alt="QR code to add this account to your authenticator app" width="176" height="176">
+            <div class="secret">
+              <span class="secret-label">Can’t scan? Enter this key instead:</span>
+              <code class="secret-value">{{ setup.secret }}</code>
+              <button type="button" class="btn btn--quiet btn--small" (click)="copySecret(setup.secret)">
+                {{ secretCopied() ? 'Copied' : 'Copy key' }}
+              </button>
             </div>
           </div>
-        </div>
+        </li>
+        <li class="step">
+          <span class="step-number" aria-hidden="true">2</span>
+          <div class="step-body">
+            <label class="step-title" for="twofa-code">Enter the 6-digit code the app shows</label>
+            <form class="verify" (ngSubmit)="verifyTwoFa()">
+              <input id="twofa-code" name="twofaCode" type="text" inputmode="numeric" autocomplete="one-time-code"
+                     maxlength="6" pattern="[0-9]*" class="code-input"
+                     [(ngModel)]="twoFaCode" (ngModelChange)="twoFaError.set(null)">
+              <button type="submit" class="btn btn--primary" [disabled]="twoFaCode.length !== 6 || twoFaVerifying()">
+                {{ twoFaVerifying() ? 'Checking…' : 'Turn on' }}
+              </button>
+              <button type="button" class="btn btn--quiet" (click)="cancelTwoFa()">Cancel</button>
+            </form>
+          </div>
+        </li>
+      </ol>
+      @if (twoFaError()) {
+        <p class="notice notice--error" role="alert">{{ twoFaError() }}</p>
+      }
+    } @else {
+      @if (twoFaError()) {
+        <p class="notice notice--error" role="alert">{{ twoFaError() }}</p>
+      }
+      <div class="form-actions form-actions--start">
+        <button type="button" class="btn btn--secondary" (click)="startTwoFa()" [disabled]="twoFaStarting()">
+          {{ twoFaStarting() ? 'Preparing…' : 'Set up two-factor authentication' }}
+        </button>
       </div>
-    </div>
+    }
   </section>
 
-  <section class="settings-card devices-card">
-    <div class="devices-header">
-      <h2>Login &amp; devices</h2>
-      <p class="helper-text">
-        Review where you are logged in and sign out of sessions you don’t recognize.
-      </p>
+  <!-- ── Devices ──────────────────────────────────────────────────────────── -->
+  <section class="card" aria-labelledby="devices-title">
+    <div class="card-head">
+      <h2 id="devices-title">Signed-in devices</h2>
+      <p>If you don’t recognise a device, sign it out and change your password.</p>
     </div>
 
-    <div class="device-list">
-      
-      <ng-container *ngFor="let session of sessions; let last = last">
-        
-        <div class="device-item">
-          <div class="device-icon">
-             {{ session.deviceName.includes('Mobile') || session.deviceName.includes('Android') || session.deviceName.includes('iPhone') ? '📱' : '💻' }}
-          </div>
-          
-          <div class="device-info">
-            <p class="device-name">{{ session.deviceName }}</p>
-            <p class="device-meta">
-              {{ session.ipAddress }} · 
-              <span *ngIf="session.isCurrent" class="status-active">Active now</span>
-              <span *ngIf="!session.isCurrent">Last active {{ session.lastActive }}</span>
-            </p>
-          </div>
-
-          <span *ngIf="session.isCurrent" class="badge badge-success">Current device</span>
-          <button *ngIf="!session.isCurrent" 
-                  type="button" 
-                  class="ghost-button small" 
-                  (click)="onSignOutSession(session.id)">
-            Sign out
-          </button>
+    @switch (sessionsState()) {
+      @case ('loading') {
+        <ul class="device-list" aria-busy="true" aria-label="Loading devices">
+          @for (i of [1, 2]; track i) {
+            <li class="device" aria-hidden="true">
+              <span class="device-icon"></span>
+              <span class="skeleton-stack"><span class="skeleton skeleton--title"></span><span class="skeleton"></span></span>
+            </li>
+          }
+        </ul>
+      }
+      @case ('error') {
+        <div class="inline-state" role="alert">
+          <p>Your devices didn’t load.</p>
+          <button type="button" class="btn btn--quiet btn--small" (click)="loadSessions()">Try again</button>
         </div>
+      }
+      @case ('ready') {
+        <ul class="device-list">
+          @for (s of sessions(); track s.id) {
+            <li class="device">
+              <span class="device-icon" aria-hidden="true">
+                <i class="fa-solid" [class.fa-mobile-screen]="isMobile(s)" [class.fa-laptop]="!isMobile(s)"></i>
+              </span>
+              <span class="device-text">
+                <span class="device-name">{{ s.deviceName }}</span>
+                <span class="device-meta">
+                  {{ s.ipAddress }} ·
+                  @if (s.isCurrent) { <span class="device-now">Active now</span> } @else { Last active {{ s.lastActive }} }
+                </span>
+              </span>
+              @if (s.isCurrent) {
+                <span class="state-badge" data-on="true">This device</span>
+              } @else {
+                <button type="button" class="btn btn--quiet btn--small" (click)="signOut(s)"
+                        [disabled]="signingOut() !== null"
+                        [attr.aria-label]="'Sign out ' + s.deviceName + ', last active ' + s.lastActive">
+                  {{ signingOut() === s.id ? 'Signing out…' : 'Sign out' }}
+                </button>
+              }
+            </li>
+          } @empty {
+            <li class="empty-line">No active sessions.</li>
+          }
+        </ul>
 
-        <div class="device-separator" *ngIf="!last"></div>
-      </ng-container>
+        @if (sessionsError()) {
+          <p class="notice notice--error" role="alert">{{ sessionsError() }}</p>
+        }
 
-      <p *ngIf="sessions.length === 0" style="padding: 20px; color: #6b7280;">No active sessions found.</p>
-
-    </div>
-
-    <div class="device-footer">
-      <button type="button" class="danger-link" (click)="onSignOutOtherDevices()">
-        Sign out from all other devices
-      </button>
-    </div>
-  </section>
-
-  <section class="settings-card preferences-card">
-     <h2>Preferences</h2>
-    <div class="preference-divider"></div>
-
-    <div class="preference-row">
-      <div class="preference-text">
-        <span class="label">Email notifications</span>
-        <span class="description">
-          Receive updates about your course progress and grades.
-        </span>
-      </div>
-      <label class="switch">
-        <input type="checkbox" checked />
-        <span class="slider"></span>
-      </label>
-    </div>
+        @if (otherSessions().length > 0) {
+          <div class="devices-foot">
+            @if (!confirmSignOutOthers()) {
+              <button type="button" class="btn btn--danger-quiet" (click)="confirmSignOutOthers.set(true)">
+                Sign out all other devices
+              </button>
+            } @else {
+              <div class="confirm" role="group" aria-labelledby="confirm-others">
+                <p id="confirm-others">
+                  Sign out {{ otherSessions().length }} other {{ otherSessions().length === 1 ? 'device' : 'devices' }}? This one stays signed in.
+                </p>
+                <button type="button" class="btn btn--quiet btn--small" (click)="confirmSignOutOthers.set(false)">Cancel</button>
+                <button type="button" class="btn btn--danger btn--small" (click)="signOutOthers()" [disabled]="signingOut() !== null">
+                  {{ signingOut() === 'others' ? 'Signing out…' : 'Sign them out' }}
+                </button>
+              </div>
+            }
+          </div>
+        }
+      }
+    }
   </section>
 </div>
