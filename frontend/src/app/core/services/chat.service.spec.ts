@@ -6,7 +6,7 @@ import { ChatService } from './chat.service';
 import { AuthService } from './auth.service';
 import { WebSocketService } from './web-socket.service';
 import { API_BASE_URL } from '../config/api-endpoints';
-import { ChatContact, ChatMessage, ChatStatus } from '../models/chat.model';
+import { ChatContact, ChatMessage, ChatRead, ChatStatus } from '../models/chat.model';
 
 const CHAT = `${API_BASE_URL}/api/chat`;
 const ME = 'student@test.com';
@@ -19,13 +19,20 @@ const teacher: ChatContact = {
   courses: ['CS201'],
 };
 
-function message(id: number, sender: string, recipient: string, minutesAgo = 1): ChatMessage {
+function message(
+  id: number,
+  sender: string,
+  recipient: string,
+  minutesAgo = 1,
+  read = sender === ME,
+): ChatMessage {
   return {
     id,
     sender,
     recipient,
     content: `message ${id}`,
     timestamp: new Date(Date.now() - minutesAgo * 60_000).toISOString(),
+    read,
   };
 }
 
@@ -34,10 +41,12 @@ describe('ChatService', () => {
   let http: HttpTestingController;
   let statusPush: Subject<ChatStatus>;
   let messagePush: Subject<ChatMessage>;
+  let readPush: Subject<ChatRead>;
 
   beforeEach(() => {
     statusPush = new Subject<ChatStatus>();
     messagePush = new Subject<ChatMessage>();
+    readPush = new Subject<ChatRead>();
 
     TestBed.configureTestingModule({
       providers: [
@@ -57,6 +66,7 @@ describe('ChatService', () => {
           useValue: {
             messages$: messagePush,
             chatStatus$: statusPush,
+            chatRead$: readPush,
             connected$: new BehaviorSubject(false),
           },
         },
@@ -69,7 +79,6 @@ describe('ChatService', () => {
 
   afterEach(() => {
     http.verify();
-    localStorage.removeItem(`chat_seen_${ME}`);
   });
 
   function openWith(history: ChatMessage[]): void {
@@ -141,6 +150,32 @@ describe('ChatService', () => {
     service.markSeen(teacher.email);
 
     expect(service.unreadTotal()).toBe(0);
+    const req = http.expectOne(`${CHAT}/read`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ partner: teacher.email, upToId: 2 });
+    req.flush(null, { status: 204, statusText: 'No Content' });
+  });
+
+  it('trusts the server for what is already read, so a new session starts with the right count', () => {
+    openWith([message(1, teacher.email, ME, 5, true), message(2, teacher.email, ME, 4, false)]);
+
+    expect(service.unreadTotal()).toBe(1);
+  });
+
+  it('does not call the server when there is nothing new to mark', () => {
+    openWith([message(1, teacher.email, ME, 5, true), message(2, ME, teacher.email, 4)]);
+
+    service.markSeen(teacher.email);
+
+    http.expectNone(`${CHAT}/read`);
+  });
+
+  it('clears the badge when the conversation is read in another tab', () => {
+    openWith([message(1, teacher.email, ME, 5), message(2, teacher.email, ME, 4)]);
+
+    readPush.next({ partner: teacher.email, upToId: 1 });
+
+    expect(service.unreadTotal()).toBe(1);
   });
 
   it('re-checks the status when the server refuses a call as locked', () => {

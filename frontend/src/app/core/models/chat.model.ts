@@ -6,6 +6,14 @@ export interface ChatMessage {
   content: string;
   /** ISO-8601 instant. */
   timestamp: string;
+  /** Whether the current user has seen it; always true for their own messages. */
+  read: boolean;
+}
+
+/** Pushed when the current user reads a conversation in another tab or on another device. */
+export interface ChatRead {
+  partner: string;
+  upToId: number;
 }
 
 /** Someone the current user may message (a student's teachers, a teacher's students). */

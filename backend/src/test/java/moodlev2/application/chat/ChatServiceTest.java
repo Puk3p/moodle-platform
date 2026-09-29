@@ -24,6 +24,7 @@ import moodlev2.infrastructure.persistence.jpa.SpringDataUserRepository;
 import moodlev2.infrastructure.persistence.jpa.entity.ChatMessageEntity;
 import moodlev2.infrastructure.persistence.jpa.entity.UserEntity;
 import moodlev2.web.chat.dto.ChatMessageDto;
+import moodlev2.web.chat.dto.ChatReadDto;
 import moodlev2.web.chat.dto.ChatStatusDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -89,8 +90,19 @@ class ChatServiceTest {
         assertThat(sent.sender()).isEqualTo(teacher.getEmail());
         assertThat(sent.recipient()).isEqualTo(student.getEmail());
         assertThat(sent.content()).isEqualTo("Hello");
+        assertThat(sent.read()).isTrue();
         verify(messaging).convertAndSendToUser(teacher.getEmail(), ChatService.MESSAGE_QUEUE, sent);
-        verify(messaging).convertAndSendToUser(student.getEmail(), ChatService.MESSAGE_QUEUE, sent);
+        // The recipient's copy is the same message, unread to them.
+        ChatMessageDto delivered =
+                new ChatMessageDto(
+                        sent.id(),
+                        sent.sender(),
+                        sent.recipient(),
+                        "Hello",
+                        sent.timestamp(),
+                        false);
+        verify(messaging)
+                .convertAndSendToUser(student.getEmail(), ChatService.MESSAGE_QUEUE, delivered);
     }
 
     @Test
@@ -252,5 +264,72 @@ class ChatServiceTest {
             return t;
         }
         throw new AssertionError("Expected an exception");
+    }
+
+    // ── Read state ───────────────────────────────────────────────────────────
+
+    @Test
+    void historyReportsReadStateFromTheViewersSide() {
+        ChatMessageEntity unreadToMe = row(1L, teacher, student, null);
+        ChatMessageEntity readToMe = row(2L, teacher, student, java.time.LocalDateTime.now());
+        ChatMessageEntity mine = row(3L, student, teacher, null);
+        when(messageRepository.findChatHistory(student.getEmail()))
+                .thenReturn(List.of(unreadToMe, readToMe, mine));
+        when(userRepository.findAllByEmailIn(any())).thenReturn(List.of(teacher));
+
+        List<ChatMessageDto> history = chatService.history(student.getEmail());
+
+        assertThat(history).extracting(ChatMessageDto::read).containsExactly(false, true, true);
+    }
+
+    @Test
+    void markingReadIsStoredAndSyncedToTheReadersOtherTabs() {
+        when(messageRepository.markRead(
+                        eq(student.getEmail()), eq(teacher.getEmail()), eq(7L), any()))
+                .thenReturn(2);
+
+        chatService.markRead(student.getEmail(), " " + teacher.getEmail() + " ", 7L);
+
+        verify(messaging)
+                .convertAndSendToUser(
+                        student.getEmail(),
+                        ChatService.READ_QUEUE,
+                        new ChatReadDto(teacher.getEmail(), 7L));
+    }
+
+    @Test
+    void markingAnAlreadyReadConversationPushesNothing() {
+        when(messageRepository.markRead(anyString(), anyString(), eq(7L), any())).thenReturn(0);
+
+        chatService.markRead(student.getEmail(), teacher.getEmail(), 7L);
+
+        verifyNoInteractions(messaging);
+    }
+
+    @Test
+    void markingReadNeedsAConversationAndAMessage() {
+        assertThatThrownBy(() -> chatService.markRead(student.getEmail(), " ", 7L))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> chatService.markRead(student.getEmail(), teacher.getEmail(), null))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void studentMidQuizCannotMarkMessagesRead() {
+        lock(student);
+
+        Throwable thrown =
+                catchThrown(() -> chatService.markRead(student.getEmail(), teacher.getEmail(), 7L));
+
+        assertThat(statusOf(thrown)).isEqualTo(HttpStatus.LOCKED);
+        verify(messageRepository, never()).markRead(anyString(), anyString(), eq(7L), any());
+    }
+
+    private static ChatMessageEntity row(
+            long id, UserEntity from, UserEntity to, java.time.LocalDateTime readAt) {
+        ChatMessageEntity m = new ChatMessageEntity(from.getEmail(), to.getEmail(), "m" + id, true);
+        ReflectionTestUtils.setField(m, "id", id);
+        m.setReadAt(readAt);
+        return m;
     }
 }

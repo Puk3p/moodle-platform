@@ -30,8 +30,6 @@ export class ChatService {
   private readonly contactsSignal = signal<ChatContact[]>([]);
   private readonly messagesSignal = signal<ChatMessage[]>([]);
   private readonly loadStateSignal = signal<ChatLoadState>('idle');
-  /** Per-conversation "read up to" time (epoch ms), keyed by lower-cased partner email. */
-  private readonly seenSignal = signal<Record<string, number>>({});
 
   readonly status = this.statusSignal.asReadonly();
   readonly contacts = this.contactsSignal.asReadonly();
@@ -40,14 +38,16 @@ export class ChatService {
 
   readonly available = computed(() => this.statusSignal()?.available === true);
 
-  /** Unread count per partner (lower-cased email). */
+  /**
+   * Unread count per partner (lower-cased email). Read state lives on the server, so it
+   * survives sign-out, reconnects and switching devices.
+   */
   readonly unreadByPartner = computed(() => {
     const me = this.myEmail();
-    const seen = this.seenSignal();
     const counts: Record<string, number> = {};
     for (const m of this.messagesSignal()) {
       const from = normalize(m.sender);
-      if (from !== me && Date.parse(m.timestamp) > (seen[from] ?? 0)) {
+      if (from !== me && !m.read) {
         counts[from] = (counts[from] ?? 0) + 1;
       }
     }
@@ -62,28 +62,19 @@ export class ChatService {
   private connectedBefore = false;
 
   constructor() {
-    let signedInEmail: string | null = null;
     this.auth.currentUser$.subscribe((user) => {
-      // On sign-out, forget the read-state too: its keys name the people this user talks to.
-      if (!user && signedInEmail) {
-        try {
-          localStorage.removeItem(this.seenKey(signedInEmail));
-        } catch {
-          // Storage unavailable; nothing to clean.
-        }
-      }
-      signedInEmail = user?.email ?? null;
       this.clear();
       this.statusSignal.set(null);
       this.connectedBefore = false;
-      this.seenSignal.set(user?.email ? this.readSeen(user.email) : {});
       if (user) {
+        forgetLegacySeenState(user.email);
         this.refreshStatus();
       }
     });
 
     this.socket.chatStatus$.subscribe((status) => this.applyStatus(status));
     this.socket.messages$.subscribe((message) => this.receive(message));
+    this.socket.chatRead$.subscribe(({ partner, upToId }) => this.applyRead(partner, upToId));
 
     // After a dropped connection, pushes may have been missed: re-check the lock and reload.
     // The first connect needs nothing; the login above already loaded everything.
@@ -152,17 +143,20 @@ export class ChatService {
     );
   }
 
+  /** Marks everything this partner sent as read, here and on the server. */
   markSeen(partnerEmail: string): void {
     const partner = normalize(partnerEmail);
-    const latest = this.conversationWith(partner).reduce(
-      (max, m) => Math.max(max, Date.parse(m.timestamp) || 0),
-      0,
-    );
-    if (latest <= (this.seenSignal()[partner] ?? 0)) {
+    const unread = this.messagesSignal().filter((m) => normalize(m.sender) === partner && !m.read);
+    if (!unread.length) {
       return;
     }
-    this.seenSignal.update((seen) => ({ ...seen, [partner]: latest }));
-    this.writeSeen();
+    const upToId = Math.max(...unread.map((m) => m.id));
+    // Clear the badge now; the server is told in the background. If that fails, the next load
+    // brings the true state back.
+    this.applyRead(partner, upToId);
+    this.http.post<void>(`${CHAT_URL}/read`, { partner: partnerEmail, upToId }).subscribe({
+      error: (err: HttpErrorResponse) => this.handleRefusal(err),
+    });
   }
 
   isMine(message: ChatMessage): boolean {
@@ -179,6 +173,15 @@ export class ChatService {
     } else if (!wasAvailable || reload) {
       this.load();
     }
+  }
+
+  private applyRead(partnerEmail: string, upToId: number): void {
+    const partner = normalize(partnerEmail);
+    this.messagesSignal.update((list) =>
+      list.map((m) =>
+        !m.read && m.id <= upToId && normalize(m.sender) === partner ? { ...m, read: true } : m,
+      ),
+    );
   }
 
   private receive(message: ChatMessage): void {
@@ -222,31 +225,17 @@ export class ChatService {
   private myEmail(): string {
     return normalize(this.auth.currentUserValue?.email);
   }
+}
 
-  private seenKey(email: string): string {
-    return `chat_seen_${normalize(email)}`;
-  }
-
-  // Storage can be unavailable (private mode, blocked site data); unread counts then just reset
-  // per session, which is harmless.
-  private readSeen(email: string): Record<string, number> {
-    try {
-      return JSON.parse(localStorage.getItem(this.seenKey(email)) ?? '{}');
-    } catch {
-      return {};
-    }
-  }
-
-  private writeSeen(): void {
-    const email = this.auth.currentUserValue?.email;
-    if (!email) {
-      return;
-    }
-    try {
-      localStorage.setItem(this.seenKey(email), JSON.stringify(this.seenSignal()));
-    } catch {
-      // See readSeen.
-    }
+/**
+ * Read state used to be kept in localStorage under this key. It is on the server now; drop the old
+ * copy, since its keys name the people this user talks to.
+ */
+function forgetLegacySeenState(email: string | null | undefined): void {
+  try {
+    localStorage.removeItem(`chat_seen_${normalize(email)}`);
+  } catch {
+    // Storage unavailable; nothing to clean.
   }
 }
 

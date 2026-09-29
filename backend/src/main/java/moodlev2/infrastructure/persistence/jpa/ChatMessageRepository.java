@@ -1,5 +1,6 @@
 package moodlev2.infrastructure.persistence.jpa;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import moodlev2.infrastructure.persistence.jpa.entity.ChatMessageEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -21,6 +22,21 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessageEntity, 
                     + "FROM ChatMessageEntity m "
                     + "WHERE m.isPrivate = true AND (m.sender = :email OR m.recipient = :email)")
     List<String> findConversationPartners(@Param("email") String email);
+
+    /**
+     * Marks what {@code partner} sent to {@code me} as read, up to and including {@code upToId}.
+     * The bound keeps a message that arrived after the client looked from being marked with it.
+     */
+    @Modifying
+    @Query(
+            "UPDATE ChatMessageEntity m SET m.readAt = :now "
+                    + "WHERE m.isPrivate = true AND m.recipient = :me AND m.sender = :partner "
+                    + "AND m.readAt IS NULL AND m.id <= :upToId")
+    int markRead(
+            @Param("me") String me,
+            @Param("partner") String partner,
+            @Param("upToId") long upToId,
+            @Param("now") LocalDateTime now);
 
     // Messages reference people by email rather than by id, so these keep history consistent
     // when an account is deleted or its email changes: otherwise a new account registered with

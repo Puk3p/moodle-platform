@@ -16,6 +16,10 @@ public class ChatMessageEntity {
     private boolean isPrivate;
     private LocalDateTime timestamp;
 
+    /** When the recipient opened the conversation; null while unread. */
+    @Column(name = "read_at")
+    private LocalDateTime readAt;
+
     public ChatMessageEntity() {}
 
     public ChatMessageEntity(String sender, String recipient, String content, boolean isPrivate) {
@@ -68,5 +72,13 @@ public class ChatMessageEntity {
 
     public void setTimestamp(LocalDateTime timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public LocalDateTime getReadAt() {
+        return readAt;
+    }
+
+    public void setReadAt(LocalDateTime readAt) {
+        this.readAt = readAt;
     }
 }
