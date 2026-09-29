@@ -1,6 +1,7 @@
 package moodlev2.application.chat;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -25,6 +26,7 @@ import moodlev2.infrastructure.persistence.jpa.entity.CourseEntity;
 import moodlev2.infrastructure.persistence.jpa.entity.UserEntity;
 import moodlev2.web.chat.dto.ChatContactDto;
 import moodlev2.web.chat.dto.ChatMessageDto;
+import moodlev2.web.chat.dto.ChatReadDto;
 import moodlev2.web.chat.dto.ChatStatusDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -47,6 +49,8 @@ public class ChatService {
     public static final String MESSAGE_QUEUE = "/queue/private";
 
     public static final String STATUS_QUEUE = "/queue/chat-status";
+
+    public static final String READ_QUEUE = "/queue/chat-read";
 
     private static final String NOT_PERMITTED_MESSAGE =
             "Messaging is only available between teachers and students.";
@@ -146,7 +150,7 @@ public class ChatService {
 
         return rows.stream()
                 .filter(m -> allowed.contains(normalize(otherParty(m, me.getEmail()))))
-                .map(ChatService::toDto)
+                .map(m -> toDto(m, me.getEmail()))
                 .toList();
     }
 
@@ -180,15 +184,36 @@ public class ChatService {
         ChatMessageEntity row =
                 messageRepository.save(
                         new ChatMessageEntity(sender.getEmail(), recipient.getEmail(), body, true));
-        ChatMessageDto dto = toDto(row);
+        ChatMessageDto dto = toDto(row, sender.getEmail());
 
         // The sender's other tabs; the calling tab also has it from the response and de-duplicates
         // by id.
         messaging.convertAndSendToUser(sender.getEmail(), MESSAGE_QUEUE, dto);
         if (lockedUntil(recipient).isEmpty()) {
-            messaging.convertAndSendToUser(recipient.getEmail(), MESSAGE_QUEUE, dto);
+            messaging.convertAndSendToUser(
+                    recipient.getEmail(), MESSAGE_QUEUE, toDto(row, recipient.getEmail()));
         }
         return dto;
+    }
+
+    /**
+     * Records that the caller has read what {@code partnerEmail} sent them, up to message {@code
+     * upToId}, and tells the caller's other tabs. Only rows addressed to the caller are touched, so
+     * a caller cannot mark anyone else's messages.
+     */
+    @Transactional
+    public void markRead(String email, String partnerEmail, Long upToId) {
+        UserEntity me = requireChatUser(email);
+        if (partnerEmail == null || partnerEmail.isBlank() || upToId == null) {
+            throw new IllegalArgumentException("A conversation and a message id are required.");
+        }
+        String partner = partnerEmail.strip();
+        int updated =
+                messageRepository.markRead(me.getEmail(), partner, upToId, LocalDateTime.now());
+        if (updated > 0) {
+            messaging.convertAndSendToUser(
+                    me.getEmail(), READ_QUEUE, new ChatReadDto(partner, upToId));
+        }
     }
 
     private UserEntity requireChatUser(String email) {
@@ -259,13 +284,16 @@ public class ChatService {
         return email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
     }
 
-    static ChatMessageDto toDto(ChatMessageEntity m) {
+    /** {@code viewer} decides {@code read}: their own messages are always read to them. */
+    static ChatMessageDto toDto(ChatMessageEntity m, String viewer) {
         // Stored as server-local wall time (LocalDateTime); sent as an absolute instant so every
         // client renders it in its own zone.
         Instant at =
                 m.getTimestamp() == null
                         ? null
                         : m.getTimestamp().atZone(ZoneId.systemDefault()).toInstant();
-        return new ChatMessageDto(m.getId(), m.getSender(), m.getRecipient(), m.getContent(), at);
+        boolean read = m.getReadAt() != null || viewer.equalsIgnoreCase(m.getSender());
+        return new ChatMessageDto(
+                m.getId(), m.getSender(), m.getRecipient(), m.getContent(), at, read);
     }
 }

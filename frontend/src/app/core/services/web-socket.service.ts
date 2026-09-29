@@ -3,7 +3,7 @@ import { Client, IMessage } from '@stomp/stompjs';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
-import { ChatMessage, ChatStatus } from '../models/chat.model';
+import { ChatMessage, ChatRead, ChatStatus } from '../models/chat.model';
 
 /**
  * The live connection. Receive-only: the server refuses every frame a client publishes, so
@@ -23,12 +23,15 @@ export class WebSocketService {
 
   private readonly messageSubject = new Subject<ChatMessage>();
   private readonly statusSubject = new Subject<ChatStatus>();
+  private readonly readSubject = new Subject<ChatRead>();
   private readonly connectedSubject = new BehaviorSubject<boolean>(false);
 
   /** Messages sent to or by the current user, from any of their tabs or devices. */
   readonly messages$: Observable<ChatMessage> = this.messageSubject.asObservable();
   /** Pushed when a quiz locks or unlocks messaging for the current user. */
   readonly chatStatus$: Observable<ChatStatus> = this.statusSubject.asObservable();
+  /** Conversations this user marked read elsewhere, so unread badges agree across tabs. */
+  readonly chatRead$: Observable<ChatRead> = this.readSubject.asObservable();
   /** True while connected; each transition to true is a chance to catch up on anything missed. */
   readonly connected$: Observable<boolean> = this.connectedSubject.asObservable();
 
@@ -60,6 +63,7 @@ export class WebSocketService {
       client.subscribe('/user/queue/chat-status', (frame) =>
         this.forward(frame, this.statusSubject),
       );
+      client.subscribe('/user/queue/chat-read', (frame) => this.forward(frame, this.readSubject));
       this.connectedSubject.next(true);
     };
     client.onWebSocketClose = () => this.connectedSubject.next(false);

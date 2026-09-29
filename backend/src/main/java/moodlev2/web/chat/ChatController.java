@@ -6,6 +6,7 @@ import moodlev2.application.chat.ChatService;
 import moodlev2.web.chat.dto.ChatContactDto;
 import moodlev2.web.chat.dto.ChatMessageDto;
 import moodlev2.web.chat.dto.ChatStatusDto;
+import moodlev2.web.chat.dto.MarkReadRequest;
 import moodlev2.web.chat.dto.SendMessageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -49,5 +50,12 @@ public class ChatController {
     public ChatMessageDto send(
             @RequestBody SendMessageRequest request, Authentication authentication) {
         return chatService.send(authentication.getName(), request.recipient(), request.content());
+    }
+
+    /** The partner goes in the body rather than the path so emails stay out of access logs. */
+    @PostMapping("/read")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void markRead(@RequestBody MarkReadRequest request, Authentication authentication) {
+        chatService.markRead(authentication.getName(), request.partner(), request.upToId());
     }
 }

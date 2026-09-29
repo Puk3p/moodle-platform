@@ -26,7 +26,7 @@ public class StompAccessInterceptor implements ChannelInterceptor {
      * ever receive its own.
      */
     static final Set<String> SUBSCRIBABLE =
-            Set.of("/user/queue/private", "/user/queue/chat-status");
+            Set.of("/user/queue/private", "/user/queue/chat-status", "/user/queue/chat-read");
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
