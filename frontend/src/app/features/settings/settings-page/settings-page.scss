@@ -153,10 +153,35 @@ $page-bg: #f8f6f5;
     .card-footer {
       display: flex;
       justify-content: flex-end;
+      align-items: center;
       gap: 0.75rem;
       border-top: 1px solid #f3f4f6;
       padding-top: 1rem;
       margin-top: 0.5rem;
+
+      // Outcome of Save / Reset, pushed left so the buttons keep their place.
+      .save-status {
+        margin-right: auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: $text-muted;
+
+        &[data-kind='success'] {
+          color: #15803d;
+        }
+
+        &[data-kind='error'] {
+          color: #b42318;
+        }
+      }
+
+      button:disabled {
+        opacity: 0.6;
+        cursor: default;
+      }
     }
   }
 

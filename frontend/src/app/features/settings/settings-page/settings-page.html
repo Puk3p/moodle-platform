@@ -12,14 +12,12 @@
     <div class="profile-content">
       <div class="avatar-block">
         <div class="avatar"
-             [style.background-image]="pictures.url() ? 'url(' + pictures.url() + ')' : null"></div>
+             [style.background-image]="avatarUrl ? 'url(' + avatarUrl + ')' : null"></div>
         <input #pictureInput type="file" accept="image/jpeg,image/png" hidden
                (change)="onPictureSelected($event)" />
-        <button type="button" class="link-button" [disabled]="pictureBusy"
-                (click)="pictureInput.click()">
-          {{ pictureBusy ? 'Uploading…' : 'Change picture' }}
-        </button>
-        <button *ngIf="pictures.url() && !pictureBusy" type="button" class="link-button"
+        <button type="button" class="link-button" [disabled]="saving"
+                (click)="pictureInput.click()">Change picture</button>
+        <button *ngIf="canRemovePicture" type="button" class="link-button"
                 (click)="onRemovePicture()">Remove picture</button>
         <p class="picture-hint" role="status" [class.is-error]="pictureError">
           {{ pictureMessage || 'JPG or PNG, up to 2 MB.' }}
@@ -70,8 +68,18 @@
     </div>
 
     <div class="card-footer">
-      <button type="button" class="ghost-button">Reset changes</button>
-      <button type="button" class="primary-button" (click)="onSaveProfile()">Save changes</button>
+      <span class="save-status" role="status" aria-live="polite" [attr.data-kind]="saveStatusKind">
+        <ng-container *ngIf="saveStatus">
+          <i class="fa-solid" [class.fa-circle-check]="saveStatusKind === 'success'"
+             [class.fa-circle-exclamation]="saveStatusKind === 'error'"
+             [class.fa-circle-info]="saveStatusKind === 'info'" aria-hidden="true"></i>
+          {{ saveStatus }}
+        </ng-container>
+      </span>
+      <button type="button" class="ghost-button" [disabled]="saving" (click)="onResetProfile()">Reset changes</button>
+      <button type="button" class="primary-button" [disabled]="saving" (click)="onSaveProfile()">
+        {{ saving ? 'Saving…' : 'Save changes' }}
+      </button>
     </div>
   </section>
 

@@ -101,4 +101,69 @@ describe('SettingsPage', () => {
 
     expect(fields).toContain(['Class / Group', 'Not Assigned', true]);
   });
+
+  describe('Save changes / Reset changes', () => {
+    const PICTURE = `${API_BASE_URL}/api/users/me/picture`;
+    const photo = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'me.jpg', { type: 'image/jpeg' });
+
+    function pick(file: File): void {
+      fixture.componentInstance.onPictureSelected({ target: { files: [file], value: '' } } as unknown as Event);
+      fixture.detectChanges();
+    }
+
+    function footerStatus(): string {
+      return (fixture.nativeElement as HTMLElement).querySelector('.save-status')!.textContent!.trim();
+    }
+
+    beforeEach(async () => {
+      await profileFields(student);
+    });
+
+    it('does not upload when a picture is picked, only when Save is clicked, then confirms', () => {
+      pick(photo);
+      http.expectNone(PICTURE); // staged, not sent
+
+      fixture.componentInstance.onSaveProfile();
+      const put = http.expectOne((r) => r.method === 'PUT' && r.url === PICTURE);
+      expect((put.request.body as FormData).get('file')).toBe(photo);
+      put.flush({ updatedAt: '2026-09-28T12:00:00Z' });
+      http.expectOne((r) => r.method === 'GET' && r.url === PICTURE).flush(null, { status: 204, statusText: 'No Content' });
+      fixture.detectChanges();
+
+      expect(footerStatus()).toContain('Changes saved.');
+      expect(fixture.componentInstance.hasPendingChanges).toBeFalse();
+    });
+
+    it('says there is nothing to save instead of silently doing nothing', () => {
+      fixture.componentInstance.onSaveProfile();
+      fixture.detectChanges();
+
+      http.expectNone(PICTURE);
+      expect(footerStatus()).toContain('No changes to save.');
+    });
+
+    it('Reset discards a staged picture without sending anything', () => {
+      pick(photo);
+
+      fixture.componentInstance.onResetProfile();
+      fixture.detectChanges();
+
+      http.expectNone(PICTURE);
+      expect(fixture.componentInstance.hasPendingChanges).toBeFalse();
+      expect(footerStatus()).toContain('Changes discarded.');
+    });
+
+    it('shows the server’s reason when saving fails, and keeps the staged picture', () => {
+      pick(photo);
+
+      fixture.componentInstance.onSaveProfile();
+      http
+        .expectOne((r) => r.method === 'PUT' && r.url === PICTURE)
+        .flush({ error: 'The image could not be read. It may be damaged.' }, { status: 400, statusText: 'Bad Request' });
+      fixture.detectChanges();
+
+      expect(footerStatus()).toContain('could not be read');
+      expect(fixture.componentInstance.hasPendingChanges).toBeTrue();
+    });
+  });
 });

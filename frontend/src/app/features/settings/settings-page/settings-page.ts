@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -14,15 +14,27 @@ import { ProfilePictureService } from '../../../core/services/profile-picture.se
   templateUrl: './settings-page.html',
   styleUrl: './settings-page.scss',
 })
-export class SettingsPageComponent implements OnInit {
+export class SettingsPageComponent implements OnInit, OnDestroy {
   private userService = inject(UserService);
   private authService = inject(AuthService);
   private cdr = inject(ChangeDetectorRef);
   pictures = inject(ProfilePictureService);
 
-  pictureBusy = false;
+  /**
+   * Picture changes are staged, not applied on pick: the preview shows straight away, and
+   * "Save changes" commits it (or "Reset changes" discards it), like any other form.
+   */
+  pendingPicture: File | null = null;
+  pendingPreviewUrl: string | null = null;
+  pendingRemoval = false;
+
   pictureMessage = '';
   pictureError = false;
+
+  saving = false;
+  saveStatus = '';
+  saveStatusKind: 'success' | 'error' | 'info' = 'info';
+  private saveStatusTimer: ReturnType<typeof setTimeout> | null = null;
 
   userName = 'Loading...';
   userRole = 'Student';
@@ -150,7 +162,6 @@ export class SettingsPageComponent implements OnInit {
       next: (res) => {
         this.qrCodeImage = res.qrImageBase64;
         this.secretKey = res.secret;
-        console.log('2FA Setup started');
         this.cdr.detectChanges();
       },
       error: (err) => console.error('Error starting 2FA setup', err)
@@ -179,6 +190,22 @@ export class SettingsPageComponent implements OnInit {
     });
   }
 
+  /** What the avatar shows: the staged picture, the saved one, or the default. */
+  get avatarUrl(): string | null {
+    if (this.pendingRemoval) {
+      return null;
+    }
+    return this.pendingPreviewUrl ?? this.pictures.url();
+  }
+
+  get hasPendingChanges(): boolean {
+    return this.pendingPicture !== null || this.pendingRemoval;
+  }
+
+  get canRemovePicture(): boolean {
+    return !this.saving && !this.pendingRemoval && (this.pendingPicture !== null || !!this.pictures.url());
+  }
+
   onPictureSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -193,28 +220,74 @@ export class SettingsPageComponent implements OnInit {
       return;
     }
 
-    this.pictureBusy = true;
+    this.clearPending();
+    this.pendingPicture = file;
+    this.pendingPreviewUrl = URL.createObjectURL(file);
+    this.clearSaveStatus();
+    this.showPictureMessage('New picture selected. Click Save changes to keep it.', false);
+  }
+
+  onRemovePicture(): void {
+    const hadSavedPicture = !!this.pictures.url();
+    this.clearPending();
+    this.clearSaveStatus();
+    if (hadSavedPicture) {
+      this.pendingRemoval = true;
+      this.showPictureMessage('Picture will be removed when you click Save changes.', false);
+    } else {
+      this.showPictureMessage('', false);
+    }
+  }
+
+  onResetProfile(): void {
+    if (!this.hasPendingChanges) {
+      this.flashSaveStatus('Nothing to reset.', 'info');
+      return;
+    }
+    this.clearPending();
     this.showPictureMessage('', false);
-    this.pictures.upload(file).subscribe({
+    this.flashSaveStatus('Changes discarded.', 'info');
+  }
+
+  onSaveProfile(): void {
+    if (this.saving) {
+      return;
+    }
+    if (!this.hasPendingChanges) {
+      this.flashSaveStatus('No changes to save.', 'info');
+      return;
+    }
+
+    this.saving = true;
+    this.clearSaveStatus();
+    const request = this.pendingPicture ? this.pictures.upload(this.pendingPicture) : this.pictures.remove();
+
+    request.subscribe({
       next: () => {
-        this.pictureBusy = false;
-        this.showPictureMessage('Picture updated.', false);
+        this.saving = false;
+        this.clearPending();
+        this.showPictureMessage('', false);
+        this.flashSaveStatus('Changes saved.', 'success');
       },
       error: (err) => {
-        this.pictureBusy = false;
-        this.showPictureMessage(err.error?.error || 'The picture could not be uploaded.', true);
+        this.saving = false;
+        this.flashSaveStatus(err.error?.error || 'Your changes could not be saved. Please try again.', 'error', false);
       },
     });
   }
 
-  onRemovePicture(): void {
-    if (!confirm('Remove your profile picture?')) {
-      return;
+  ngOnDestroy(): void {
+    this.clearPending();
+    this.clearSaveStatus();
+  }
+
+  private clearPending(): void {
+    if (this.pendingPreviewUrl) {
+      URL.revokeObjectURL(this.pendingPreviewUrl);
     }
-    this.pictures.remove().subscribe({
-      next: () => this.showPictureMessage('Picture removed.', false),
-      error: () => this.showPictureMessage('The picture could not be removed.', true),
-    });
+    this.pendingPicture = null;
+    this.pendingPreviewUrl = null;
+    this.pendingRemoval = false;
   }
 
   private showPictureMessage(message: string, isError: boolean): void {
@@ -223,6 +296,25 @@ export class SettingsPageComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  onResetProfile(): void { console.log('Reset profile (TODO)'); }
-  onSaveProfile(): void { console.log('Save profile (TODO)', this.profile); }
+  /** Shows the outcome next to the buttons; success and info fade after a few seconds. */
+  private flashSaveStatus(message: string, kind: 'success' | 'error' | 'info', autoHide = true): void {
+    this.clearSaveStatus();
+    this.saveStatus = message;
+    this.saveStatusKind = kind;
+    if (autoHide) {
+      this.saveStatusTimer = setTimeout(() => {
+        this.saveStatus = '';
+        this.cdr.detectChanges();
+      }, 4000);
+    }
+    this.cdr.detectChanges();
+  }
+
+  private clearSaveStatus(): void {
+    if (this.saveStatusTimer) {
+      clearTimeout(this.saveStatusTimer);
+      this.saveStatusTimer = null;
+    }
+    this.saveStatus = '';
+  }
 }
