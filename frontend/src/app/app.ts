@@ -105,9 +105,12 @@ export class App implements OnInit, OnDestroy {
 
   logout() {
     this.isChatOpen = false;
-    this.authService.logout();
-
-    window.location.href = '/login';
+    // Revoke the session on the server first; only then leave the page.
+    this.authService.logout().subscribe({
+      complete: () => {
+        window.location.href = '/login';
+      },
+    });
   }
 
   toggleChat() {

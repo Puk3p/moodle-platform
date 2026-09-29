@@ -1,5 +1,6 @@
 package moodlev2.web.course;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import moodlev2.application.course.*;
@@ -48,11 +49,13 @@ public class CourseController {
     }
 
     @GetMapping("/{code}/preview")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public CoursePreviewDto getCoursePreview(@PathVariable String code) {
         return getCoursePreviewService.getPreviewData(code);
     }
 
     @GetMapping("/{code}/resources")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public List<ResourceDto> getCourseResources(@PathVariable String code) {
         return getCourseResourcesService.getResourcesByCourse(code);
     }
@@ -81,7 +84,8 @@ public class CourseController {
     }
 
     @PostMapping("/create")
-    public void createCourse(@RequestBody CreateCourseDto dto) {
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    public void createCourse(@Valid @RequestBody CreateCourseDto dto) {
         getCourseCreateService.createCourse(dto);
     }
 }

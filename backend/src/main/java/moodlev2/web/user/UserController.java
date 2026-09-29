@@ -3,16 +3,20 @@ package moodlev2.web.user;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import moodlev2.application.auth.SessionService;
 import moodlev2.application.user.ChangePasswordService;
 import moodlev2.application.user.GetMeService;
 import moodlev2.application.user.GetTeachersService;
 import moodlev2.application.user.ManageSessionsService;
+import moodlev2.infrastructure.security.SessionAuthenticationFilter;
 import moodlev2.web.course.dto.SimpleDto;
 import moodlev2.web.user.dto.ChangePasswordRequest;
 import moodlev2.web.user.dto.SessionDto;
 import moodlev2.web.user.dto.UserProfileDto;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/users")
@@ -33,34 +37,37 @@ public class UserController {
 
     @PostMapping("/change-password")
     public void changePassword(
-            @RequestBody ChangePasswordRequest request, Authentication authentication) {
-        changePasswordService.changePassword(authentication.getName(), request);
+            @RequestBody ChangePasswordRequest request, HttpServletRequest httpRequest) {
+        SessionService.Resolved current = currentSession(httpRequest);
+        changePasswordService.changePassword(
+                current.user().getEmail(), request, current.tokenHash());
     }
 
     @GetMapping("/sessions")
-    public List<SessionDto> getActiveSessions(
-            Authentication authentication, HttpServletRequest request) {
-        String token = extractToken(request);
-        return manageSessionsService.getUserSessions(authentication.getName(), token);
+    public List<SessionDto> getActiveSessions(HttpServletRequest httpRequest) {
+        SessionService.Resolved current = currentSession(httpRequest);
+        return manageSessionsService.getUserSessions(
+                current.user().getEmail(), current.tokenHash());
     }
 
     @DeleteMapping("/sessions/{id}")
-    public void revokeSession(@PathVariable Long id, Authentication authentication) {
-        manageSessionsService.revokeSession(id, authentication.getName());
+    public void revokeSession(@PathVariable Long id, HttpServletRequest httpRequest) {
+        manageSessionsService.revokeSession(id, currentSession(httpRequest).user().getId());
     }
 
     @DeleteMapping("/sessions/others")
-    public void revokeAllOthers(Authentication authentication, HttpServletRequest request) {
-        String token = extractToken(request);
-        manageSessionsService.revokeAllOtherSessions(authentication.getName(), token);
+    public void revokeAllOthers(HttpServletRequest httpRequest) {
+        SessionService.Resolved current = currentSession(httpRequest);
+        manageSessionsService.revokeAllOtherSessions(current.user().getId(), current.tokenHash());
     }
 
-    private String extractToken(HttpServletRequest request) {
-        String bearer = request.getHeader("Authorization");
-        if (bearer != null && bearer.startsWith("Bearer ")) {
-            return bearer.substring(7);
+    /** Set by SessionAuthenticationFilter for every authenticated request. */
+    private static SessionService.Resolved currentSession(HttpServletRequest request) {
+        if (request.getAttribute(SessionAuthenticationFilter.CURRENT_SESSION)
+                instanceof SessionService.Resolved current) {
+            return current;
         }
-        return "";
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
     }
 
     @GetMapping("/teachers")

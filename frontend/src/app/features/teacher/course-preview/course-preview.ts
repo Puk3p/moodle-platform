@@ -6,6 +6,7 @@ import { CoursePreview } from '../../../core/models/course-preview.model';
 import { ResourcesService } from '../../../core/services/resources.service';
 import { QuizzesService } from '../../../core/services/quizzes.service'; 
 import { API_BASE_URL } from '../../../core/config/api-endpoints';
+import { openExternal } from '../../../core/http/open-external';
 
 @Component({
   selector: 'app-course-preview',
@@ -53,8 +54,6 @@ export class CoursePreviewComponent implements OnInit {
     
     let quizItem: any = this.previewData?.quizzes.find(q => q.id === quizId);
     
-    console.log('START QUIZ DEBUG:', quizItem);
-    console.log('Has Password?', quizItem?.hasPassword);
     
     if (!quizItem && this.previewData?.modules) {
         for (const mod of this.previewData.modules) {
@@ -141,13 +140,13 @@ export class CoursePreviewComponent implements OnInit {
     if (!url) return;
 
     if (typeStr.includes('link') || url.startsWith('http')) {
-      window.open(url, '_blank');
+      openExternal(url);
       return;
     }
 
     let fullPath = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
     if (typeStr.includes('video') || typeStr.includes('mp4') || typeStr.includes('image')) {
-      window.open(fullPath, '_blank');
+      openExternal(fullPath);
       return;
     }
 

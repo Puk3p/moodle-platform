@@ -117,10 +117,10 @@
               <a routerLink="/create-announcement" routerLinkActive="active" class="sidebar-link">
                 <i class="fa-solid fa-bullhorn"></i> <span>Create Announcement</span>
               </a>
-              <a routerLink="/gradebook" routerLinkActive="active" class="sidebar-link">
+              <a *ngIf="authService.hasRole('ADMIN')" routerLink="/gradebook" routerLinkActive="active" class="sidebar-link">
                 <i class="fa-solid fa-clipboard-list"></i> <span>Gradebook (Admin)</span>
               </a>
-              <a routerLink="/students" routerLinkActive="active" class="sidebar-link">
+              <a *ngIf="authService.hasRole('ADMIN')" routerLink="/students" routerLinkActive="active" class="sidebar-link">
                 <i class="fa-solid fa-users"></i> <span>Students / Enrollments</span>
               </a>
             </div>

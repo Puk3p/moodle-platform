@@ -1,18 +1,18 @@
 package moodlev2.infrastructure.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.security.Principal;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import moodlev2.common.util.TokenHashUtil;
-import moodlev2.domain.auth.ports.TokenServicePort;
-import moodlev2.infrastructure.persistence.jpa.UserSessionRepository;
+import java.util.Optional;
+import moodlev2.application.auth.SessionService;
+import moodlev2.infrastructure.security.SessionCookies;
 import moodlev2.infrastructure.security.StompAccessInterceptor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import moodlev2.infrastructure.security.WebSocketSessionRegistry;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
@@ -24,36 +24,49 @@ import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
 import org.springframework.web.socket.server.HandshakeInterceptor;
 import org.springframework.web.socket.server.support.DefaultHandshakeHandler;
-import org.springframework.web.util.UriComponentsBuilder;
 
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    private static final Logger log = LoggerFactory.getLogger(WebSocketConfig.class);
-
     private static final String PRINCIPAL_ATTRIBUTE = "moodlev2.ws.email";
 
-    private final TokenServicePort tokenService;
-    private final UserSessionRepository userSessionRepository;
+    private final SessionService sessionService;
+    private final SessionCookies cookies;
+    private final WebSocketSessionRegistry socketRegistry;
     private final ObjectMapper objectMapper;
+    private final String[] allowedOrigins;
 
     public WebSocketConfig(
-            TokenServicePort tokenService,
-            UserSessionRepository userSessionRepository,
-            ObjectMapper objectMapper) {
-        this.tokenService = tokenService;
-        this.userSessionRepository = userSessionRepository;
+            SessionService sessionService,
+            SessionCookies cookies,
+            WebSocketSessionRegistry socketRegistry,
+            ObjectMapper objectMapper,
+            @Value("${app.cors.allowed-origins:http://localhost:4200}") String allowedOrigins) {
+        this.sessionService = sessionService;
+        this.cookies = cookies;
+        this.socketRegistry = socketRegistry;
         this.objectMapper = objectMapper;
+        this.allowedOrigins =
+                Arrays.stream(allowedOrigins.split(","))
+                        .map(String::trim)
+                        .filter(o -> !o.isEmpty())
+                        .toArray(String[]::new);
     }
 
+    /**
+     * Only our own front-end may open a socket. Browsers attach cookies to cross-site WebSocket
+     * handshakes, so with a wildcard any website could open a live channel as its visitor
+     * (cross-site WebSocket hijacking). Same-origin handshakes are always allowed by Spring.
+     */
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*")
-                .addInterceptors(new TokenHandshakeInterceptor())
+                .setAllowedOrigins(allowedOrigins)
+                .addInterceptors(new CookieHandshakeInterceptor())
                 .setHandshakeHandler(
                         new DefaultHandshakeHandler() {
                             @Override
@@ -69,10 +82,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     }
 
     /**
-     * Refuses the upgrade outright unless the token is valid and its session has not been revoked.
-     * Previously a bad token still produced an anonymous socket, which could then publish frames.
+     * Authenticates the upgrade from the HttpOnly session cookie, with the same checks as every
+     * HTTP request (expiry, idle, same browser, active account). No token in the URL any more,
+     * where proxies and access logs would record it.
      */
-    private final class TokenHandshakeInterceptor implements HandshakeInterceptor {
+    private final class CookieHandshakeInterceptor implements HandshakeInterceptor {
 
         @Override
         public boolean beforeHandshake(
@@ -80,12 +94,21 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 ServerHttpResponse response,
                 WebSocketHandler wsHandler,
                 Map<String, Object> attributes) {
-            String email = authenticate(request);
-            if (email == null) {
+            Optional<SessionService.Resolved> session =
+                    cookies.readSessionFromHeader(request.getHeaders().getFirst(HttpHeaders.COOKIE))
+                            .flatMap(
+                                    token ->
+                                            sessionService.resolve(
+                                                    token,
+                                                    request.getHeaders()
+                                                            .getFirst(HttpHeaders.USER_AGENT),
+                                                    clientAddress(request)));
+            if (session.isEmpty()) {
                 response.setStatusCode(HttpStatus.UNAUTHORIZED);
                 return false;
             }
-            attributes.put(PRINCIPAL_ATTRIBUTE, email);
+            attributes.put(PRINCIPAL_ATTRIBUTE, session.get().user().getEmail());
+            attributes.put(WebSocketSessionRegistry.SESSION_HASH, session.get().tokenHash());
             return true;
         }
 
@@ -97,33 +120,15 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 Exception exception) {}
     }
 
-    /**
-     * Resolves the user from the {@code access_token} query parameter (browsers cannot set headers
-     * on a WebSocket upgrade). Signature and expiry are verified via {@link TokenServicePort}, and
-     * the session row must still exist, matching what {@code JwtAuthenticationFilter} requires of
-     * REST calls — so logging out, or revoking a session in Settings, also closes off the socket.
-     */
-    private String authenticate(ServerHttpRequest request) {
-        String raw =
-                UriComponentsBuilder.fromUri(request.getURI())
-                        .build()
-                        .getQueryParams()
-                        .getFirst("access_token");
-        if (raw == null || raw.isBlank()) {
-            return null;
-        }
-        String token = URLDecoder.decode(raw, StandardCharsets.UTF_8);
+    private static String clientAddress(ServerHttpRequest request) {
+        return request.getRemoteAddress() == null || request.getRemoteAddress().getAddress() == null
+                ? null
+                : request.getRemoteAddress().getAddress().getHostAddress();
+    }
 
-        try {
-            if (!tokenService.isValid(token)
-                    || !userSessionRepository.existsByTokenSignature(TokenHashUtil.sha256(token))) {
-                return null;
-            }
-            return tokenService.parse(token).email();
-        } catch (RuntimeException e) {
-            log.warn("Rejected WebSocket handshake: invalid token");
-            return null;
-        }
+    @Override
+    public void configureWebSocketTransport(WebSocketTransportRegistration registration) {
+        registration.addDecoratorFactory(socketRegistry);
     }
 
     @Override

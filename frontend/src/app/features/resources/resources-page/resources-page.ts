@@ -23,6 +23,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { CourseResources, ResourceFile } from '../../../core/models/resource.model';
 import { ResourcesService } from '../../../core/services/resources.service';
+import { openExternal } from '../../../core/http/open-external';
 
 @Component({
   selector: 'app-resources-page',
@@ -188,7 +189,7 @@ export class ResourcesPageComponent {
 
     
     if (file.type === 'link' || file.url.startsWith('http')) {
-      window.open(file.url, '_blank');
+      openExternal(file.url);
       return;
     }
 

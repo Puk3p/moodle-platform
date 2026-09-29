@@ -1,5 +1,6 @@
 import { Injectable, NgZone, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { readXsrfToken } from '../http/api-request';
 import { API_BASE_URL } from '../config/api-endpoints';
 
 export type ProctorEventType =
@@ -136,16 +137,17 @@ export class ProctorService {
     const body = JSON.stringify({ events });
 
     if (isUnload) {
-      // sendBeacon cannot carry the Authorization header, so use fetch with keepalive,
-      // which survives the page going away AND keeps custom headers.
-      const token = sessionStorage.getItem('token');
+      // sendBeacon cannot carry the CSRF header, so use fetch with keepalive, which survives
+      // the page going away AND keeps custom headers. The session cookie rides along.
+      const xsrf = readXsrfToken();
       try {
         fetch(url, {
           method: 'POST',
           keepalive: true,
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...(xsrf ? { 'X-XSRF-TOKEN': xsrf } : {}),
           },
           body,
         }).catch(() => {});

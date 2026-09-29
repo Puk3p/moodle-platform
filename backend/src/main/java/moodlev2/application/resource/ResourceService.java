@@ -1,5 +1,7 @@
 package moodlev2.application.resource;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -17,6 +19,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class ResourceService {
+
+    private static final String INVALID_LINK = "Enter a valid http(s) link.";
+
+    /** module_items.url is VARCHAR(500). */
+    private static final int MAX_LINK_LENGTH = 500;
 
     private final CourseRepository courseRepository;
     private final CourseModuleRepository courseModuleRepository;
@@ -95,7 +102,7 @@ public class ResourceService {
                 || "External Link".equalsIgnoreCase(dto.getType())) {
             item.setType("resource");
             item.setFileType("link");
-            item.setUrl(dto.getExternalUrl());
+            item.setUrl(requireWebLink(dto.getExternalUrl()));
             item.setFileSize("URL");
             item.setIsAssignment(false);
         } else {
@@ -114,6 +121,32 @@ public class ResourceService {
         }
 
         moduleItemRepository.save(item);
+    }
+
+    /**
+     * Links are rendered as clickable anchors for every student of the course, so only absolute
+     * http(s) URLs with a host are accepted. Anything else (javascript:, data:, relative paths,
+     * protocol-relative "//host") could run script or navigate somewhere unexpected on click.
+     */
+    static String requireWebLink(String raw) {
+        String candidate = raw == null ? "" : raw.trim();
+        if (candidate.isEmpty() || candidate.length() > MAX_LINK_LENGTH) {
+            throw new IllegalArgumentException(INVALID_LINK);
+        }
+        URI uri;
+        try {
+            uri = new URI(candidate);
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException(INVALID_LINK, e);
+        }
+        String scheme = uri.getScheme();
+        boolean web =
+                scheme != null
+                        && ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme));
+        if (!web || uri.getHost() == null || uri.getHost().isBlank()) {
+            throw new IllegalArgumentException(INVALID_LINK);
+        }
+        return candidate;
     }
 
     private String getFileExtension(String filename) {

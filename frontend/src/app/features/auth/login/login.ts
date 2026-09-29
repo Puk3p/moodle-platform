@@ -41,7 +41,6 @@ export class Login implements OnInit {
   errorMessage: string | null = null;
   
   requiresTwoFa = false;
-  tempToken: string | null = null;
   
   twoFaControl = new FormControl('', [Validators.required, Validators.minLength(6), Validators.maxLength(6)]);
 
@@ -65,6 +64,13 @@ export class Login implements OnInit {
   }
 
   ngOnInit(): void {
+    // Google/Facebook sign-in comes back here: either a 2FA account needs its code, or it failed.
+    const query = this.route.snapshot.queryParamMap;
+    if (query.get('twofa') === 'required') {
+      this.requiresTwoFa = true;
+    } else if (query.get('oauth') === 'failed') {
+      this.errorMessage = 'Sign-in with that account did not work. Use a verified email or sign in with your password.';
+    }
   }
   
   onSubmit(): void {
@@ -82,23 +88,22 @@ export class Login implements OnInit {
       next: (response) => {
         this.isSubmitting = false;
 
-        if (response.requiresTwoFa && response.accessToken) {
+        if (response.requiresTwoFa) {
             this.requiresTwoFa = true;
-            this.tempToken = response.accessToken; 
-            return; 
+            return;
         }
 
         this.router.navigate(['/dashboard']);
       },
       error: (err) => {
         this.isSubmitting = false;
-        this.errorMessage = err?.error?.message || 'Login failed. Check credentials.';
+        this.errorMessage = err?.error?.error || 'Login failed. Check credentials.';
       },
     });
   }
 
   onVerifyTwoFa(): void {
-      if (this.twoFaControl.invalid || !this.tempToken) {
+      if (this.twoFaControl.invalid) {
           this.twoFaControl.markAsTouched();
           return;
       }
@@ -107,14 +112,14 @@ export class Login implements OnInit {
       this.errorMessage = null;
       const code = this.twoFaControl.value!;
 
-      this.authService.verifyTwoFaLogin(this.tempToken, code).subscribe({
+      this.authService.verifyTwoFaLogin(code).subscribe({
           next: () => {
               this.isSubmitting = false;
               this.router.navigate(['/dashboard']);
           },
           error: (err) => {
               this.isSubmitting = false;
-              this.errorMessage = err?.error?.message || 'Invalid verification code.';
+              this.errorMessage = err?.error?.error || 'Invalid verification code.';
           }
       });
   }

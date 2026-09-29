@@ -23,4 +23,17 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
                     + "WHERE e.user.id = :userId "
                     + "OR cl.id = (SELECT u.clazz.id FROM UserEntity u WHERE u.id = :userId)")
     List<CourseEntity> findAllCoursesForStudent(@Param("userId") Long userId);
+
+    /**
+     * Whether the user belongs to the course: enrolled directly, or in a class the course is
+     * assigned to. Same rule as {@link #findAllCoursesForStudent}, answered for one course.
+     */
+    @Query(
+            "SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END FROM CourseEntity c "
+                    + "WHERE c.id = :courseId AND ("
+                    + "EXISTS (SELECT e.id FROM EnrollmentEntity e "
+                    + "WHERE e.course.id = c.id AND e.user.id = :userId) "
+                    + "OR EXISTS (SELECT u.id FROM UserEntity u JOIN u.clazz cl "
+                    + "WHERE u.id = :userId AND cl MEMBER OF c.assignedClasses))")
+    boolean isMember(@Param("courseId") Long courseId, @Param("userId") Long userId);
 }

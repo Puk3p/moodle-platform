@@ -1,10 +1,12 @@
 package moodlev2.web.quiz.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 import java.util.List;
 
 public record CreateQuizDto(
-        String title,
+        @NotBlank @Size(max = 255) String title,
         String description,
         Long courseId,
         Long moduleId,

@@ -15,6 +15,7 @@ import { ResourcesService } from '../../../core/services/resources.service';
 import { QuizzesService } from '../../../core/services/quizzes.service';
 import { API_BASE_URL } from '../../../core/config/api-endpoints';
 import { ModuleTypePipe } from '../module-type-pipe';
+import { openExternal } from '../../../core/http/open-external';
 
 export interface CourseDetailsResponse {
   courseCode: string;
@@ -135,14 +136,14 @@ export class CoursePageComponent implements OnInit {
     if (!url) return;
 
     if (typeStr.includes('link') || url.startsWith('http')) {
-      window.open(url, '_blank');
+      openExternal(url);
       return;
     }
 
     let fullPath = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
     
     if (typeStr.includes('video') || typeStr.includes('mp4') || typeStr.includes('image')) {
-      window.open(fullPath, '_blank');
+      openExternal(fullPath);
       return;
     }
 
@@ -159,7 +160,7 @@ export class CoursePageComponent implements OnInit {
         },
         error: (err: any) => {
             console.error('Download failed', err);
-            window.open(fullPath, '_blank');
+            openExternal(fullPath);
         }
       });
     }

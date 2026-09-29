@@ -8,5 +8,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ForgotPasswordRequest {
+    @jakarta.validation.constraints.NotBlank
+    @jakarta.validation.constraints.Email
+    @jakarta.validation.constraints.Size(max = 255)
     private String email;
 }

@@ -9,8 +9,9 @@ import { ChatMessage, ChatStatus } from '../models/chat.model';
  * The live connection. Receive-only: the server refuses every frame a client publishes, so
  * sending goes through ChatService over REST.
  *
- * The socket follows the session: it opens on login, closes on logout, and reopens with the
- * new token if the user changes. The token is re-read on every (re)connect attempt.
+ * The socket follows the session: it opens on login, closes on logout, and reopens if the user
+ * changes. Authentication is the session cookie on the handshake; the server also closes the
+ * socket when that session is revoked.
  */
 @Injectable({
   providedIn: 'root',
@@ -46,12 +47,11 @@ export class WebSocketService {
       // Called before every attempt, including reconnects, so a new login's token is used and a
       // logged-out tab stops trying.
       beforeConnect: async () => {
-        const token = this.auth.getToken();
-        if (!token) {
+        if (!this.auth.isLoggedIn()) {
           await client.deactivate();
           return;
         }
-        client.brokerURL = this.socketUrl(token);
+        client.brokerURL = this.socketUrl();
       },
     });
 
@@ -91,12 +91,13 @@ export class WebSocketService {
   /**
    * In production wsBaseUrl is empty and the origin comes from the page: an https:// page
    * yields wss://, which is required (a ws:// socket on an https page is blocked as mixed
-   * content). Browsers cannot set headers on a WebSocket upgrade, hence the query parameter.
+   * content). The browser attaches the HttpOnly session cookie to the handshake itself, so the
+   * URL carries no credential for proxies or access logs to record.
    */
-  private socketUrl(token: string): string {
+  private socketUrl(): string {
     const origin =
       environment.wsBaseUrl ||
       `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`;
-    return `${origin}/ws/websocket?access_token=${encodeURIComponent(token)}`;
+    return `${origin}/ws/websocket`;
   }
 }

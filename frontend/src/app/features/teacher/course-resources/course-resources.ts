@@ -6,6 +6,7 @@ import { CoursesService } from '../../../core/services/courses.service';
 import { ResourcesService } from '../../../core/services/resources.service';
 import { Resource } from '../../../core/models/resource.model';
 import { API_BASE_URL } from '../../../core/config/api-endpoints';
+import { openExternal } from '../../../core/http/open-external';
 
 @Component({
   selector: 'app-course-resources',
@@ -155,13 +156,13 @@ export class CourseResourcesComponent implements OnInit {
     const t = this.getDetectionString(resource);
 
     if (t.includes('link') || url.startsWith('http')) {
-        window.open(url, '_blank');
+        openExternal(url);
         return;
     }
 
     const fullStaticUrl = `${API_BASE_URL}${url}`;
     if (t.includes('video') || t.includes('mp4') || t.includes('image') || t.includes('png') || t.includes('jpg')) {
-        window.open(fullStaticUrl, '_blank');
+        openExternal(fullStaticUrl);
         return;
     }
 

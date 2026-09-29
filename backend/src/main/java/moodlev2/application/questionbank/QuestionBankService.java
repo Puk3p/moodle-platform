@@ -2,8 +2,11 @@ package moodlev2.application.questionbank;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import moodlev2.application.resource.FileStorageService;
+import moodlev2.domain.question.QuestionDifficulty;
+import moodlev2.domain.question.QuestionType;
 import moodlev2.infrastructure.persistence.jpa.CategoryRepository;
 import moodlev2.infrastructure.persistence.jpa.QuestionRepository;
 import moodlev2.infrastructure.persistence.jpa.entity.*;
@@ -110,9 +113,8 @@ public class QuestionBankService {
 
         QuestionEntity question = new QuestionEntity();
         question.setText(request.text());
-        question.setType(moodlev2.domain.question.QuestionType.valueOf(request.type()));
-        question.setDifficulty(
-                moodlev2.domain.question.QuestionDifficulty.valueOf(request.difficulty()));
+        question.setType(parseType(request.type()));
+        question.setDifficulty(parseDifficulty(request.difficulty()));
         question.setCategory(category);
         question.setUsageCount(0);
 
@@ -171,8 +173,8 @@ public class QuestionBankService {
                         .orElseThrow(() -> new RuntimeException("Question not found"));
 
         q.setText(request.text());
-        q.setType(moodlev2.domain.question.QuestionType.valueOf(request.type()));
-        q.setDifficulty(moodlev2.domain.question.QuestionDifficulty.valueOf(request.difficulty()));
+        q.setType(parseType(request.type()));
+        q.setDifficulty(parseDifficulty(request.difficulty()));
 
         if (request.categoryId() != null) {
             CategoryEntity cat = categoryRepository.findById(request.categoryId()).orElse(null);
@@ -197,5 +199,33 @@ public class QuestionBankService {
         }
 
         questionRepository.save(q);
+    }
+
+    /**
+     * Enum.valueOf would answer bad input with "No enum constant moodlev2.domain...", leaking class
+     * names to the client; these fail with a plain message instead.
+     */
+    static QuestionType parseType(String raw) {
+        String name = normalize(raw);
+        for (QuestionType type : QuestionType.values()) {
+            if (type.name().equals(name)) {
+                return type;
+            }
+        }
+        throw new IllegalArgumentException("Unknown question type.");
+    }
+
+    static QuestionDifficulty parseDifficulty(String raw) {
+        String name = normalize(raw);
+        for (QuestionDifficulty difficulty : QuestionDifficulty.values()) {
+            if (difficulty.name().equals(name)) {
+                return difficulty;
+            }
+        }
+        throw new IllegalArgumentException("Unknown difficulty.");
+    }
+
+    private static String normalize(String raw) {
+        return raw == null ? "" : raw.trim().toUpperCase(Locale.ROOT);
     }
 }

@@ -1,15 +1,15 @@
 package moodlev2.web.resource;
 
-import jakarta.servlet.http.HttpServletRequest;
-import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import lombok.RequiredArgsConstructor;
-import moodlev2.application.resource.FileStorageService;
+import moodlev2.application.resource.FileDownloadService;
 import moodlev2.application.resource.GetResourcesService;
 import moodlev2.application.resource.ResourceService;
 import moodlev2.web.resource.dto.CreateResourceDto;
 import moodlev2.web.resource.dto.ResourcesPageResponse;
 import moodlev2.web.resource.dto.UploadOptionsDto;
 import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +24,7 @@ public class ResourceController {
 
     private final GetResourcesService getResourcesService;
     private final ResourceService resourceService;
-    private final FileStorageService fileStorageService;
+    private final FileDownloadService fileDownloadService;
 
     @GetMapping
     public ResourcesPageResponse getResources(
@@ -36,6 +36,7 @@ public class ResourceController {
     }
 
     @GetMapping("/options")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
     public UploadOptionsDto getUploadOptions(Authentication authentication) {
         return resourceService.getUploadOptions(authentication.getName());
     }
@@ -46,35 +47,27 @@ public class ResourceController {
         resourceService.createResource(dto);
     }
 
+    /**
+     * Streams an upload after checking the caller may have it (see {@link FileDownloadService}).
+     * Always an attachment of an opaque type with sniffing off, so a stored HTML or SVG file can
+     * never be rendered by the browser as a page of this origin.
+     */
     @GetMapping("/download/{fileName:.+}")
     public ResponseEntity<Resource> downloadFile(
-            @PathVariable String fileName, HttpServletRequest request) {
-        Resource resource = fileStorageService.loadFileAsResource(fileName);
+            @PathVariable String fileName, Authentication authentication) {
+        FileDownloadService.Download download =
+                fileDownloadService.open(fileName, authentication.getName());
 
-        String contentType = null;
-        try {
-            contentType =
-                    request.getServletContext().getMimeType(resource.getFile().getAbsolutePath());
-        } catch (IOException ex) {
-        }
-
-        if (contentType == null) {
-            contentType = "application/octet-stream";
-        }
-
-        String storedFileName = resource.getFilename();
-        String downloadFileName = storedFileName;
-
-        if (storedFileName != null && storedFileName.length() > 37) {
-            downloadFileName = storedFileName.substring(37);
-        }
+        ContentDisposition disposition =
+                ContentDisposition.attachment()
+                        .filename(download.downloadName(), StandardCharsets.UTF_8)
+                        .build();
 
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(contentType))
-                .header(
-                        HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + downloadFileName + "\"")
-                .body(resource);
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition.toString())
+                .header("X-Content-Type-Options", "nosniff")
+                .body(download.resource());
     }
 
     @PatchMapping("/{id}/visibility")

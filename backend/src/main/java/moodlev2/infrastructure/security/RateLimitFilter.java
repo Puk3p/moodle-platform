@@ -37,11 +37,24 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
     }
 
+    /**
+     * Only the endpoints that check a secret. Session status and logout are called on every page
+     * load and must not eat into the budget meant for password guessing.
+     */
+    private static final java.util.Set<String> GUARDED_PATHS =
+            java.util.Set.of(
+                    "/api/auth/login",
+                    "/api/auth/login/verify-2fa",
+                    "/api/auth/register",
+                    "/api/auth/forgot-password",
+                    "/api/auth/reset-password",
+                    "/api/auth/2fa/setup",
+                    "/api/auth/2fa/verify");
+
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        String path = request.getServletPath();
-        // Only throttle the sensitive, unauthenticated auth surface.
-        return path == null || !path.startsWith("/api/auth/");
+        return !("POST".equals(request.getMethod())
+                && GUARDED_PATHS.contains(request.getServletPath()));
     }
 
     @Override
@@ -50,7 +63,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         long now = System.currentTimeMillis();
-        String key = clientKey(request);
+        // One bucket per client per endpoint, so a burst of password-reset requests does not lock
+        // the same person (or a whole school behind one NAT address) out of signing in.
+        String key = clientKey(request) + " " + request.getServletPath();
 
         Window window = counters.computeIfAbsent(key, k -> new Window(now));
         synchronized (window) {
@@ -79,12 +94,14 @@ public class RateLimitFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
+    /**
+     * The client address as resolved by the servlet container. X-Forwarded-For is deliberately not
+     * read here: its left-most entry is whatever the client sent, so trusting it let anyone reset
+     * their rate limit by inventing a new address per request. With {@code
+     * server.forward-headers-strategy=native} Tomcat's RemoteIpValve walks the header from the
+     * right, skipping only trusted proxies (nginx on localhost), and exposes the real client here.
+     */
     private String clientKey(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            int comma = forwarded.indexOf(',');
-            return (comma > 0 ? forwarded.substring(0, comma) : forwarded).trim();
-        }
         return request.getRemoteAddr();
     }
 }

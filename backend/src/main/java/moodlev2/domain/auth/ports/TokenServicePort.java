@@ -18,5 +18,10 @@ public interface TokenServicePort {
     boolean isValid(String token);
 
     record TokenPayload(
-            String jti, Long userId, String email, Set<Role> roles, Instant expiresAt) {}
+            String jti,
+            Long userId,
+            String email,
+            Set<Role> roles,
+            Instant expiresAt,
+            Set<String> scopes) {}
 }

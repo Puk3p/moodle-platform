@@ -39,6 +39,18 @@ export class TakeQuizComponent implements OnInit, OnDestroy {
   quizTitle = 'Loading Quiz...';
   /** Set by the teacher per quiz; the server enforces it, this only tells the student. */
   messagingBlocked = false;
+
+  /** Once submitted, the draft must not be written back (ngOnDestroy used to re-save it). */
+  private submitted = false;
+
+  /**
+   * Draft answers live in sessionStorage, which is scoped to this quiz tab and gone when it
+   * closes. localStorage outlived the attempt, so the next person on a shared lab computer could
+   * read the previous student's answers.
+   */
+  private get draftKey(): string {
+    return 'quiz_state_' + this.attemptId;
+  }
   
   questions: StudentQuestion[] = [];
   currentQuestionIndex = 0;
@@ -400,7 +412,9 @@ export class TakeQuizComponent implements OnInit, OnDestroy {
 
     this.quizService.submitQuiz(submissionPayload).subscribe({
       next: (result) => {
-        localStorage.removeItem('quiz_state_' + this.attemptId);
+        this.submitted = true;
+        sessionStorage.removeItem(this.draftKey);
+        localStorage.removeItem(this.draftKey); // drafts saved by older versions of this page
         alert(`Quiz Finished! Score: ${result.score}/${result.maxScore}. Passed: ${result.passed}`);
         if (window.opener) window.close();
         else this.router.navigate(['/courses']);
@@ -415,7 +429,7 @@ export class TakeQuizComponent implements OnInit, OnDestroy {
 
   
   saveLocalState() {
-    if (!this.attemptId || !this.questions.length) return;
+    if (this.submitted || !this.attemptId || !this.questions.length) return;
     
     const state = {
       answers: this.questions.map(q => ({ 
@@ -428,12 +442,13 @@ export class TakeQuizComponent implements OnInit, OnDestroy {
       timeRemaining: this.timeRemaining,
       timestamp: Date.now()
     };
-    localStorage.setItem('quiz_state_' + this.attemptId, JSON.stringify(state));
+    sessionStorage.setItem(this.draftKey, JSON.stringify(state));
   }
 
   loadLocalState() {
     if (!this.attemptId) return;
-    const saved = localStorage.getItem('quiz_state_' + this.attemptId);
+    const saved = sessionStorage.getItem(this.draftKey);
+    localStorage.removeItem(this.draftKey); // never keep answers in persistent storage
     if (saved) {
       try {
         const state = JSON.parse(saved);

@@ -63,6 +63,13 @@ public class ProctorService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your attempt");
         }
 
+        // A submitted attempt's report is final. Events arriving afterwards (the page flushing its
+        // buffer on unload, or a replayed request) must not change what the teacher reviews, and
+        // are dropped quietly rather than failing the page's last request.
+        if (!"IN_PROGRESS".equals(attempt.getStatus())) {
+            return;
+        }
+
         if (events == null || events.isEmpty()) {
             return;
         }

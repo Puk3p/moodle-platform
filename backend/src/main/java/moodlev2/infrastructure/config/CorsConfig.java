@@ -33,7 +33,8 @@ public class CorsConfig {
         config.setAllowedOrigins(origins);
 
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Origin"));
+        // Credentials travel in cookies, so only the CSRF header needs allowing, not Authorization.
+        config.setAllowedHeaders(List.of("Content-Type", "Accept", "X-XSRF-TOKEN"));
         config.setExposedHeaders(List.of("Content-Disposition"));
         config.setAllowCredentials(true);
         config.setMaxAge(3600L);

@@ -4,6 +4,7 @@ import java.util.List;
 import moodlev2.infrastructure.persistence.jpa.entity.ModuleItemEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface ModuleItemRepository extends JpaRepository<ModuleItemEntity, Long> {
     @Query(
@@ -24,4 +25,8 @@ public interface ModuleItemRepository extends JpaRepository<ModuleItemEntity, Lo
     List<ModuleItemEntity> findAllResourcesByCourseCode(String courseCode);
 
     List<ModuleItemEntity> findTop5ByOrderByCreatedAtDesc();
+
+    /** Visible items whose stored file is exactly this URL (for download authorisation). */
+    @Query("SELECT mi FROM ModuleItemEntity mi WHERE mi.url = :url AND mi.isVisible = true")
+    List<ModuleItemEntity> findVisibleByUrl(@Param("url") String url);
 }

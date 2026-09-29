@@ -1,5 +1,9 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth-guard';
+import { roleGuard } from './core/guards/role-guard';
+
+const staffOnly = [authGuard, roleGuard('TEACHER', 'ADMIN')];
+const adminOnly = [authGuard, roleGuard('ADMIN')];
 import { PublicHomeComponent } from './features/home/public-home/public-home';
 import { DashboardHomeComponent } from './features/home/dashboard-home/dashboard-home';
 import { ManageCoursesComponent } from './features/teacher/manage-courses/manage-courses';
@@ -89,79 +93,65 @@ export const routes: Routes = [
   {
     path: 'manage-courses',
     component: ManageCoursesComponent,
-    canActivate: [authGuard]
-  },
+    canActivate: staffOnly},
   {
     path: 'manage-quizzes',
-    canActivate: [authGuard],
+    canActivate: staffOnly,
     loadComponent: () => import('./features/teacher/manage-quizzes/manage-quizzes').then(m => m.ManageQuizzesComponent)
   },
   {
     path: 'question-bank',
     loadComponent: () => import('./features/teacher/question-bank/question-bank').then(m => m.QuestionBankComponent),
-    canActivate: [authGuard]
-  },
+    canActivate: staffOnly},
   {
     path: 'upload-resource',
     component: UploadResourceComponent,
-    canActivate: [authGuard]
-  },
+    canActivate: staffOnly},
   {
     path: 'create-announcement',
     loadComponent: () => import('./features/teacher/create-announcement/create-announcement').then(m => m.CreateAnnouncementComponent),
-    canActivate: [authGuard]
-  },
+    canActivate: staffOnly},
   {
     path: 'gradebook',
     loadComponent: () => import('./features/admin/admin-gradebook/admin-gradebook').then(m => m.AdminGradebookComponent),
-    canActivate: [authGuard]
-  },
+    canActivate: adminOnly},
   {
     path: 'students',
     loadComponent: () => import('./features/admin/admin-students/admin-students').then(m => m.AdminStudentsComponent),
-    canActivate: [authGuard] 
-  },
+    canActivate: adminOnly},
   {
     path: 'manage-courses/:code/edit',
     component: EditCourseComponent,
-    canActivate: [authGuard]
-  },
+    canActivate: staffOnly},
   { 
     path: 'manage-courses/:code/students', 
     component: EnrolledStudentsComponent, 
-    canActivate: [authGuard] 
-  },
+    canActivate: staffOnly},
   {
     path: 'manage-courses/:code/resources',
     component: CourseResourcesComponent,
-    canActivate: [authGuard]
-  },
+    canActivate: staffOnly},
   { 
     path: 'manage-courses/:code/preview', 
     component: CoursePreviewComponent, 
-    canActivate: [authGuard] 
-  },
+    canActivate: staffOnly},
   {
     path: 'teacher/quizzes/:id/results',
     component: QuizResultsComponent,
-    canActivate: [authGuard]
-  },
+    canActivate: staffOnly},
   {
     path: 'teacher/quizzes/attempts/:attemptId/review', 
     component: QuizAttemptReviewComponent,
-    canActivate: [authGuard]
-  },
+    canActivate: staffOnly},
   {
     path: 'assignments/submissions/:id/grade',
     loadComponent: () => import('./features/teacher/grade-assignment/grade-assignment').then(m => m.GradeAssignmentComponent),
-    canActivate: [authGuard]
-  },
+    canActivate: staffOnly},
   {
     
     path: 'manage-courses/:code/assignments/:id',
     loadComponent: () => import('./features/teacher/assignment-dashboard/assignment-dashboard').then(m => m.AssignmentDashboardComponent),
-    canActivate: [authGuard]
-},
+    canActivate: staffOnly},
   
   {
     path: 'take-quiz/:quizId',

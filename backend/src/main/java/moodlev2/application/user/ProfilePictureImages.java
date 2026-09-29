@@ -42,6 +42,19 @@ final class ProfilePictureImages {
 
     private static final float JPEG_QUALITY = 0.85f;
 
+    /**
+     * Large images are decoded subsampled to about this size: the output is at most 512 px, so a
+     * full-resolution decode of a 40-megapixel image would only waste ~160 MB of heap per upload.
+     */
+    private static final int DECODE_TARGET = 2048;
+
+    /**
+     * At most this many decodes at once. Accounts are free to create, so parallel uploads must not
+     * be able to exhaust the heap of a small server.
+     */
+    private static final java.util.concurrent.Semaphore DECODES =
+            new java.util.concurrent.Semaphore(2);
+
     private ProfilePictureImages() {}
 
     record Processed(byte[] jpeg, int side) {}
@@ -52,7 +65,20 @@ final class ProfilePictureImages {
             throw new IllegalArgumentException("Only JPEG and PNG images are allowed.");
         }
 
-        BufferedImage decoded = decode(input, format);
+        BufferedImage decoded;
+        try {
+            if (!DECODES.tryAcquire(10, java.util.concurrent.TimeUnit.SECONDS)) {
+                throw new IllegalStateException("The server is busy. Please try again.");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("The server is busy. Please try again.");
+        }
+        try {
+            decoded = decode(input, format);
+        } finally {
+            DECODES.release();
+        }
         int orientation = "jpeg".equals(format) ? ExifOrientation.read(input) : 1;
         BufferedImage upright = applyOrientation(decoded, orientation);
         BufferedImage square = cropAndScale(upright);
@@ -107,7 +133,12 @@ final class ProfilePictureImages {
                                     + MIN_SIDE
                                     + " pixels a side.");
                 }
-                BufferedImage image = reader.read(0);
+                javax.imageio.ImageReadParam param = reader.getDefaultReadParam();
+                int factor = Math.max(1, Math.max(width, height) / DECODE_TARGET);
+                if (factor > 1) {
+                    param.setSourceSubsampling(factor, factor, 0, 0);
+                }
+                BufferedImage image = reader.read(0, param);
                 if (image == null) {
                     throw unreadable();
                 }

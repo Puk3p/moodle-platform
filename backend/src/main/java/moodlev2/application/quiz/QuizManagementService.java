@@ -1,5 +1,6 @@
 package moodlev2.application.quiz;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -18,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Slf4j
 public class QuizManagementService {
+
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     private final QuizRepository quizRepository;
     private final CourseRepository courseRepository;
@@ -152,7 +155,13 @@ public class QuizManagementService {
         qq.setPoints(1);
         qq.setSortOrder(order);
 
-        for (QuestionOptionEntity bankOpt : bankQ.getOptions()) {
+        // Option ids are assigned in insertion order. Inserting in authored order would make a
+        // drag-and-drop question's ids spell out its answer, so insert in a random order; each
+        // option keeps its sortOrder, which is what grading and display use.
+        List<QuestionOptionEntity> bankOptions = new ArrayList<>(bankQ.getOptions());
+        Collections.shuffle(bankOptions, RANDOM);
+
+        for (QuestionOptionEntity bankOpt : bankOptions) {
             QuizOptionEntity qo = new QuizOptionEntity();
             qo.setText(bankOpt.getText());
             qo.setCorrect(bankOpt.isCorrect());

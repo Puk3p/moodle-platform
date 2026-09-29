@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Moodle</title>
+  <!--
+    Must stay absolute. With a relative base ("./") the browser resolves the JS/CSS
+    bundles against the current directory, so any URL below the root (e.g. /take-quiz/1)
+    requests /take-quiz/main-*.js. The SPA fallback answers that with index.html, the
+    browser refuses to run HTML as a module script, and the page renders blank.
+    The Cordova build that originally needed a relative base no longer exists.
+  -->
+  <base href="/">
+  <!--
+    Content-Security-Policy (production build only; see angular.json "index").
+    - script-src 'self': only our own bundles run. Injected markup, javascript: URLs and inline
+      handlers cannot execute, which turns most XSS bugs into dead text.
+    - style-src 'unsafe-inline': Angular component styles and [style] bindings need it; styles
+      cannot read cookies or run code.
+    - img-src https:: course images are teacher-provided absolute URLs.
+    - connect-src 'self': API calls and the same-origin WebSocket only.
+    frame-ancestors cannot be set from a meta tag; nginx sends X-Frame-Options: DENY. Mirror this
+    policy as a real header in nginx when possible.
+  -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self'; object-src 'none'; frame-src 'none'; worker-src 'none'; base-uri 'self'; form-action 'self'; manifest-src 'self'; upgrade-insecure-requests">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+  <!-- Font Awesome is bundled from node_modules (angular.json "styles"): no third-party script
+       runs with this page's privileges, and nothing is fetched from a CDN at runtime. -->
+</head>
+<body class="mat-typography">
+  <app-root></app-root>
+</body>
+</html>

@@ -1,5 +1,6 @@
 package moodlev2.infrastructure.mapper;
 
+import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -9,6 +10,9 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class QuizEngineMapper {
+
+    /** Shuffles decide what an examinee sees, so they should not be predictable. */
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     public StudentQuizViewDto toStudentView(QuizEntity quiz, Long attemptId) {
         return new StudentQuizViewDto(
@@ -29,8 +33,11 @@ public class QuizEngineMapper {
                         .map(o -> new StudentQuizViewDto.StudentOptionDto(o.getId(), o.getText()))
                         .collect(Collectors.toList());
 
-        if (shuffle) {
-            Collections.shuffle(optionDtos);
+        // Drag-and-drop options are stored in answer order (sortOrder is the answer), so showing
+        // them unshuffled would hand the student the solution. They are always shuffled; the
+        // teacher's shuffleOptions switch only governs the other question types.
+        if (shuffle || "DRAG_DROP".equalsIgnoreCase(q.getType())) {
+            Collections.shuffle(optionDtos, RANDOM);
         }
 
         return new StudentQuizViewDto.StudentQuestionDto(

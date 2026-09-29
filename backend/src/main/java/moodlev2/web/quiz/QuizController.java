@@ -1,5 +1,6 @@
 package moodlev2.web.quiz;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import moodlev2.application.quiz.ProctorService;
@@ -28,7 +29,7 @@ public class QuizController {
 
     @PostMapping("/create")
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
-    public void createQuiz(@RequestBody CreateQuizDto dto) {
+    public void createQuiz(@Valid @RequestBody CreateQuizDto dto) {
         managementService.createQuiz(dto);
     }
 
@@ -44,7 +45,8 @@ public class QuizController {
     }
 
     @PostMapping("/submit")
-    public QuizResultDto submitQuiz(@RequestBody QuizSubmissionDto dto, Authentication auth) {
+    public QuizResultDto submitQuiz(
+            @Valid @RequestBody QuizSubmissionDto dto, Authentication auth) {
         return engineService.submitAttempt(dto, auth.getName());
     }
 
@@ -80,7 +82,7 @@ public class QuizController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
-    public void updateQuiz(@PathVariable Long id, @RequestBody CreateQuizDto dto) {
+    public void updateQuiz(@PathVariable Long id, @Valid @RequestBody CreateQuizDto dto) {
         managementService.updateQuiz(id, dto);
     }
 }

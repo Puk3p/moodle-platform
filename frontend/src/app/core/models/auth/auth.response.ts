@@ -1,8 +1,7 @@
-import { Role } from "../role.enum";
+import { Role } from '../role.enum';
 
+/** Who is signed in. Never carries a token: the session is an HttpOnly cookie. */
 export interface AuthResponse {
-  token?: string;
-  accessToken?: string;
   userId?: string;
   email?: string;
   firstName?: string;

@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import moodlev2.common.exception.NotFoundException;
@@ -22,34 +23,34 @@ public class GetCourseDetailsService {
     private final CourseRepository courseRepository;
     private final SpringDataUserRepository userRepository;
     private final QuizAttemptRepository quizAttemptRepository;
+    private final CourseAccess courseAccess;
 
     @Transactional(readOnly = true)
     public CourseDetailsResponse getCourseDetails(String idOrCode, String userEmail) {
 
+        // One message for "does not exist" and "not yours" so ids and codes cannot be probed.
         CourseEntity course;
 
-        if (idOrCode.matches("\\d+")) {
+        if (idOrCode.matches("\\d{1,18}")) {
             Long id = Long.parseLong(idOrCode);
             course =
                     courseRepository
                             .findById(id)
-                            .orElseThrow(
-                                    () -> new NotFoundException("Course not found with id: " + id));
+                            .orElseThrow(() -> new NotFoundException("Course not found"));
         } else {
 
             course =
                     courseRepository
-                            .findByCode(idOrCode.toUpperCase())
-                            .orElseThrow(
-                                    () ->
-                                            new NotFoundException(
-                                                    "Course not found with code: " + idOrCode));
+                            .findByCode(idOrCode.toUpperCase(Locale.ROOT))
+                            .orElseThrow(() -> new NotFoundException("Course not found"));
         }
 
         UserEntity currentUser =
                 userRepository
                         .findByEmail(userEmail)
                         .orElseThrow(() -> new NotFoundException("User not found"));
+
+        courseAccess.requireMember(course, currentUser);
 
         String instructorName = "Unknown Instructor";
         if (course.getTeacher() != null) {

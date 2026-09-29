@@ -1,159 +1,90 @@
 package moodlev2.application.auth.implementations;
 
-import jakarta.transaction.Transactional;
-import java.time.Duration;
 import java.util.Optional;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import moodlev2.application.auth.LoginAttemptGuard;
+import moodlev2.application.auth.TwoFactorChallenges;
 import moodlev2.application.auth.interfaces.ILoginService;
-import moodlev2.common.util.TokenHashUtil;
-import moodlev2.domain.auth.ports.TokenServicePort;
-import moodlev2.domain.user.Role;
 import moodlev2.domain.user.User;
 import moodlev2.domain.user.ports.PasswordHasherPort;
 import moodlev2.domain.user.ports.UserRepositoryPort;
-import moodlev2.infrastructure.persistence.jpa.SpringDataUserRepository;
-import moodlev2.infrastructure.persistence.jpa.UserSessionRepository;
-import moodlev2.infrastructure.persistence.jpa.entity.UserSessionEntity;
-import moodlev2.web.auth.dto.AuthResponse;
 import moodlev2.web.auth.dto.LoginRequest;
-import moodlev2.web.auth.dto.VerifyTwoFaLoginRequest;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
 @Service
 public class LoginService implements ILoginService {
-    private static final Duration ACCESS_TOKEN_VALIDITY = Duration.ofHours(1);
-    private static final Duration TEMP_TOKEN_VALIDITY = Duration.ofMinutes(5);
 
     // A valid BCrypt hash of a random value, compared against when the account is not found so
     // that authentication timing is constant regardless of account existence.
     private static final String DUMMY_HASH =
             "$2a$10$7EqJtq98hPqEX7fNZaFWoOa8n8Q9m0m3p3vJ3n1qQ9k1s5m8n0uK";
 
+    private static final String BAD_CREDENTIALS = "Invalid email or password";
+
+    static final String PASSWORD = "password";
+    static final String SECOND_FACTOR = "2fa";
+
     private final UserRepositoryPort userRepository;
     private final PasswordHasherPort passwordHasher;
-    private final TokenServicePort tokenService;
     private final TwoFactorService twoFactorService;
-
-    private final UserSessionRepository userSessionRepository;
-    private final SpringDataUserRepository jpaUserRepository;
+    private final TwoFactorChallenges challenges;
+    private final LoginAttemptGuard attempts;
 
     @Override
-    @Transactional
-    public AuthResponse login(LoginRequest request, String ipAddress, String userAgent) {
-        String normalizedEmail = request.email == null ? null : request.email.trim().toLowerCase();
-
-        if (normalizedEmail == null || normalizedEmail.isEmpty()) {
+    public LoginResult login(LoginRequest request) {
+        String email = request.email == null ? "" : request.email.trim().toLowerCase();
+        if (email.isEmpty()) {
             throw new IllegalArgumentException("Email cannot be empty");
         }
+        attempts.checkAllowed(PASSWORD, email);
 
-        Optional<User> idkUser = userRepository.findByEmail(normalizedEmail);
-
-        if (idkUser.isEmpty()) {
-            // Run a dummy hash comparison so the response time does not reveal whether the
-            // account exists, and return the same generic message as a wrong password would.
+        Optional<User> found = userRepository.findByEmail(email);
+        if (found.isEmpty()) {
+            // Same work and same answer as a wrong password, so neither timing nor message reveals
+            // whether the account exists.
             passwordHasher.matches(request.password, DUMMY_HASH);
-            throw new IllegalArgumentException("Invalid email or password");
+            attempts.recordFailure(PASSWORD, email);
+            throw new IllegalArgumentException(BAD_CREDENTIALS);
         }
 
-        User user = idkUser.get();
-
+        User user = found.get();
         if (!passwordHasher.matches(request.password, user.getPasswordHash())) {
-            throw new IllegalArgumentException("Invalid email or password");
+            attempts.recordFailure(PASSWORD, email);
+            throw new IllegalArgumentException(BAD_CREDENTIALS);
         }
-
         if (!user.isEnabled()) {
             throw new IllegalArgumentException("User account is disabled");
         }
+        attempts.recordSuccess(PASSWORD, email);
 
         if (user.isTwoFaEnabled()) {
-
-            User tempUser = new User();
-            tempUser.setId(user.getId());
-            tempUser.setEmail(user.getEmail());
-            tempUser.setFirstName(user.getFirstName());
-            tempUser.setLastName(user.getLastName());
-            tempUser.setRoles(Set.of(Role.STUDENT));
-
-            String tempToken =
-                    tokenService.generateToken(
-                            tempUser, TEMP_TOKEN_VALIDITY, Set.of("auth:pre-2fa"));
-
-            return new AuthResponse(tempToken, null, null, null, null, null, true);
+            return new LoginResult.TwoFactorRequired(challenges.issue(user));
         }
-
-        return finalizeLogin(user, ipAddress, userAgent);
+        return new LoginResult.Authenticated(user);
     }
 
     @Override
-    @Transactional
-    public AuthResponse verifyTwoFaLogin(
-            VerifyTwoFaLoginRequest request, String ipAddress, String userAgent) {
-
-        TokenServicePort.TokenPayload payload;
-        try {
-            payload = tokenService.parse(request.tempToken());
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid or expired login session.");
-        }
-
+    public User verifyTwoFaLogin(String challengeToken, String code) {
+        Long userId = challenges.userIdFor(challengeToken);
         User user =
                 userRepository
-                        .findById(payload.userId())
-                        .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-        boolean isValid = twoFactorService.verifyCode(user.getEmail(), request.code());
-        if (!isValid) {
-            throw new IllegalArgumentException("Invalid 2FA Code");
-        }
-
-        return finalizeLogin(user, ipAddress, userAgent);
-    }
-
-    private AuthResponse finalizeLogin(User user, String ipAddress, String userAgent) {
-        String accessToken =
-                tokenService.generateToken(user, ACCESS_TOKEN_VALIDITY, Set.of("access:api"));
-
-        saveUserSession(user.getEmail(), accessToken, ipAddress, userAgent);
-
-        return new AuthResponse(
-                accessToken,
-                user.getId() != null ? user.getId().toString() : null,
-                user.getEmail(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getRoles(),
-                false);
-    }
-
-    private void saveUserSession(
-            String email, String accessToken, String ipAddress, String userAgent) {
-        var userEntity =
-                jpaUserRepository
-                        .findByEmail(email)
+                        .findById(userId)
+                        .filter(User::isEnabled)
                         .orElseThrow(
                                 () ->
-                                        new RuntimeException(
-                                                "User entity not found for session saving"));
+                                        new IllegalArgumentException(
+                                                "Your sign-in expired. Please sign in again."));
 
-        UserSessionEntity session = new UserSessionEntity();
-        session.setUser(userEntity);
-        session.setIpAddress(ipAddress);
-        session.setDeviceName(parseUserAgent(userAgent));
-        session.setTokenSignature(TokenHashUtil.sha256(accessToken));
+        attempts.checkAllowed(SECOND_FACTOR, user.getEmail());
+        if (!twoFactorService.verifyCode(user.getEmail(), code)) {
+            challenges.recordFailure(challengeToken);
+            attempts.recordFailure(SECOND_FACTOR, user.getEmail());
+            throw new IllegalArgumentException("Invalid verification code.");
+        }
 
-        userSessionRepository.save(session);
-    }
-
-    private String parseUserAgent(String ua) {
-        if (ua == null) return "Unknown Device";
-
-        if (ua.contains("Windows")) return "Windows";
-        if (ua.contains("Mac")) return "macOS";
-        if (ua.contains("Linux")) return "Linux";
-        if (ua.contains("Android")) return "Android";
-        if (ua.contains("iPhone") || ua.contains("iPad")) return "iOS";
-        return "Unknown Device";
+        challenges.consume(challengeToken);
+        attempts.recordSuccess(SECOND_FACTOR, user.getEmail());
+        return user;
     }
 }

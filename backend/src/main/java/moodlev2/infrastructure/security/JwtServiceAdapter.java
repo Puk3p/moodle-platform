@@ -81,7 +81,12 @@ public final class JwtServiceAdapter implements TokenServicePort {
     @Override
     public TokenPayload parse(String token) {
         try {
-            Jws<Claims> jws = Jwts.parser().setSigningKey(signingKey).build().parseClaimsJws(token);
+            Jws<Claims> jws =
+                    Jwts.parser()
+                            .requireIssuer(issuer)
+                            .setSigningKey(signingKey)
+                            .build()
+                            .parseClaimsJws(token);
 
             Claims claims = jws.getBody();
 
@@ -103,7 +108,13 @@ public final class JwtServiceAdapter implements TokenServicePort {
 
             Instant expiresAt = claims.getExpiration().toInstant();
 
-            return new TokenPayload(jti, userId, email, roles, expiresAt);
+            String scopeClaim = claims.get("scopes", String.class);
+            Set<String> scopes =
+                    scopeClaim == null || scopeClaim.isBlank()
+                            ? Set.of()
+                            : Set.of(scopeClaim.trim().split("\\s+"));
+
+            return new TokenPayload(jti, userId, email, roles, expiresAt, scopes);
         } catch (JwtException | IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid token", e);
         }

@@ -62,7 +62,17 @@ export class ChatService {
   private connectedBefore = false;
 
   constructor() {
+    let signedInEmail: string | null = null;
     this.auth.currentUser$.subscribe((user) => {
+      // On sign-out, forget the read-state too: its keys name the people this user talks to.
+      if (!user && signedInEmail) {
+        try {
+          localStorage.removeItem(this.seenKey(signedInEmail));
+        } catch {
+          // Storage unavailable; nothing to clean.
+        }
+      }
+      signedInEmail = user?.email ?? null;
       this.clear();
       this.statusSignal.set(null);
       this.connectedBefore = false;

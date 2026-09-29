@@ -31,6 +31,7 @@
             ],
             "styles": [
               "src/styles.scss",
+              "node_modules/@fortawesome/fontawesome-free/css/all.min.css",
               "node_modules/codemirror/lib/codemirror.css",
               "node_modules/codemirror/theme/material.css"
             ]
@@ -55,7 +56,19 @@
                   "replace": "src/environments/environment.ts",
                   "with": "src/environments/environment.prod.ts"
                 }
-              ]
+              ],
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": false
+                },
+                "fonts": true
+              },
+              "index": {
+                "input": "src/index.prod.html",
+                "output": "index.html"
+              }
             },
             "development": {
               "optimization": false,

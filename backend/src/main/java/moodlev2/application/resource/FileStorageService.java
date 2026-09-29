@@ -2,6 +2,7 @@ package moodlev2.application.resource;
 
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -66,21 +67,27 @@ public class FileStorageService {
         // A random prefix removes any control the uploader has over the on-disk name.
         String fileName = UUID.randomUUID() + "_" + originalFileName;
 
-        try {
-            if (originalFileName.contains("..")) {
-                throw new IllegalArgumentException(
-                        "Filename contains an invalid path sequence: " + originalFileName);
-            }
+        if (originalFileName.contains("..")) {
+            throw new IllegalArgumentException(
+                    "Filename contains an invalid path sequence: " + originalFileName);
+        }
 
-            Path targetLocation = this.fileStorageLocation.resolve(fileName).normalize();
-            if (!targetLocation.startsWith(this.fileStorageLocation)) {
-                throw new IllegalArgumentException("Resolved path escapes the storage directory.");
-            }
+        Path targetLocation = this.fileStorageLocation.resolve(fileName).normalize();
+        if (!targetLocation.startsWith(this.fileStorageLocation)) {
+            throw new IllegalArgumentException("Resolved path escapes the storage directory.");
+        }
 
-            Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
-
+        try (InputStream in = file.getInputStream()) {
+            Files.copy(in, targetLocation, StandardCopyOption.REPLACE_EXISTING);
             return "/uploads/" + fileName;
         } catch (IOException ex) {
+            // A copy that dies half way (client disconnect, disk full) must not leave a partial
+            // file behind that nothing refers to.
+            try {
+                Files.deleteIfExists(targetLocation);
+            } catch (IOException cleanup) {
+                ex.addSuppressed(cleanup);
+            }
             throw new IllegalStateException("Could not store file. Please try again.", ex);
         }
     }

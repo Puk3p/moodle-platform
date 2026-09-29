@@ -1,13 +1,19 @@
 package moodlev2.application.quiz;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import moodlev2.application.course.CourseAccess;
 import moodlev2.common.exception.NotFoundException;
 import moodlev2.common.util.ColorUtil;
+import moodlev2.common.util.SlidingWindowCounter;
 import moodlev2.infrastructure.mapper.QuizEngineMapper;
 import moodlev2.infrastructure.persistence.jpa.*;
 import moodlev2.infrastructure.persistence.jpa.entity.*;
@@ -31,7 +37,26 @@ public class QuizEngineService {
     private final PasswordEncoder passwordEncoder;
     private final QuizEngineMapper mapper;
     private final ApplicationEventPublisher events;
+    private final CourseAccess courseAccess;
 
+    static final int MAX_PASSWORD_FAILURES = 5;
+    static final Duration PASSWORD_WINDOW = Duration.ofMinutes(15);
+
+    private static final DateTimeFormatter WINDOW_FORMAT =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm", Locale.ROOT);
+
+    /** Wrong access passwords per "userId:quizId". In memory: a restart simply clears it. */
+    private final SlidingWindowCounter passwordFailures =
+            new SlidingWindowCounter(MAX_PASSWORD_FAILURES, PASSWORD_WINDOW, Clock.systemUTC());
+
+    /**
+     * Starts (or resumes) the caller's attempt.
+     *
+     * <p>Students may only start a published quiz of a course they belong to, assigned to their
+     * class when the quiz is restricted to classes, and inside its availability window. Staff skip
+     * those rules so they can preview any quiz. The access password and attempt limit apply to
+     * everyone.
+     */
     @Transactional
     public StudentQuizViewDto startAttempt(Long quizId, String userEmail, String providedPassword) {
         UserEntity user =
@@ -44,6 +69,13 @@ public class QuizEngineService {
                         .findById(quizId)
                         .orElseThrow(() -> new NotFoundException("Quiz not found"));
 
+        boolean staff = CourseAccess.isStaff(user);
+        if (!staff) {
+            requireStudentMayOpen(quiz, user);
+        }
+
+        // Resuming is allowed after the window closes: the student started in time, and the
+        // attempt's own time limit is enforced separately.
         var existingAttempt =
                 quizAttemptRepository.findByQuizIdAndUserIdAndStatus(
                         quizId, user.getId(), "IN_PROGRESS");
@@ -52,15 +84,11 @@ public class QuizEngineService {
             return mapper.toStudentView(quiz, existingAttempt.get().getId());
         }
 
-        String dbPassword = quiz.getPassword();
-        if (dbPassword != null && !dbPassword.isBlank()) {
-            if (providedPassword == null || providedPassword.isBlank()) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Password is required");
-            }
-            if (!passwordEncoder.matches(providedPassword.trim(), dbPassword)) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid quiz password");
-            }
+        if (!staff) {
+            requireWithinWindow(quiz);
         }
+
+        checkAccessPassword(quiz, user, providedPassword);
 
         if (quiz.getMaxAttempts() != null && quiz.getMaxAttempts() > 0) {
             int existingAttemptsCount =
@@ -87,36 +115,122 @@ public class QuizEngineService {
         return mapper.toStudentView(quiz, attempt.getId());
     }
 
+    /**
+     * Draft and unpublished quizzes, and quizzes of courses the student does not belong to, look
+     * exactly like quizzes that do not exist, so ids cannot be probed.
+     */
+    private void requireStudentMayOpen(QuizEntity quiz, UserEntity student) {
+        if (!quiz.isPublished() || !courseAccess.isMember(quiz.getCourse(), student)) {
+            throw new NotFoundException("Quiz not found");
+        }
+        List<ClassEntity> assigned = quiz.getAssignedClasses();
+        if (assigned != null && !assigned.isEmpty()) {
+            Long classId = student.getClazz() != null ? student.getClazz().getId() : null;
+            boolean assignedToMe =
+                    classId != null && assigned.stream().anyMatch(c -> classId.equals(c.getId()));
+            if (!assignedToMe) {
+                throw new ResponseStatusException(
+                        HttpStatus.FORBIDDEN, "This quiz is not assigned to your class.");
+            }
+        }
+    }
+
+    /**
+     * The quiz form sends its window as UTC ({@code toISOString()}) and Jackson keeps that wall
+     * time in the LocalDateTime, so "now" must be UTC as well, whatever the server's zone.
+     */
+    private static void requireWithinWindow(QuizEntity quiz) {
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        if (quiz.getAvailableFrom() != null && now.isBefore(quiz.getAvailableFrom())) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "This quiz is not open yet. It opens at "
+                            + WINDOW_FORMAT.format(quiz.getAvailableFrom())
+                            + " UTC.");
+        }
+        if (quiz.getAvailableTo() != null && now.isAfter(quiz.getAvailableTo())) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "This quiz closed at " + WINDOW_FORMAT.format(quiz.getAvailableTo()) + " UTC.");
+        }
+    }
+
+    /**
+     * Quiz passwords are short and shared by a whole class, so wrong guesses are limited per
+     * student and quiz; after {@link #MAX_PASSWORD_FAILURES} the student waits out the window.
+     */
+    private void checkAccessPassword(QuizEntity quiz, UserEntity user, String providedPassword) {
+        String dbPassword = quiz.getPassword();
+        if (dbPassword == null || dbPassword.isBlank()) {
+            return;
+        }
+        if (providedPassword == null || providedPassword.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Password is required");
+        }
+        String key = user.getId() + ":" + quiz.getId();
+        if (passwordFailures.isExhausted(key)) {
+            throw new ResponseStatusException(
+                    HttpStatus.TOO_MANY_REQUESTS,
+                    "Too many wrong passwords. Try again in 15 minutes.");
+        }
+        if (!passwordEncoder.matches(providedPassword.trim(), dbPassword)) {
+            passwordFailures.record(key);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Invalid quiz password");
+        }
+        passwordFailures.reset(key);
+    }
+
+    /**
+     * Grades an attempt. Only the first answer per question counts: a client sending one answer per
+     * option used to collect every correct option's points, so extra entries are ignored, the list
+     * may not be longer than the quiz, and the total can never exceed the maximum.
+     */
     @Transactional
     public QuizResultDto submitAttempt(QuizSubmissionDto dto, String userEmail) {
+        if (dto == null || dto.attemptId() == null) {
+            throw new IllegalArgumentException("attemptId is required.");
+        }
+
         QuizAttemptEntity attempt =
                 attemptRepository
                         .findById(dto.attemptId())
                         .orElseThrow(() -> new NotFoundException("Attempt not found"));
 
-        if (!attempt.getUser().getEmail().equals(userEmail)) {
-            throw new RuntimeException("Unauthorized submission");
+        if (attempt.getUser() == null || !attempt.getUser().getEmail().equals(userEmail)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your attempt");
         }
 
-        if ("COMPLETED".equals(attempt.getStatus())) {
-            throw new RuntimeException("Attempt already submitted");
+        if (!"IN_PROGRESS".equals(attempt.getStatus())) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, "This attempt has already been submitted.");
         }
 
         QuizEntity quiz = attempt.getQuiz();
+        List<QuizQuestionEntity> questions = quiz.getQuestions();
 
-        Map<Long, QuizQuestionEntity> questionMap =
-                quiz.getQuestions().stream()
-                        .collect(Collectors.toMap(QuizQuestionEntity::getId, Function.identity()));
+        if (dto.answers() == null) {
+            throw new IllegalArgumentException("Answers are required.");
+        }
+        if (dto.answers().size() > questions.size()) {
+            throw new IllegalArgumentException("There are more answers than questions.");
+        }
+
+        Map<Long, QuizQuestionEntity> questionMap = new HashMap<>();
+        for (QuizQuestionEntity q : questions) {
+            questionMap.put(q.getId(), q);
+        }
 
         BigDecimal totalScore = BigDecimal.ZERO;
         BigDecimal maxScore =
-                quiz.getQuestions().stream()
-                        .map(q -> BigDecimal.valueOf(q.getPoints()))
+                questions.stream()
+                        .map(QuizEngineService::pointsOf)
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        Set<Long> answered = new HashSet<>();
         for (QuizSubmissionDto.AnswerDto ans : dto.answers()) {
+            if (ans == null || ans.questionId() == null) continue;
             QuizQuestionEntity question = questionMap.get(ans.questionId());
-            if (question == null) continue;
+            if (question == null || !answered.add(question.getId())) continue;
 
             QuizResponseEntity responseEntity = new QuizResponseEntity();
             responseEntity.setAttempt(attempt);
@@ -133,7 +247,7 @@ public class QuizEngineService {
 
                 responseEntity.setSelectedOption(selectedOption);
                 if (selectedOption != null && selectedOption.isCorrect()) {
-                    questionScore = BigDecimal.valueOf(question.getPoints());
+                    questionScore = pointsOf(question);
                 }
             } else if (ans.orderedOptionIds() != null && !ans.orderedOptionIds().isEmpty()) {
                 String orderStr =
@@ -154,7 +268,7 @@ public class QuizEngineService {
                                 .toList();
 
                 if (ans.orderedOptionIds().equals(correctOrderIds)) {
-                    questionScore = BigDecimal.valueOf(question.getPoints());
+                    questionScore = pointsOf(question);
                 }
             } else if (ans.textAnswer() != null) {
                 responseEntity.setTextResponse(ans.textAnswer());
@@ -163,6 +277,10 @@ public class QuizEngineService {
             responseEntity.setScore(questionScore);
             totalScore = totalScore.add(questionScore);
             attempt.getResponses().add(responseEntity);
+        }
+
+        if (totalScore.compareTo(maxScore) > 0) {
+            totalScore = maxScore;
         }
 
         attempt.setCompletedAt(Instant.now());
@@ -183,6 +301,10 @@ public class QuizEngineService {
                 maxScore,
                 passed,
                 attempt.getCompletedAt().toString());
+    }
+
+    private static BigDecimal pointsOf(QuizQuestionEntity question) {
+        return BigDecimal.valueOf(question.getPoints() != null ? question.getPoints() : 0);
     }
 
     @Transactional(readOnly = true)
