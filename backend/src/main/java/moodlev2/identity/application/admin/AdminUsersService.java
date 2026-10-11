@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import moodlev2.identity.api.Role;
+import moodlev2.identity.api.UserDeletedEvent;
+import moodlev2.identity.api.UserEmailChangedEvent;
 import moodlev2.identity.application.auth.SessionService;
 import moodlev2.identity.infrastructure.persistence.ClassRepository;
 import moodlev2.identity.infrastructure.persistence.SpringDataUserRepository;
@@ -11,8 +13,8 @@ import moodlev2.identity.infrastructure.persistence.entity.ClassEntity;
 import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
 import moodlev2.identity.web.admin.dto.AdminStudentDto;
 import moodlev2.identity.web.admin.dto.UpdateStudentRequest;
-import moodlev2.messaging.infrastructure.persistence.ChatMessageRepository;
 import moodlev2.shared.exception.NotFoundException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,7 +26,7 @@ public class AdminUsersService {
 
     private final SpringDataUserRepository userRepository;
     private final ClassRepository classRepository;
-    private final ChatMessageRepository chatMessageRepository;
+    private final ApplicationEventPublisher events;
     private final SessionService sessionService;
 
     @Transactional(readOnly = true)
@@ -36,9 +38,9 @@ public class AdminUsersService {
     }
 
     /**
-     * Edits a user's name, email and class. A new email must be free; when it changes, the user's
-     * chat history follows it (messages are keyed by email) and every session is signed out, since
-     * open sessions and sockets still carry the old address.
+     * Edits a user's name, email and class. A new email must be free; when it changes, other
+     * modules that refer to the user by email follow it (see {@link UserEmailChangedEvent}) and
+     * every session is signed out, since open sessions and sockets still carry the old address.
      */
     @Transactional
     public void updateStudent(Long id, UpdateStudentRequest request, String actorEmail) {
@@ -73,8 +75,7 @@ public class AdminUsersService {
         userRepository.save(user);
 
         if (emailChanged) {
-            chatMessageRepository.renameSender(oldEmail, newEmail);
-            chatMessageRepository.renameRecipient(oldEmail, newEmail);
+            events.publishEvent(new UserEmailChangedEvent(user.getId(), oldEmail, newEmail));
             sessionService.revokeAll(user.getId());
         }
     }
@@ -94,14 +95,15 @@ public class AdminUsersService {
     }
 
     /**
-     * Deletes an account together with its chat history. Messages refer to people by email, so
-     * leaving them would hand the conversations to whoever registers that address next.
+     * Deletes an account. Other modules remove what they keep about the person (see {@link
+     * UserDeletedEvent}); chat, for one, must not hand the conversations to whoever registers that
+     * address next.
      */
     @Transactional
     public void deleteUser(Long id, String actorEmail) {
         UserEntity user = findManageable(id, actorEmail);
 
-        chatMessageRepository.deleteAllByParticipant(user.getEmail());
+        events.publishEvent(new UserDeletedEvent(user.getId(), user.getEmail()));
         sessionService.revokeAll(user.getId());
         userRepository.delete(user);
     }

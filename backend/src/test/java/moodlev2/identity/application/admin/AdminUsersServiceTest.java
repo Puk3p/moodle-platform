@@ -4,7 +4,6 @@ import static moodlev2.support.Fixtures.user;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
@@ -14,12 +13,13 @@ import static org.mockito.Mockito.when;
 
 import java.util.Optional;
 import moodlev2.identity.api.Role;
+import moodlev2.identity.api.UserDeletedEvent;
+import moodlev2.identity.api.UserEmailChangedEvent;
 import moodlev2.identity.application.auth.SessionService;
 import moodlev2.identity.infrastructure.persistence.ClassRepository;
 import moodlev2.identity.infrastructure.persistence.SpringDataUserRepository;
 import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
 import moodlev2.identity.web.admin.dto.UpdateStudentRequest;
-import moodlev2.messaging.infrastructure.persistence.ChatMessageRepository;
 import moodlev2.shared.exception.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,6 +28,7 @@ import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -38,7 +39,7 @@ class AdminUsersServiceTest {
 
     @Mock private SpringDataUserRepository userRepository;
     @Mock private ClassRepository classRepository;
-    @Mock private ChatMessageRepository chatMessageRepository;
+    @Mock private ApplicationEventPublisher events;
     @Mock private SessionService sessionService;
 
     @InjectMocks private AdminUsersService service;
@@ -78,7 +79,7 @@ class AdminUsersServiceTest {
 
         verify(userRepository, never()).save(any());
         verify(userRepository, never()).delete(any());
-        verifyNoInteractions(sessionService, chatMessageRepository);
+        verifyNoInteractions(sessionService, events);
     }
 
     @Test
@@ -92,7 +93,7 @@ class AdminUsersServiceTest {
 
         assertThat(otherAdmin.getEmail()).isEqualTo("admin2@test.com");
         verify(userRepository, never()).delete(any());
-        verifyNoInteractions(sessionService, chatMessageRepository);
+        verifyNoInteractions(sessionService, events);
     }
 
     @Test
@@ -122,15 +123,15 @@ class AdminUsersServiceTest {
 
         assertThat(student.getEmail()).isEqualTo("student@test.com");
         verify(userRepository, never()).save(any());
-        verifyNoInteractions(sessionService, chatMessageRepository);
+        verifyNoInteractions(sessionService, events);
     }
 
     @Test
     void changingTheEmailMovesChatHistoryAndSignsTheUserOut() {
         service.updateStudent(3L, edit("new@test.com"), ACTOR);
 
-        verify(chatMessageRepository).renameSender("student@test.com", "new@test.com");
-        verify(chatMessageRepository).renameRecipient("student@test.com", "new@test.com");
+        verify(events)
+                .publishEvent(new UserEmailChangedEvent(3L, "student@test.com", "new@test.com"));
         verify(sessionService).revokeAll(3L);
     }
 
@@ -139,7 +140,7 @@ class AdminUsersServiceTest {
         service.updateStudent(3L, edit("student@test.com"), ACTOR);
 
         verify(userRepository).save(student);
-        verifyNoInteractions(sessionService, chatMessageRepository);
+        verifyNoInteractions(sessionService, events);
     }
 
     // ── 2FA reset and deletion ───────────────────────────────────────────────
@@ -160,8 +161,8 @@ class AdminUsersServiceTest {
     void deletingAUserRemovesTheirChatHistoryAndSessions() {
         service.deleteUser(3L, ACTOR);
 
-        InOrder order = inOrder(chatMessageRepository, sessionService, userRepository);
-        order.verify(chatMessageRepository).deleteAllByParticipant("student@test.com");
+        InOrder order = inOrder(events, sessionService, userRepository);
+        order.verify(events).publishEvent(new UserDeletedEvent(3L, "student@test.com"));
         order.verify(sessionService).revokeAll(3L);
         order.verify(userRepository).delete(student);
     }
@@ -174,8 +175,8 @@ class AdminUsersServiceTest {
         service.deleteUser(5L, ACTOR);
 
         verify(userRepository).delete(teacher);
-        verify(chatMessageRepository).deleteAllByParticipant("teacher@test.com");
-        verify(chatMessageRepository, never()).renameSender(anyString(), anyString());
+        verify(events).publishEvent(new UserDeletedEvent(5L, "teacher@test.com"));
+        verify(events, never()).publishEvent(any(UserEmailChangedEvent.class));
         verify(sessionService).revokeAll(5L);
     }
 }
