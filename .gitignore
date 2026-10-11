@@ -49,3 +49,6 @@ connect_*.sh
 ### Uploads ###
 uploads/
 profile-pictures/
+
+# macOS Finder metadata
+.DS_Store
