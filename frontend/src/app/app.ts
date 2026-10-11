@@ -13,13 +13,15 @@ import { ChatService } from './core/services/chat.service';
 import { ProfilePictureService } from './core/services/profile-picture.service';
 import { AuthHeroComponent } from './features/auth/auth-hero/auth-hero';
 import { ChatPanelComponent } from './features/chat/chat-panel/chat-panel';
+import { PageContainerComponent } from './layout/page-container/page-container';
+import { scrollShellToTop } from './layout/route-transitions';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   templateUrl: './app.html',
   styleUrl: './app.scss',
-  imports: [AuthHeroComponent, ChatPanelComponent,
+  imports: [AuthHeroComponent, ChatPanelComponent, PageContainerComponent,
     RouterOutlet, MatSidenavModule, MatToolbarModule, MatListModule, 
     MatIconModule, MatButtonModule, RouterLink, RouterLinkActive,
     NgIf, NgClass
@@ -100,6 +102,8 @@ export class App implements OnInit, OnDestroy {
     ).subscribe((event: any) => {
       this.isQuizRoute = event.urlAfterRedirects.includes('/take-quiz');
       this.isChatOpen = false;
+      // Already done before capture when the browser runs a view transition.
+      scrollShellToTop();
     });
   }
 

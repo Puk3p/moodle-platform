@@ -1,0 +1,16 @@
+// Tokens live in styles.scss (:root) so the mobile breakpoint changes them in one place.
+:host {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: calc(var(--page-max-width) + 2 * var(--page-pad-x));
+  margin-inline: auto;
+  padding: var(--page-pad-top) var(--page-pad-x) var(--page-pad-bottom);
+  view-transition-name: page;
+}
+
+:host(.is-bleed) {
+  max-width: none;
+  height: 100%;
+  padding: 0;
+}

@@ -8,9 +8,9 @@
    =========================================================================== */
 
 :host {
-  --rs-bg:            #faf9f8;
-  --rs-surface:       #ffffff;
-  --rs-surface-sunk:  #f6f5f3;
+  --rs-bg:            var(--app-bg);
+  --rs-surface:       var(--app-surface);
+  --rs-surface-sunk:  var(--app-surface-muted);
   --rs-border:        #ecebe8;
   --rs-border-strong: #dcdad5;
 
@@ -33,7 +33,6 @@
   display: block;
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   color: var(--rs-text);
-  background: var(--rs-bg);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -50,12 +49,6 @@
     animation-duration: .01ms !important;
     transition-duration: .01ms !important;
   }
-}
-
-.resources-page {
-  padding: clamp(20px, 3.2vw, 34px) clamp(16px, 3.2vw, 38px) 64px;
-  background: var(--rs-bg);
-  min-height: calc(100vh - 56px);
 }
 
 /* ---------------------------------------------------------------- header -- */

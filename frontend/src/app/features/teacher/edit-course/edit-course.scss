@@ -1,12 +1,11 @@
 $primary: #ff5100;
-$bg-light: #f8f6f5;
 $border: #e5e7eb;
 $text-dark: #181310;
 $text-gray: #6b7280;
 
+// Narrower measure for a form, left-aligned so the title lines up with every other page.
 .edit-course-page {
   max-width: 1000px;
-  margin: 0 auto;
 }
 
 .mt-6 { margin-top: 24px; }
@@ -45,7 +44,7 @@ $text-gray: #6b7280;
 }
 
 .content-card {
-  background: white;
+  background: var(--app-surface);
   border: 1px solid rgba(229, 231, 235, 0.8);
   border-radius: 12px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
@@ -98,17 +97,17 @@ $text-gray: #6b7280;
 
 .select-wrapper {
   position: relative;
-  select { appearance: none; background: white; cursor: pointer; }
+  select { appearance: none; background: var(--app-surface); cursor: pointer; }
   i { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: $text-gray; pointer-events: none; font-size: 12px; }
 }
 
 .custom-select-trigger {
-  width: 100%; padding: 10px 16px; border-radius: 8px; border: 1px solid #d1d5db; background: white;
+  width: 100%; padding: 10px 16px; border-radius: 8px; border: 1px solid #d1d5db; background: var(--app-surface);
   cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 14px;
   .placeholder { color: #9ca3af; }
 }
 .custom-dropdown-menu {
-  position: absolute; top: 100%; left: 0; width: 100%; background: white; border: 1px solid $border;
+  position: absolute; top: 100%; left: 0; width: 100%; background: var(--app-surface); border: 1px solid $border;
   border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); margin-top: 4px; padding: 8px; z-index: 20;
   .dropdown-item {
     display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 6px; cursor: pointer;
@@ -123,8 +122,8 @@ $text-gray: #6b7280;
   .toggle-btn {
     display: flex; align-items: center; gap: 6px; padding: 6px 16px; border: 1px solid transparent;
     border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; background: transparent; color: $text-gray;
-    &.active-published { background: white; color: #047857; border-color: #e5e7eb; .dot { background: #10b981; } }
-    &.active { background: white; color: $text-dark; border-color: #e5e7eb; }
+    &.active-published { background: var(--app-surface); color: #047857; border-color: #e5e7eb; .dot { background: #10b981; } }
+    &.active { background: var(--app-surface); color: $text-dark; border-color: #e5e7eb; }
     .dot { width: 6px; height: 6px; border-radius: 50%; }
   }
 }
@@ -148,14 +147,14 @@ $text-gray: #6b7280;
 
 .module-item {
   position: relative;
-  background: #f9fafb;
+  background: var(--app-surface-muted);
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 20px;
   transition: all 0.2s;
 
   &:hover {
-    background: white;
+    background: var(--app-surface);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     border-color: rgba($primary, 0.2);
     
@@ -231,7 +230,7 @@ $text-gray: #6b7280;
 
 .module-footer {
   border-top: 1px solid $border;
-  background: #f9fafb;
+  background: var(--app-surface-muted);
   margin: 0 -32px -32px -32px; 
   padding: 16px 32px;
   display: flex;
@@ -247,7 +246,7 @@ $text-gray: #6b7280;
   transform: translateX(-50%); 
   width: 90%;
   max-width: 960px;
-  background: white;
+  background: var(--app-surface);
   border: 1px solid rgba(229, 231, 235, 0.8);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
   border-radius: 16px;
@@ -282,9 +281,9 @@ $text-gray: #6b7280;
   &:hover { background: rgba($primary, 0.2); }
 }
 .btn-secondary {
-  background: white; color: $text-gray; border: 1px solid $border; padding: 8px 16px;
+  background: var(--app-surface); color: $text-gray; border: 1px solid $border; padding: 8px 16px;
   border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;
-  &:hover { background: #f9fafb; color: $text-dark; }
+  &:hover { background: var(--app-surface-muted); color: $text-dark; }
 }
 
 .modal-overlay {
@@ -297,7 +296,7 @@ $text-gray: #6b7280;
 }
 
 .modal-card {
-  background: white;
+  background: var(--app-surface);
   width: 90%; max-width: 500px;
   border-radius: 16px;
   box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
@@ -324,7 +323,7 @@ $text-gray: #6b7280;
 }
 
 .modal-footer {
-  padding: 16px 24px; background: #f9fafb; border-top: 1px solid $border;
+  padding: 16px 24px; background: var(--app-surface-muted); border-top: 1px solid $border;
   display: flex; justify-content: flex-end; gap: 12px;
 }
 

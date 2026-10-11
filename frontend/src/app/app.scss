@@ -6,7 +6,7 @@
 }
 
 $app-primary: #ff5100;
-$app-bg: #f8f6f5;
+$app-bg: var(--app-bg);
 $app-border: rgba(148, 163, 184, 0.45);
 
 .app-shell {
@@ -23,9 +23,10 @@ $app-border: rgba(148, 163, 184, 0.45);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  background: #ffffff;
+  background: var(--app-surface);
   border-right: 1px solid $app-border;
   box-shadow: 4px 0 24px rgba(15, 23, 42, 0.05);
+  view-transition-name: app-sidebar;
 }
 
 .sidebar-top {
@@ -131,8 +132,10 @@ $app-border: rgba(148, 163, 184, 0.45);
   justify-content: space-between;
   padding: 12px 32px;
   border-bottom: 1px solid $app-border;
+  /* --app-bg at 90% */
   background: rgba(248, 246, 245, 0.9);
   backdrop-filter: blur(12px);
+  view-transition-name: app-topbar;
 }
 
 .search-wrapper {
@@ -142,7 +145,7 @@ $app-border: rgba(148, 163, 184, 0.45);
   padding: 0 14px;
   height: 40px;
   border-radius: 999px;
-  background: #ffffff;
+  background: var(--app-surface);
   border: 1px solid rgba(148, 163, 184, 0.35);
 }
 
@@ -176,7 +179,7 @@ $app-border: rgba(148, 163, 184, 0.45);
   height: 40px;
   border-radius: 999px;
   border: none;
-  background: #ffffff;
+  background: var(--app-surface);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -268,9 +271,9 @@ $app-border: rgba(148, 163, 184, 0.45);
   }
 }
 
+/* Gutters and measure come from <app-page-container>, not from here. */
 .content {
   flex: 1;
-  padding: 24px 32px 32px;
   overflow: auto;
 }
 
@@ -344,7 +347,6 @@ $app-border: rgba(148, 163, 184, 0.45);
     padding: 0;
     
     .content {
-      padding: 0; 
       height: 100%;
     }
   }
@@ -352,7 +354,7 @@ $app-border: rgba(148, 163, 184, 0.45);
 
 .mobile-sidenav {
   width: 280px;
-  background-color: #fffefd;   /* R7: warm off-white, not pure #fff */
+  background-color: var(--app-surface);
 
   /* The drawer is a column: header, scrolling nav, then logout pinned to the
      foot. Previously every item — including Log Out — sat in one flat list, so
@@ -453,7 +455,7 @@ $app-border: rgba(148, 163, 184, 0.45);
 }
 
 .main-content-wrapper {
-    background-color: #f8f6f5; 
+    background-color: var(--app-bg);
 }
 
 
@@ -504,10 +506,6 @@ $app-border: rgba(148, 163, 184, 0.45);
       padding: 0;
   }
   
-  .content {
-      padding: 1rem; 
-  }
-
   
   /* This block was nested inside a duplicate `.mobile-toolbar {` selector, so it
      compiled to `.mobile-toolbar .mobile-toolbar` — a toolbar inside a toolbar,
@@ -523,6 +521,7 @@ $app-border: rgba(148, 163, 184, 0.45);
   .mobile-toolbar {
     position: sticky;
     top: 0;
+    view-transition-name: app-toolbar;
 
     /* R6: own stacking context, so a small local z-index is enough and this
        stops competing with the 1000s elsewhere in the app. */
@@ -597,12 +596,12 @@ $app-border: rgba(148, 163, 184, 0.45);
   align-items: center;
   justify-content: center;
   background: #c43d00;
-  color: #fffefd;
+  color: var(--app-surface);
   font-size: 11px;
   font-weight: 600;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-  box-shadow: 0 0 0 2px #fffefd;
+  box-shadow: 0 0 0 2px var(--app-surface);
   pointer-events: none;
 }
 

@@ -8,9 +8,9 @@
    =========================================================================== */
 
 :host {
-  --qz-bg:            #f7f7f6;
-  --qz-surface:       #ffffff;
-  --qz-surface-sunk:  #fafaf9;
+  --qz-bg:            var(--app-bg);
+  --qz-surface:       var(--app-surface);
+  --qz-surface-sunk:  var(--app-surface-muted);
   --qz-border:        #e8e7e4;
   --qz-border-strong: #d6d4d0;
 

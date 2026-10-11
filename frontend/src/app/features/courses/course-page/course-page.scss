@@ -1,7 +1,6 @@
 $primary: #ff5100;
 $text-dark: #181310;
 $text-gray: #6b7280;
-$bg-light: #f9fafb;
 $border: #e5e7eb;
 
 :host {
@@ -9,12 +8,6 @@ $border: #e5e7eb;
 }
 
 
-
-.course-page {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 24px;
-}
 
 .page-nav {
   margin-bottom: 24px;
@@ -126,7 +119,7 @@ $border: #e5e7eb;
 .quizzes-section {
   border-left: 4px solid #7c3aed !important; 
   margin-bottom: 8px; 
-  background: #fdfbff; 
+  background: var(--app-surface);
 
   .special-header h3 {
     color: #5b21b6 !important;
@@ -160,7 +153,7 @@ $border: #e5e7eb;
 
 
 .module-card {
-  background: white;
+  background: var(--app-surface);
   border: 1px solid rgba(229, 231, 235, 0.8);
   border-radius: 12px;
   overflow: hidden;
@@ -189,7 +182,7 @@ $border: #e5e7eb;
 
   &.locked {
     opacity: 0.8;
-    background-color: #f9fafb;
+    background-color: var(--app-surface-muted);
     .module-header { border-bottom: none; }
   }
 }
@@ -241,7 +234,7 @@ $border: #e5e7eb;
   &:last-child { border-bottom: none; }
 
   &:hover {
-    background: #f9fafb;
+    background: var(--app-surface-muted);
     .arrow { color: $primary; }
     .item-title { color: $primary; }
     .item-icon { transform: scale(1.05); }
@@ -308,7 +301,7 @@ $border: #e5e7eb;
 }
 
 .widget-card {
-  background: white;
+  background: var(--app-surface);
   border: 1px solid rgba(229, 231, 235, 0.8);
   border-radius: 12px;
   overflow: hidden;
@@ -317,7 +310,7 @@ $border: #e5e7eb;
   .widget-header {
     padding: 16px;
     border-bottom: 1px solid #f3f4f6;
-    background-color: #f9fafb;
+    background-color: var(--app-surface-muted);
     display: flex; align-items: center; gap: 8px;
     
     fa-icon { color: #9ca3af; }
@@ -384,7 +377,7 @@ $border: #e5e7eb;
 }
 
 .modal-card {
-  background: white;
+  background: var(--app-surface);
   border-radius: 16px;
   width: 90%;
   max-width: 400px;
@@ -436,13 +429,13 @@ $border: #e5e7eb;
 
   .modal-footer {
     padding: 12px 20px;
-    background: #f9fafb;
+    background: var(--app-surface-muted);
     border-top: 1px solid #f3f4f6;
     display: flex;
     justify-content: flex-end;
 
     .btn-secondary {
-      background: white;
+      background: var(--app-surface);
       border: 1px solid #d1d5db;
       padding: 8px 16px;
       border-radius: 6px;

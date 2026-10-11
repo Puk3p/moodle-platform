@@ -1,17 +1,14 @@
 $primary: #ff5200;
 $green: #16a34a;
 $red: #dc2626;
-$bg-light: #f9fafb;
 $border: #e5e7eb;
 $text-dark: #1f2937;
 $text-gray: #6b7280;
 
+// Narrower measure for reading, left-aligned so the title lines up with every other page.
 .review-container {
-    padding: 2rem;
     max-width: 1000px;
-    margin: 0 auto;
     font-family: 'Inter', sans-serif;
-    padding-bottom: 4rem;
 }
 
 .back-link {
@@ -23,7 +20,7 @@ $text-gray: #6b7280;
 
 
 .header-card {
-    background: white;
+    background: var(--app-surface);
     border: 1px solid $border;
     border-radius: 12px;
     padding: 1.5rem;
@@ -95,7 +92,7 @@ $text-gray: #6b7280;
 }
 
 .question-card {
-    background: white;
+    background: var(--app-surface);
     border: 1px solid $border;
     border-radius: 12px;
     overflow: hidden;
@@ -105,7 +102,7 @@ $text-gray: #6b7280;
         padding: 1rem 1.5rem;
         display: flex; justify-content: space-between; align-items: center;
         border-bottom: 1px solid $border;
-        background: #f9fafb;
+        background: var(--app-surface-muted);
 
         &.correct-bg { background: #f0fdf4; border-bottom-color: #dcfce7; }
         &.wrong-bg { background: #fef2f2; border-bottom-color: #fee2e2; }
@@ -126,7 +123,7 @@ $text-gray: #6b7280;
             }
 
             .points-badge {
-                background: white; border: 1px solid $border;
+                background: var(--app-surface); border: 1px solid $border;
                 padding: 4px 8px; border-radius: 4px;
                 font-size: 0.8rem; font-weight: 600; color: $text-gray;
             }
@@ -185,7 +182,7 @@ $text-gray: #6b7280;
 
     .text-response {
         padding: 1rem;
-        background: #fff;
+        background: var(--app-surface);
         border: 1px solid #d1d5db;
         border-left: 4px solid #3b82f6; 
         border-radius: 6px;
@@ -208,7 +205,7 @@ $text-gray: #6b7280;
     padding: 1rem;
     border: 1px solid $border;
     border-radius: 8px;
-    background: white;
+    background: var(--app-surface);
     transition: all 0.2s;
     position: relative;
 
@@ -305,7 +302,7 @@ $text-gray: #6b7280;
     }
 
     .drag-chip {
-        background-color: #fff; border: 1px solid #e5e7eb;
+        background-color: var(--app-surface); border: 1px solid #e5e7eb;
         padding: 4px 10px; border-radius: 6px;
         font-weight: 600; font-size: 0.9rem; color: #1f2937;
         box-shadow: 0 1px 2px rgba(0,0,0,0.05);
@@ -313,7 +310,7 @@ $text-gray: #6b7280;
     }
 
     .options-pool {
-        background: #f9fafb; border: 1px solid #e5e7eb;
+        background: var(--app-surface-muted); border: 1px solid #e5e7eb;
         border-radius: 8px; padding: 12px; margin-top: 10px;
 
         .pool-label {
@@ -327,7 +324,7 @@ $text-gray: #6b7280;
 
         .pool-item {
             color: #6b7280; border-color: #e5e7eb;
-            background-color: #fff;
+            background-color: var(--app-surface);
         }
     }
 
@@ -369,7 +366,7 @@ $text-gray: #6b7280;
         display: flex;
         align-items: center;
         gap: 6px;
-        background: white;
+        background: var(--app-surface);
         padding: 4px 8px;
         border: 1px solid $primary; 
         border-radius: 8px;
@@ -440,7 +437,7 @@ $text-gray: #6b7280;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: white;
+    background: var(--app-surface);
     margin-right: 2px;
 
     &.checked {

@@ -4,8 +4,8 @@
 
 :host {
   /* R7: warm neutrals from the shell's ramp; no pure black or white. */
-  --chat-surface: #fffefd;
-  --chat-sunk: #f8f6f5;
+  --chat-surface: var(--app-surface);
+  --chat-sunk: var(--app-surface-muted);
   --chat-ink: #181310;
   --chat-ink-muted: #6b625c;
   --chat-ink-faint: #9a918a;

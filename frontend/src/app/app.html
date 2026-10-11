@@ -170,7 +170,9 @@
         </header>
 
         <main class="content">
-          <router-outlet></router-outlet>
+          <app-page-container [bleed]="isQuizRoute">
+            <router-outlet></router-outlet>
+          </app-page-container>
         </main>
       </div>
 

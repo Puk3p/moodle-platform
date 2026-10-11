@@ -2,25 +2,16 @@
 
 $primary: #ff5100;
 $primary-hover: #ea4c00;
-$bg-light: #f8f6f5;
 $border: #e5e7eb;
 $text-main: #181310;
 $text-muted: #6b7280;
 
 :host {
   display: block;
-  background-color: $bg-light;
-  min-height: 100vh;
   font-family: 'Inter', sans-serif;
   color: $text-main;
 }
 
-.page-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
-  padding-bottom: 5rem;
-}
 
 
 .page-header {
@@ -56,20 +47,20 @@ $text-muted: #6b7280;
     }
 
     .back-btn {
-      display: flex; align-items: center; gap: 0.5rem; background: white; border: 1px solid $border;
+      display: flex; align-items: center; gap: 0.5rem; background: var(--app-surface); border: 1px solid $border;
       padding: 0.75rem 1.25rem; border-radius: 0.75rem; font-weight: 700; font-size: 0.875rem; cursor: pointer;
-      &:hover { background: #f9fafb; transform: translateX(-2px); transition: all 0.2s; }
+      &:hover { background: var(--app-surface-muted); transform: translateX(-2px); transition: all 0.2s; }
     }
   }
 }
 
 
 .grade-card {
-  background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); overflow: hidden; border: 1px solid rgba(0,0,0,0.03);
+  background: var(--app-surface); border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); overflow: hidden; border: 1px solid rgba(0,0,0,0.03);
 }
 
 .card-header {
-  background: #f9fafb; padding: 1.5rem 2rem; border-bottom: 1px solid $border; display: flex; justify-content: space-between; align-items: center;
+  background: var(--app-surface-muted); padding: 1.5rem 2rem; border-bottom: 1px solid $border; display: flex; justify-content: space-between; align-items: center;
   
   .course-tag { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: $primary; margin-bottom: 0.25rem; }
   h3 { font-size: 1.2rem; font-weight: 700; margin: 0; }
@@ -95,22 +86,22 @@ $text-muted: #6b7280;
 
     .file-item {
         display: flex; justify-content: space-between; align-items: center;
-        padding: 1rem; background: #f9fafb; border: 1px solid $border; border-radius: 0.75rem; margin-bottom: 0.75rem;
+        padding: 1rem; background: var(--app-surface-muted); border: 1px solid $border; border-radius: 0.75rem; margin-bottom: 0.75rem;
         transition: all 0.2s;
         &:hover { background: #f3f4f6; border-color: color.adjust($border, $lightness: -5%); }
 
         .file-info {
             display: flex; align-items: center; gap: 1rem;
-            .file-icon { width: 2.5rem; height: 2.5rem; background: white; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; color: $primary; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+            .file-icon { width: 2.5rem; height: 2.5rem; background: var(--app-surface); border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; color: $primary; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
             .name { font-weight: 600; font-size: 0.9rem; display: block; }
             .meta { font-size: 0.75rem; color: $text-muted; }
         }
-        .download-btn { width: 2.5rem; height: 2.5rem; display: flex; align-items: center; justify-content: center; border-radius: 0.5rem; color: $text-muted; &:hover { background: white; color: $primary; } }
+        .download-btn { width: 2.5rem; height: 2.5rem; display: flex; align-items: center; justify-content: center; border-radius: 0.5rem; color: $text-muted; &:hover { background: var(--app-surface); color: $primary; } }
     }
 
     .text-response {
         margin-top: 2rem;
-        background: #f9fafb; border: 1px solid $border; border-radius: 0.75rem; padding: 1.5rem;
+        background: var(--app-surface-muted); border: 1px solid $border; border-radius: 0.75rem; padding: 1.5rem;
         h5 { margin: 0 0 0.5rem 0; font-size: 0.9rem; font-weight: 700; }
         p { margin: 0; font-size: 0.95rem; line-height: 1.6; color: #374151; white-space: pre-wrap; }
     }
@@ -119,7 +110,7 @@ $text-muted: #6b7280;
 
 .grading-column {
     flex: 2;
-    background: rgba(249, 250, 251, 0.5);
+    background: rgba(248, 246, 245, 0.5);
     padding: 2rem;
     display: flex;
     flex-direction: column;

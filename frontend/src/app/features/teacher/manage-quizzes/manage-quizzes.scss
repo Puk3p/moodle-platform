@@ -6,7 +6,6 @@ $text-gray: #6b7280;
 $text-light-gray: #9ca3af;
 $bg-light: #f9fafb;
 $border-color: #e5e7eb;
-$white: #ffffff;
 
 @mixin flex-center {
   display: flex;
@@ -15,9 +14,6 @@ $white: #ffffff;
 
 
 .quizzes-container {
-  padding: 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
   font-family: 'Inter', sans-serif;
   height: 100%;
   overflow-y: auto;
@@ -121,7 +117,7 @@ $white: #ffffff;
 
       select {
         appearance: none;
-        background-color: $white;
+        background-color: var(--app-surface);
         border: 1px solid $border-color;
         padding: 0.75rem 2.5rem 0.75rem 1rem;
         border-radius: 0.5rem;
@@ -157,7 +153,7 @@ $white: #ffffff;
 }
 
 .quiz-card {
-  background: $white;
+  background: var(--app-surface);
   border: 1px solid rgba($border-color, 0.8);
   border-radius: 0.75rem;
   padding: 1.25rem;
@@ -173,7 +169,7 @@ $white: #ffffff;
 
   &.draft-card {
       opacity: 0.9;
-      background-color: #fafafa;
+      background-color: var(--app-surface-muted);
   }
 
   .card-top {
@@ -315,7 +311,7 @@ $white: #ffffff;
     width: 800px;
     max-width: 95vw;
     height: 85vh; 
-    background: white;
+    background: var(--app-surface);
     border-radius: 12px;
     display: flex;
     flex-direction: column;
@@ -400,7 +396,7 @@ $white: #ffffff;
     flex: 1;
     overflow-y: auto;
     padding: 2rem;
-    background-color: #ffffff;
+    background-color: var(--app-surface);
 }
 
 
@@ -512,14 +508,14 @@ $white: #ffffff;
     button {
         padding: 0.6rem 1.2rem;
         border: 1px solid $border-color;
-        background: white;
+        background: var(--app-surface);
         border-radius: 6px;
         cursor: pointer;
         font-weight: 500;
         color: $text-gray;
         transition: all 0.2s;
 
-        &:hover { background: #f9fafb; }
+        &:hover { background: var(--app-surface-muted); }
 
         &.active {
             background: #fff1eb;
@@ -561,7 +557,7 @@ $white: #ffffff;
         transition: background 0.1s;
 
         &:last-child { border-bottom: none; }
-        &:hover { background: #f9fafb; }
+        &:hover { background: var(--app-surface-muted); }
         
         &.selected { 
             background: #fff7ed; 
@@ -602,7 +598,7 @@ $white: #ffffff;
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    background: #f9fafb;
+    background: var(--app-surface-muted);
     padding: 0.75rem;
     border-radius: 6px;
     border: 1px solid $border-color;
@@ -615,7 +611,7 @@ $white: #ffffff;
         border: 1px solid #d1d5db; 
         border-radius: 4px; 
         min-width: 150px;
-        background: white;
+        background: var(--app-surface);
     }
     
     .btn-icon-danger { 
@@ -639,7 +635,7 @@ $white: #ffffff;
 
 
 .review-card {
-    background: #f9fafb;
+    background: var(--app-surface-muted);
     padding: 2rem;
     border-radius: 8px;
     border: 1px solid $border-color;
@@ -671,7 +667,7 @@ $white: #ffffff;
     justify-content: space-between; 
     border-top: 1px solid $border-color;
     padding: 1.25rem 2rem;
-    background: white;
+    background: var(--app-surface);
     border-bottom-left-radius: 12px;
     border-bottom-right-radius: 12px;
     
@@ -703,12 +699,12 @@ $white: #ffffff;
         border-radius: 6px;
         cursor: pointer;
         transition: all 0.2s;
-        background: white;
+        background: var(--app-surface);
         user-select: none;
 
         &:hover {
             border-color: $text-light-gray;
-            background: $bg-light;
+            background: var(--app-surface-muted);
         }
 
         &.selected {
@@ -752,7 +748,7 @@ $white: #ffffff;
         appearance: none;
         cursor: pointer;
         padding-right: 2.5rem !important; 
-        background-color: white;
+        background-color: var(--app-surface);
     }
 
     .select-icon {
@@ -775,7 +771,7 @@ $white: #ffffff;
     position: absolute;
     top: 100%;
     right: 0;
-    background: white;
+    background: var(--app-surface);
     border: 1px solid #e5e7eb;
     border-radius: 6px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);

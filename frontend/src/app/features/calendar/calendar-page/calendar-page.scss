@@ -2,8 +2,6 @@
 
 $primary-orange: #ff5200;
 $primary-orange-light: rgba(255, 82, 0, 0.1);
-$bg-light: #f8f9fa; // Un gri foarte deschis, mai modern
-$bg-white: #ffffff;
 $text-dark: #1f2937; // Un negru mai soft (Gray-800)
 $text-gray: #6b7280; // Gray-500
 $border-color: #e5e7eb; // Gray-200
@@ -19,7 +17,6 @@ $radius-sm: 12px;
 }
 
 .calendar-page {
-  background: $bg-light;
   min-height: 100%;
   display: flex;
   flex-direction: column;
@@ -27,22 +24,15 @@ $radius-sm: 12px;
 
 .calendar-layout {
   flex: 1;
-  padding: 32px 48px;
   box-sizing: border-box;
   display: grid;
   grid-template-columns: 1fr 340px; // Fixăm lățimea sidebar-ului
   gap: 40px;
-  max-width: 1600px;
-  margin: 0 auto;
   width: 100%;
 
   @media (max-width: 1200px) {
     grid-template-columns: 1fr;
     gap: 32px;
-  }
-  
-  @media (max-width: 600px) {
-    padding: 20px;
   }
 }
 
@@ -56,7 +46,8 @@ $radius-sm: 12px;
 
 .calendar-header {
   display: flex;
-  align-items: center;
+  // Baseline, not center: the taller toggle would push the title below the frame's top edge.
+  align-items: baseline;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 16px;
@@ -73,7 +64,7 @@ $radius-sm: 12px;
 .view-toggle {
   display: inline-flex;
   padding: 4px;
-  background: $bg-white;
+  background: var(--app-surface);
   border-radius: 99px;
   border: 1px solid $border-color;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -104,7 +95,7 @@ $radius-sm: 12px;
 // --- CALENDAR CARD ---
 
 .calendar-card {
-  background: $bg-white;
+  background: var(--app-surface);
   border-radius: $radius-card;
   border: 1px solid $border-color;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 
@@ -142,7 +133,7 @@ $radius-sm: 12px;
   height: 36px;
   border-radius: 50%;
   border: 1px solid $border-color;
-  background: #fff;
+  background: var(--app-surface);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -151,7 +142,7 @@ $radius-sm: 12px;
   transition: all 0.2s;
 
   &:hover {
-    background: #f9fafb;
+    background: var(--app-surface-muted);
     border-color: #d1d5db;
     color: $text-dark;
     transform: translateY(-1px);
@@ -166,7 +157,7 @@ $radius-sm: 12px;
   border-radius: 8px;
   border: 1px solid $border-color;
   padding: 8px 16px;
-  background: #fff;
+  background: var(--app-surface);
   font-size: 0.9rem;
   font-weight: 600;
   color: $text-dark;
@@ -209,7 +200,7 @@ $radius-sm: 12px;
 }
 
 .day-cell {
-  background: #fff;
+  background: var(--app-surface);
   min-height: 100px; // Celule mai înalte
   padding: 8px;
   position: relative;
@@ -218,11 +209,11 @@ $radius-sm: 12px;
   transition: background 0.2s;
 
   &:hover {
-    background: #fcfcfc; // Foarte subtil highlight la hover
+    background: var(--app-surface-muted);
   }
 
   &.muted {
-    background: #f9fafb; // Zilele din alta lună ușor gri
+    background: var(--app-surface-muted); // Zilele din alta lună ușor gri
     .day-number {
       color: #d1d5db;
     }
@@ -321,7 +312,7 @@ $radius-sm: 12px;
 }
 
 .widget-card {
-  background: $bg-white;
+  background: var(--app-surface);
   border-radius: $radius-card;
   border: 1px solid $border-color;
   padding: 24px;

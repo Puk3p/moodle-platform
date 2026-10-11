@@ -116,7 +116,7 @@
   font-size: 0.85rem;
   border-radius: 999px;
   border: 1px solid rgba(0, 0, 0, 0.09);
-  background: white;
+  background: var(--app-surface);
 }
 
 
@@ -231,7 +231,7 @@
   transform: translateX(10px) scale(0.98);
   pointer-events: none;
   transition: all 0.25s ease;
-  background: white;
+  background: var(--app-surface);
   border-radius: 18px;
   padding: 20px 22px;
   box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);

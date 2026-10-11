@@ -2,13 +2,7 @@ $primary: #ff5100;
 $text-dark: #181310;
 $text-gray: #6b7280;
 $border-color: #e5e7eb;
-$bg-light: #f9fafb;
 
-.students-page {
-  padding: 0;
-  max-width: 1200px;
-  margin: 0 auto;
-}
 
 .page-nav {
   margin-bottom: 24px;
@@ -69,7 +63,7 @@ $bg-light: #f9fafb;
   gap: 16px;
 
   .stat-card {
-    background: white;
+    background: var(--app-surface);
     border: 1px solid $border-color;
     border-radius: 12px;
     padding: 12px 16px;
@@ -139,18 +133,18 @@ $bg-light: #f9fafb;
       padding: 8px 16px;
       border: 1px solid $border-color;
       border-radius: 8px;
-      background: white;
+      background: var(--app-surface);
       font-size: 14px;
       font-weight: 600;
       color: #374151;
       cursor: pointer;
-      &:hover { background: #f9fafb; }
+      &:hover { background: var(--app-surface-muted); }
     }
   }
 }
 
 .table-container {
-  background: white;
+  background: var(--app-surface);
   border: 1px solid $border-color;
   border-radius: 12px;
   overflow: hidden;
@@ -169,7 +163,7 @@ $bg-light: #f9fafb;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       border-bottom: 1px solid $border-color;
-      background: #f9fafb;
+      background: var(--app-surface-muted);
     }
 
     td {
@@ -181,7 +175,7 @@ $bg-light: #f9fafb;
     }
 
     tr:last-child td { border-bottom: none; }
-    tr:hover { background-color: #fcfcfc; }
+    tr:hover { background-color: var(--app-surface-muted); }
   }
 }
 
@@ -220,7 +214,7 @@ $bg-light: #f9fafb;
   font-size: 12px;
   font-weight: 500;
   color: #374151;
-  background: white;
+  background: var(--app-surface);
 }
 
 .progress-wrapper {
@@ -253,7 +247,7 @@ $bg-light: #f9fafb;
 .btn-view {
   padding: 6px 16px;
   border: 1px solid $border-color;
-  background: white;
+  background: var(--app-surface);
   border-radius: 6px;
   font-size: 12px;
   font-weight: 600;
@@ -263,7 +257,7 @@ $bg-light: #f9fafb;
 
   &:hover {
     border-color: #d1d5db;
-    background: #f9fafb;
+    background: var(--app-surface-muted);
   }
 }
 
@@ -272,7 +266,7 @@ $bg-light: #f9fafb;
   justify-content: space-between;
   align-items: center;
   padding: 16px 24px;
-  background: white;
+  background: var(--app-surface);
   border-top: 1px solid $border-color;
 
   .footer-text {
@@ -287,13 +281,13 @@ $bg-light: #f9fafb;
     .btn-page {
       padding: 6px 12px;
       border: 1px solid $border-color;
-      background: white;
+      background: var(--app-surface);
       border-radius: 6px;
       font-size: 12px;
       font-weight: 500;
       cursor: pointer;
       
-      &:hover:not(:disabled) { background: #f9fafb; }
+      &:hover:not(:disabled) { background: var(--app-surface-muted); }
       &:disabled { opacity: 0.5; cursor: not-allowed; }
     }
   }

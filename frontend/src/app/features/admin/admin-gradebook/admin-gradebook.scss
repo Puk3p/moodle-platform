@@ -2,19 +2,10 @@ $primary: #ff5100;
 $border: #e7deda; 
 $text-main: #181310;
 $text-sec: #8d6d5e;
-$bg-page: #f8f6f5;
 
 :host {
   display: block;
   font-family: 'Inter', sans-serif;
-  background-color: $bg-page;
-  min-height: 100vh;
-}
-
-.admin-container {
-  padding: 2rem;
-  max-width: 1300px;
-  margin: 0 auto;
 }
 
 
@@ -35,7 +26,7 @@ $bg-page: #f8f6f5;
 
   .back-btn {
     display: flex; align-items: center; gap: 0.5rem;
-    background: white; border: 1px solid $border;
+    background: var(--app-surface); border: 1px solid $border;
     padding: 0.6rem 1.2rem; border-radius: 12px;
     font-size: 0.9rem; font-weight: 600; color: $text-main; cursor: pointer;
     transition: all 0.2s;
@@ -45,7 +36,7 @@ $bg-page: #f8f6f5;
 
 
 .main-card {
-  background: white; border: 1px solid $border;
+  background: var(--app-surface); border: 1px solid $border;
   border-radius: 16px; overflow: hidden;
   box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
@@ -70,7 +61,7 @@ $bg-page: #f8f6f5;
     display: flex; gap: 0.75rem;
     .select-wrapper select {
       padding: 0.75rem 2rem 0.75rem 1rem;
-      background-color: #f8f6f5; border: 1px solid $border; border-radius: 12px;
+      background-color: var(--app-surface-muted); border: 1px solid $border; border-radius: 12px;
       font-size: 0.9rem; font-weight: 500; color: $text-main; cursor: pointer; outline: none;
       &:hover { background-color: #f0ebe9; }
       &:focus { border-color: $primary; }
@@ -84,7 +75,7 @@ $bg-page: #f8f6f5;
 table {
   width: 100%; border-collapse: collapse; text-align: left;
   thead {
-    background: #faf9f8; border-bottom: 1px solid $border;
+    background: var(--app-surface-muted); border-bottom: 1px solid $border;
     th {
       padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 700; 
       color: $text-sec; text-transform: uppercase; letter-spacing: 0.05em;
@@ -93,7 +84,7 @@ table {
   tbody tr {
     border-bottom: 1px solid $border; transition: background 0.1s;
     &:last-child { border-bottom: none; }
-    &:hover { background: #fffbf8; }
+    &:hover { background: var(--app-surface-muted); }
   }
   td { padding: 1rem 1.5rem; vertical-align: middle; font-size: 0.9rem; }
 }

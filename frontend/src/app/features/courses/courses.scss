@@ -1,6 +1,4 @@
 $primary-orange: #ff5100;
-$bg-light: #f8f6f5;
-$bg-white: #ffffff;
 $text-dark: #181310;
 $text-gray: #6b7280;
 $border-color: rgba(229, 231, 235, 0.8);
@@ -13,12 +11,6 @@ $font-family: 'Inter', sans-serif;
 }
 
 
-.courses-page {
-  padding: 40px;
-  max-width: 1400px;
-  margin: 0 auto;
-  box-sizing: border-box;
-}
 
 
 .welcome-section {
@@ -67,7 +59,7 @@ h2 {
 }
 
 .course-card-horizontal {
-  background: $bg-white;
+  background: var(--app-surface);
   border-radius: 30px;
   padding: 20px;
   border: 1px solid $border-color;
@@ -188,7 +180,7 @@ h2 {
 }
 
 .completed-list {
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--app-surface);
   border: 1px solid $border-color;
   border-radius: 16px;
   overflow: hidden;
@@ -228,7 +220,7 @@ h2 {
 
 .widget-card {
   .widget-list {
-    background: $bg-white;
+    background: var(--app-surface);
     border-radius: 30px;
     border: 1px solid $border-color;
     padding: 20px;

@@ -1,12 +1,9 @@
 $primary: #f95306;
 $primary-hover: #c2410b; 
-$bg-light: #f8f6f5;
 $bg-dark: #23150f;
-$card-light: #ffffff;
 $border-color: #e2e8f0; 
 $text-main: #0f172a; 
 $text-muted: #64748b; 
-$input-bg: #f8fafc; 
 
 @use '../auth-motion' as motion;
 @use '../auth-hero' as hero;
@@ -14,7 +11,7 @@ $input-bg: #f8fafc;
 :host {
   display: block;
   min-height: 100vh;
-  background-color: $bg-light;
+  background-color: var(--app-bg);
   font-family: 'Inter', sans-serif;
 }
 
@@ -57,7 +54,7 @@ $input-bg: #f8fafc;
 .auth-card {
   width: 100%;
   max-width: 440px;
-  background-color: $card-light;
+  background-color: var(--app-surface);
   border-radius: 1rem;
   box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.05);
   border: 1px solid $border-color;
@@ -162,7 +159,7 @@ label {
     width: 100%;
     height: 3rem;
     border-radius: 0.75rem;
-    background-color: $input-bg;
+    background-color: var(--app-surface-muted);
     border: 1px solid $border-color;
     padding: 0 1rem 0 2.75rem; 
     font-size: 0.875rem;
@@ -177,7 +174,7 @@ label {
     &:focus {
       border-color: $primary;
       box-shadow: 0 0 0 2px rgba($primary, 0.2);
-      background-color: #fff;
+      background-color: var(--app-surface);
     }
 
     &.error {
@@ -271,7 +268,7 @@ label {
 
   span {
     position: relative;
-    background-color: $card-light;
+    background-color: var(--app-surface);
     padding: 0 1rem;
     font-size: 0.75rem;
     font-weight: 600;
@@ -283,7 +280,7 @@ label {
 .google-btn {
   height: 3rem;
   width: 100%;
-  background-color: white;
+  background-color: var(--app-surface);
   border: 1px solid $border-color;
   border-radius: 0.75rem;
   color: #334155;
@@ -297,7 +294,7 @@ label {
     transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease;
 
   &:hover {
-    background-color: #f8fafc;
+    background-color: var(--app-surface-muted);
   }
 
   svg { width: 1.25rem; height: 1.25rem; }
@@ -305,7 +302,7 @@ label {
 
 .auth-footer {
   padding: 1.5rem;
-  background-color: #f8fafc; 
+  background-color: var(--app-surface-muted); 
   border-top: 1px solid $border-color;
   text-align: center;
 
@@ -333,13 +330,13 @@ label {
 }
 @media (max-width: 600px) {
   :host {
-    background-color: #ffffff; /* Fundal alb pe mobil */
+    background-color: var(--app-surface); /* Fundal alb pe mobil */
   }
 
   .auth-container {
     padding: 0;
     justify-content: flex-start; /* Aliniere sus, nu la centru (pt tastatură) */
-    background-color: #ffffff;
+    background-color: var(--app-surface);
     min-height: 100vh;
   }
 
@@ -402,13 +399,13 @@ label {
 
 @media (max-width: 600px) {
   :host {
-    background-color: #ffffff; 
+    background-color: var(--app-surface); 
   }
 
   .auth-container {
     padding: 0;
     justify-content: flex-start; 
-    background-color: #ffffff;
+    background-color: var(--app-surface);
     min-height: 100vh;
   }
 

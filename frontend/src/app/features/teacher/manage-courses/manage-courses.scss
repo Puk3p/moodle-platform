@@ -1,14 +1,10 @@
 @use 'sass:color';
 
 $primary: #ff5100;
-$bg-light: #f8f6f5;
 $border: rgba(148, 163, 184, 0.45);
 $text-dark: #181310;
 $text-gray: #6b7280;
 
-.manage-courses-page {
-  padding: 0;
-}
 
 .page-header {
   display: flex;
@@ -49,7 +45,7 @@ $text-gray: #6b7280;
   padding: 8px 16px;
   border-radius: 8px;
   border: 1px solid #e5e7eb;
-  background-color: white;
+  background-color: var(--app-surface);
   font-size: 14px;
   font-weight: 500;
   color: #374151;
@@ -79,7 +75,7 @@ $text-gray: #6b7280;
     color: $text-gray;
 
     &.active {
-      background: white;
+      background: var(--app-surface);
       color: $text-dark;
       box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
@@ -113,7 +109,7 @@ $text-gray: #6b7280;
 }
 
 .course-card {
-  background: white;
+  background: var(--app-surface);
   border: 1px solid rgba(229, 231, 235, 0.8);
   border-radius: 12px;
   padding: 20px;
@@ -217,7 +213,7 @@ $text-gray: #6b7280;
     font-size: 12px;
     font-weight: 500;
     
-    background: #f9fafb;
+    background: var(--app-surface-muted);
     border: 1px solid #f3f4f6;
     color: #4b5563;
 
@@ -260,13 +256,13 @@ $text-gray: #6b7280;
   font-weight: 600;
   border-radius: 8px;
   border: 1px solid #e5e7eb;
-  background: white;
+  background: var(--app-surface);
   color: #374151;
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    background: #f9fafb;
+    background: var(--app-surface-muted);
   }
 
   &.primary {
@@ -314,7 +310,7 @@ $text-gray: #6b7280;
   align-items: start;
   gap: 16px;
   padding: 20px;
-  background: white;
+  background: var(--app-surface);
   border: 1px solid rgba(229, 231, 235, 0.8);
   border-radius: 12px;
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
@@ -378,7 +374,7 @@ $text-gray: #6b7280;
 }
 
 .modal-content {
-  background: white;
+  background: var(--app-surface);
   width: 500px;
   max-width: 90%;
   border-radius: 12px;
@@ -395,7 +391,7 @@ $text-gray: #6b7280;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #fff;
+  background: var(--app-surface);
 
   h2 {
     margin: 0;
@@ -417,7 +413,7 @@ $text-gray: #6b7280;
 
 .modal-body {
   padding: 24px;
-  background: #fff;
+  background: var(--app-surface);
 }
 
 .form-row {
@@ -453,7 +449,7 @@ $text-gray: #6b7280;
     color: #1f2937;
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
-    background-color: #fff;
+    background-color: var(--app-surface);
     box-sizing: border-box; 
 
     &:focus {
@@ -481,7 +477,7 @@ $text-gray: #6b7280;
 
 .modal-footer {
   padding: 16px 24px;
-  background: #f9fafb;
+  background: var(--app-surface-muted);
   border-top: 1px solid #e5e7eb;
   display: flex;
   justify-content: flex-end;
@@ -498,7 +494,7 @@ $text-gray: #6b7280;
   }
 
   .btn-cancel {
-    background: white;
+    background: var(--app-surface);
     border: 1px solid #d1d5db;
     color: #374151;
     &:hover { background: #f3f4f6; }

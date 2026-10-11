@@ -1,14 +1,10 @@
 $primary: #ff5200;
 $text-dark: #181310;
 $text-gray: #6b7280;
-$bg-light: #f9fafb;
 $border: #e5e7eb;
 
 
 .results-container {
-    padding: 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
     font-family: 'Inter', sans-serif;
     color: $text-dark;
 }
@@ -107,7 +103,7 @@ $border: #e5e7eb;
     margin-bottom: 2.5rem;
 
     .stat-card {
-        background: white;
+        background: var(--app-surface);
         border: 1px solid $border;
         border-radius: 12px;
         padding: 1.5rem;
@@ -141,7 +137,7 @@ $border: #e5e7eb;
 
 
 .table-container {
-    background: white;
+    background: var(--app-surface);
     border: 1px solid $border;
     border-radius: 12px;
     overflow: hidden; 
@@ -154,7 +150,7 @@ $border: #e5e7eb;
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid $border;
-    background: #ffffff; 
+    background: var(--app-surface); 
 
     .search-wrapper {
         position: relative;
@@ -183,7 +179,7 @@ $border: #e5e7eb;
         
         .btn-filter {
             display: flex; align-items: center; gap: 0.5rem;
-            background: white; border: 1px solid $border;
+            background: var(--app-surface); border: 1px solid $border;
             padding: 0.6rem 1rem; border-radius: 8px;
             color: #4b5563; font-size: 0.85rem; font-weight: 500;
             cursor: pointer;
@@ -191,7 +187,7 @@ $border: #e5e7eb;
             
             fa-icon { font-size: 0.8rem; color: #9ca3af; }
 
-            &:hover { background: #f9fafb; border-color: #d1d5db; }
+            &:hover { background: var(--app-surface-muted); border-color: #d1d5db; }
         }
     }
 }
@@ -208,7 +204,7 @@ $border: #e5e7eb;
         letter-spacing: 0.05em;
         color: #6b7280;
         font-weight: 600;
-        background: #f9fafb;
+        background: var(--app-surface-muted);
         border-bottom: 1px solid $border;
     }
 
@@ -222,7 +218,7 @@ $border: #e5e7eb;
 
     .hover-row {
         transition: background 0.1s;
-        &:hover { background: #fafafa; }
+        &:hover { background: var(--app-surface-muted); }
     }
 
     
@@ -286,19 +282,19 @@ $border: #e5e7eb;
 .pagination {
     padding: 1rem 1.5rem;
     display: flex; justify-content: space-between; align-items: center;
-    background: #ffffff;
+    background: var(--app-surface);
     font-size: 0.85rem; color: $text-gray;
     border-top: 1px solid $border;
 
     .controls button {
-        background: white; border: 1px solid $border;
+        background: var(--app-surface); border: 1px solid $border;
         width: 34px; height: 34px; border-radius: 8px;
         color: $text-gray; margin-left: 0.5rem;
         cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
         transition: all 0.1s;
 
         &:hover:not(:disabled) { border-color: $primary; color: $primary; background: #fff7ed; }
-        &:disabled { opacity: 0.5; cursor: not-allowed; background: #f9fafb; }
+        &:disabled { opacity: 0.5; cursor: not-allowed; background: var(--app-surface-muted); }
         
         fa-icon { font-size: 0.8rem; }
     }

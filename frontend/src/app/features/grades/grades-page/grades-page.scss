@@ -1,6 +1,4 @@
 $primary-orange: #ff5200;
-$bg-light: #f8f6f5;
-$bg-white: #ffffff;
 $text-dark: #181310;
 $text-gray: #6b7280;
 $border-color: rgba(229, 231, 235, 0.8);
@@ -23,9 +21,6 @@ $font-family: 'Inter', sans-serif;
   color: $text-dark;
 }
 
-.grades-page {
-  background: $bg-light;
-}
 
 
 .page-header {
@@ -63,7 +58,7 @@ $font-family: 'Inter', sans-serif;
   display: inline-flex;
   border-radius: 999px;
   border: 1px solid $border-color;
-  background: $bg-white;
+  background: var(--app-surface);
   padding: 3px;
   gap: 4px;
 
@@ -106,7 +101,7 @@ $font-family: 'Inter', sans-serif;
 
 
 .card {
-  background: $bg-white;
+  background: var(--app-surface);
   border-radius: 16px;
   border: 1px solid $border-color;
   padding: 18px 20px;
@@ -176,12 +171,12 @@ tbody {
     cursor: pointer;
 
     &:hover {
-      background: #f9fafb;
+      background: var(--app-surface-muted);
     }
   }
 
   &.open {
-    background: #f9fafb;
+    background: var(--app-surface-muted);
   }
 }
 
@@ -339,7 +334,7 @@ tbody {
 
 .expanded-content {
   padding: 4px 16px 16px;
-  background: #f9fafb;
+  background: var(--app-surface-muted);
 }
 
 .expanded-heading {
@@ -366,7 +361,7 @@ tbody {
   gap: 12px;
   padding: 12px;
   border-radius: 12px;
-  background: $bg-white;
+  background: var(--app-surface);
 }
 
 .recent-icon {
@@ -539,7 +534,7 @@ tbody {
     transition: background-color 150ms ease;
 
     &:hover {
-      background: #f9fafb;
+      background: var(--app-surface-muted);
     }
 
     &:focus-visible {
@@ -667,7 +662,7 @@ tbody {
 .retry-button {
   border: 1px solid $border-color;
   border-radius: 999px;
-  background: $bg-white;
+  background: var(--app-surface);
   padding: 6px 16px;
   font: inherit;
   font-size: 0.85rem;
