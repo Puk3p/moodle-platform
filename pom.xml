@@ -19,5 +19,7 @@
         <module>backend</module>
         <module>services/messaging-service</module>
         <module>edge/gateway</module>
+        <!-- Runs only with -Pe2e, against a running stack (deploy/compose.yml). -->
+        <module>e2e</module>
     </modules>
 </project>

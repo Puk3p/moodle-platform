@@ -137,6 +137,15 @@ class GatewayIT {
     }
 
     @Test
+    void theClientAddressReachesCoreThroughATrustedProxy() throws Exception {
+        // The test client connects from loopback, a trusted proxy (as nginx would be): the chain
+        // it reports is kept and its own address appended.
+        send(get("/api/courses").header("X-Forwarded-For", "203.0.113.9").build());
+        RecordedRequest atCore = take(CORE_REQUESTS, "/api/courses");
+        assertThat(atCore.getHeader("X-Forwarded-For")).isEqualTo("203.0.113.9, 127.0.0.1");
+    }
+
+    @Test
     void coresInternalApiIsNeverReachable() throws Exception {
         assertThat(send(get("/internal/directory/users/1").build()).statusCode()).isEqualTo(404);
         assertThat(send(get("/internal/.well-known/jwks.json").build()).statusCode())

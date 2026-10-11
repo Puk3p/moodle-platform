@@ -12,6 +12,9 @@ spring:
           # gateway then appends the client it sees, and core takes the client IP from there
           # (rate limits, session logs). Anyone else's X-Forwarded-* is ignored.
           trusted-proxies: ${TRUSTED_PROXIES:127\.0\.0\.1|0:0:0:0:0:0:0:1|::1|10\..*|192\.168\..*|172\.(1[6-9]|2[0-9]|3[01])\..*}
+          # X-Forwarded-For is written by ClientAddressHeadersFilter instead (see there).
+          x-forwarded:
+            for-enabled: false
           routes:
             # Core's service-to-service API is never reachable from outside.
             - id: internal-api-blocked

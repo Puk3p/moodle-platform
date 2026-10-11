@@ -1,0 +1,14 @@
+# Only the Java modules are needed to build the images.
+.git
+.github
+.claude
+frontend
+node_modules
+**/target
+**/node_modules
+**/uploads
+**/profile-pictures
+**/.idea
+**/.DS_Store
+**/* 2.*
+deploy/.env
