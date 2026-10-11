@@ -1,0 +1,132 @@
+package moodlev2.identity.infrastructure.security;
+
+import io.jsonwebtoken.*;
+import io.jsonwebtoken.security.Keys;
+import java.nio.charset.StandardCharsets;
+import java.security.Key;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import moodlev2.identity.domain.auth.ports.TokenServicePort;
+import moodlev2.identity.domain.user.Role;
+import moodlev2.identity.domain.user.User;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+@Component
+public final class JwtServiceAdapter implements TokenServicePort {
+    private final Key signingKey;
+    private final String issuer;
+
+    // link util, de aici am luat
+    // https://medium.com/@th.chousiadas/spring-security-architecture-of-jwt-authentication-a7967a8ee309
+    public JwtServiceAdapter(
+            @Value("${security.jwt.secret}") String secret,
+            @Value("${security.jwt.issuer:moodlev2}") String issuer) {
+        this.signingKey = buildKey(secret);
+        this.issuer = issuer;
+    }
+
+    private static Key buildKey(String secret) {
+        if (secret == null || secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+            throw new IllegalStateException(
+                    "JWT secret (security.jwt.secret) must be set and at least 32 bytes long. "
+                            + "Configure a strong, random value via the JWT_SECRET environment"
+                            + " variable.");
+        }
+        if (secret.contains("your-secret-key")) {
+            throw new IllegalStateException(
+                    "JWT secret is still set to the example placeholder. Set a real JWT_SECRET"
+                            + " before running in production.");
+        }
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Override
+    public String generateToken(User user, Duration validity, Set<String> scopes) {
+        Instant now = Instant.now();
+        Instant expiresAt = now.plus(validity);
+
+        List<String> roleName = user.getRoles().stream().map(Enum::name).toList();
+
+        String scopesString;
+        if (scopes == null || scopes.isEmpty()) {
+            return null;
+        } else {
+            scopesString = String.join(" ", scopes);
+        }
+
+        JwtBuilder builder =
+                Jwts.builder()
+                        .setId(UUID.randomUUID().toString())
+                        .setSubject(String.valueOf(user.getId()))
+                        .setIssuer(issuer)
+                        .setIssuedAt(Date.from(now))
+                        .setExpiration(Date.from(expiresAt))
+                        .claim("uid", user.getId())
+                        .claim("email", user.getEmail())
+                        .claim("roles", roleName);
+
+        if (scopesString != null) {
+            builder.claim("scopes", scopesString);
+        }
+
+        return builder.signWith(signingKey, SignatureAlgorithm.HS256).compact();
+    }
+
+    @Override
+    public TokenPayload parse(String token) {
+        try {
+            Jws<Claims> jws =
+                    Jwts.parser()
+                            .requireIssuer(issuer)
+                            .setSigningKey(signingKey)
+                            .build()
+                            .parseClaimsJws(token);
+
+            Claims claims = jws.getBody();
+
+            String jti = claims.getId();
+
+            Long userId = claims.get("uid", Long.class);
+            if (userId == null) {
+                throw new JwtException("Invalid user ID in token");
+            }
+
+            String email = claims.get("email", String.class);
+
+            List<String> roleNames = claims.get("roles", List.class);
+
+            Set<Role> roles =
+                    roleNames == null
+                            ? Set.of()
+                            : roleNames.stream().map(Role::valueOf).collect(Collectors.toSet());
+
+            Instant expiresAt = claims.getExpiration().toInstant();
+
+            String scopeClaim = claims.get("scopes", String.class);
+            Set<String> scopes =
+                    scopeClaim == null || scopeClaim.isBlank()
+                            ? Set.of()
+                            : Set.of(scopeClaim.trim().split("\\s+"));
+
+            return new TokenPayload(jti, userId, email, roles, expiresAt, scopes);
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid token", e);
+        }
+    }
+
+    @Override
+    public boolean isValid(String token) {
+        try {
+            TokenPayload payload = parse(token);
+            return payload.expiresAt().isAfter(Instant.now());
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+}

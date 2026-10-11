@@ -1,0 +1,58 @@
+package moodlev2.academic.infrastructure.persistence.entity;
+
+import jakarta.persistence.*;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name = "module_items")
+@Getter
+@Setter
+@NoArgsConstructor
+public class ModuleItemEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "module_id")
+    private CourseModuleEntity module;
+
+    private String title;
+    private String type;
+
+    @Column(name = "file_type")
+    private String fileType;
+
+    @Column(name = "file_size")
+    private String fileSize;
+
+    private String url;
+
+    @Column(name = "sort_order")
+    private Integer sortOrder;
+
+    @Column(name = "is_assignment")
+    private Boolean isAssignment = false;
+
+    @Column(name = "is_visible", nullable = false)
+    private boolean isVisible = true;
+
+    @Column(name = "due_date")
+    private LocalDateTime dueDate;
+
+    @Column(name = "max_grade")
+    private Integer maxGrade;
+
+    @Column(name = "submission_type")
+    private String submissionType;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    @Column(name = "created_at")
+    private Instant createdAt;
+}

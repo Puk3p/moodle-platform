@@ -1,0 +1,105 @@
+package moodlev2.academic.web.course;
+
+import jakarta.validation.Valid;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
+import moodlev2.academic.application.course.GetCourseCreateService;
+import moodlev2.academic.application.course.GetCourseDetailsService;
+import moodlev2.academic.application.course.GetCourseEditService;
+import moodlev2.academic.application.course.GetCoursePreviewService;
+import moodlev2.academic.application.course.GetCourseResourcesService;
+import moodlev2.academic.application.course.GetCoursesPageService;
+import moodlev2.academic.application.course.GetEnrolledStudentsService;
+import moodlev2.academic.application.course.GetSimpleCoursesService;
+import moodlev2.academic.application.course.MyCoursesService;
+import moodlev2.academic.application.course.UpdateCourseService;
+import moodlev2.academic.web.course.dto.CourseDetailsResponse;
+import moodlev2.academic.web.course.dto.CoursesPageResponse;
+import moodlev2.academic.web.course.dto.CreateCourseDto;
+import moodlev2.academic.web.course.dto.DashboardHomeResponse;
+import moodlev2.academic.web.course.dto.ResourceDto;
+import moodlev2.academic.web.course.dto.edit.CourseEditDto;
+import moodlev2.academic.web.course.dto.preview.CoursePreviewDto;
+import moodlev2.academic.web.course.dto.students.EnrolledStudentsResponse;
+import moodlev2.shared.web.SimpleDto;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/courses")
+@RequiredArgsConstructor
+public class CourseController {
+
+    private final MyCoursesService myCoursesUseCase;
+    private final GetCoursesPageService getCoursesPageService;
+    private final GetCourseDetailsService getCourseDetailsUseCase;
+    private final GetCoursePreviewService getCoursePreviewService;
+    private final GetCourseResourcesService getCourseResourcesService;
+    private final GetCourseEditService getCourseEditService;
+    private final GetEnrolledStudentsService getEnrolledStudentsService;
+    private final UpdateCourseService updateCourseService;
+    private final GetSimpleCoursesService getSimpleCoursesService;
+    private final GetCourseCreateService getCourseCreateService;
+
+    @GetMapping("/my-dashboard")
+    public DashboardHomeResponse getMyDashboard(Authentication authentication) {
+        String email = (authentication != null) ? authentication.getName() : null;
+        return myCoursesUseCase.getDashboardForUserEmail(email);
+    }
+
+    @GetMapping
+    public CoursesPageResponse getAllCoursesPage(Authentication authentication) {
+        String email = (authentication != null) ? authentication.getName() : null;
+        return getCoursesPageService.getCoursesPageForUser(email);
+    }
+
+    @GetMapping("/{id}")
+    public CourseDetailsResponse getCourseDetails(
+            @PathVariable String id, Authentication authentication) {
+        String email = (authentication != null) ? authentication.getName() : "anonymous";
+
+        return getCourseDetailsUseCase.getCourseDetails(id, email);
+    }
+
+    @GetMapping("/{code}/preview")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    public CoursePreviewDto getCoursePreview(@PathVariable String code) {
+        return getCoursePreviewService.getPreviewData(code);
+    }
+
+    @GetMapping("/{code}/resources")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    public List<ResourceDto> getCourseResources(@PathVariable String code) {
+        return getCourseResourcesService.getResourcesByCourse(code);
+    }
+
+    @GetMapping("/{code}/edit")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    public CourseEditDto getCourseForEdit(@PathVariable String code) {
+        return getCourseEditService.getCourseForEdit(code);
+    }
+
+    @GetMapping("/{code}/students")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    public EnrolledStudentsResponse getEnrolledStudents(@PathVariable String code) {
+        return getEnrolledStudentsService.getEnrolledStudents(code);
+    }
+
+    @PutMapping("/{code}")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    public void updateCourse(@PathVariable String code, @RequestBody CourseEditDto dto) {
+        updateCourseService.updateCourse(code, dto);
+    }
+
+    @GetMapping("/list")
+    public List<SimpleDto> getCoursesForDropdown() {
+        return getSimpleCoursesService.getCoursesForDropdown();
+    }
+
+    @PostMapping("/create")
+    @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
+    public void createCourse(@Valid @RequestBody CreateCourseDto dto) {
+        getCourseCreateService.createCourse(dto);
+    }
+}

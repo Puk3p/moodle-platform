@@ -12,16 +12,19 @@
 
     <!-- Exclude DTO / request / response records -->
     <Match>
-        <Package name="~moodlev2\.web\..*\.dto"/>
+        <Package name="~moodlev2\.\w+\.web\..*\.dto"/>
     </Match>
 
     <!-- Exclude JPA entities (mutable by design) -->
     <Match>
-        <Package name="moodlev2.infrastructure.persistence.jpa.entity"/>
+        <Package name="~moodlev2\.\w+\.infrastructure\.persistence\.entity"/>
     </Match>
 
     <!-- Exclude Spring config classes -->
     <Match>
-        <Package name="moodlev2.infrastructure.config"/>
+        <Package name="moodlev2.platform.config"/>
+    </Match>
+    <Match>
+        <Class name="moodlev2.messaging.infrastructure.websocket.WebSocketConfig"/>
     </Match>
 </FindBugsFilter>

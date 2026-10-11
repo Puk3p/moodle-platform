@@ -1,5 +1,0 @@
-package moodlev2.web.resource.dto;
-
-import java.util.List;
-
-public record ResourcesPageResponse(List<CourseResourcesDto> courses) {}

@@ -1,0 +1,33 @@
+package moodlev2.academic.infrastructure.mapper;
+
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import moodlev2.academic.infrastructure.persistence.entity.ModuleItemEntity;
+import moodlev2.academic.web.course.dto.ResourceDto;
+import org.springframework.stereotype.Component;
+
+@Component
+public class ResourceMapper {
+
+    private final DateTimeFormatter formatter =
+            DateTimeFormatter.ofPattern("MMM dd, yyyy").withZone(ZoneId.systemDefault());
+
+    public ResourceDto toDto(ModuleItemEntity entity) {
+        String type = entity.getFileType() != null ? entity.getFileType().toLowerCase() : "file";
+        if ("link".equalsIgnoreCase(type)) type = "link";
+
+        String category = entity.getModule() != null ? entity.getModule().getTitle() : "General";
+
+        String dateStr =
+                entity.getCreatedAt() != null ? formatter.format(entity.getCreatedAt()) : "N/A";
+
+        return new ResourceDto(
+                entity.getId(),
+                entity.getTitle(),
+                category,
+                type,
+                entity.getFileSize() != null ? entity.getFileSize() : "-",
+                dateStr,
+                entity.isVisible());
+    }
+}

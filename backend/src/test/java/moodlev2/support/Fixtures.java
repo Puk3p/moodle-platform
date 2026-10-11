@@ -7,12 +7,12 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.HashSet;
 import java.util.List;
-import moodlev2.domain.user.Role;
-import moodlev2.infrastructure.persistence.jpa.entity.ClassEntity;
-import moodlev2.infrastructure.persistence.jpa.entity.CourseEntity;
-import moodlev2.infrastructure.persistence.jpa.entity.CourseModuleEntity;
-import moodlev2.infrastructure.persistence.jpa.entity.ModuleItemEntity;
-import moodlev2.infrastructure.persistence.jpa.entity.UserEntity;
+import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
+import moodlev2.academic.infrastructure.persistence.entity.CourseModuleEntity;
+import moodlev2.academic.infrastructure.persistence.entity.ModuleItemEntity;
+import moodlev2.identity.domain.user.Role;
+import moodlev2.identity.infrastructure.persistence.entity.ClassEntity;
+import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
 
 /** Plain entity builders for service tests (no Spring context, no database). */
 public final class Fixtures {
