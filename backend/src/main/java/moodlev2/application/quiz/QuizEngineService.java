@@ -39,6 +39,8 @@ public class QuizEngineService {
     private final ApplicationEventPublisher events;
     private final CourseAccess courseAccess;
 
+    private static final Set<String> TEACHER_GRADED_TYPES = Set.of("FREE_TEXT", "CODE");
+
     static final int MAX_PASSWORD_FAILURES = 5;
     static final Duration PASSWORD_WINDOW = Duration.ofMinutes(15);
 
@@ -184,6 +186,9 @@ public class QuizEngineService {
      * Grades an attempt. Only the first answer per question counts: a client sending one answer per
      * option used to collect every correct option's points, so extra entries are ignored, the list
      * may not be longer than the quiz, and the total can never exceed the maximum.
+     *
+     * <p>A quiz with free-text or code questions gets no pass/fail here: those answers score 0
+     * until the teacher grades them, so the result only says that grading is still to come.
      */
     @Transactional
     public QuizResultDto submitAttempt(QuizSubmissionDto dto, String userEmail) {
@@ -290,17 +295,25 @@ public class QuizEngineService {
         attemptRepository.save(attempt);
         events.publishEvent(new QuizAttemptChangedEvent(userEmail, quiz.isBlockMessaging()));
 
+        boolean awaitingGrading = questions.stream().anyMatch(QuizEngineService::isGradedByTeacher);
+
         return new QuizResultDto(
                 attempt.getId(),
                 quiz.getTitle(),
                 totalScore,
                 maxScore,
-                isPassing(totalScore, maxScore, quiz.getPassingScore()),
+                awaitingGrading ? null : isPassing(totalScore, maxScore, quiz.getPassingScore()),
+                awaitingGrading,
                 attempt.getCompletedAt().toString());
     }
 
     private static BigDecimal pointsOf(QuizQuestionEntity question) {
         return BigDecimal.valueOf(question.getPoints() != null ? question.getPoints() : 0);
+    }
+
+    /** Written answers score 0 on submission and wait for the teacher to grade them. */
+    private static boolean isGradedByTeacher(QuizQuestionEntity question) {
+        return TEACHER_GRADED_TYPES.contains(question.getType());
     }
 
     /**

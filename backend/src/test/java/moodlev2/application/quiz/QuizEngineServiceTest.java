@@ -45,6 +45,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
@@ -278,6 +280,7 @@ class QuizEngineServiceTest {
 
             assertThat(result.score()).isEqualByComparingTo("2");
             assertThat(result.passed()).isTrue();
+            assertThat(result.awaitingGrading()).isFalse();
         }
 
         @Test
@@ -339,6 +342,31 @@ class QuizEngineServiceTest {
                     .isTrue();
             assertThat(QuizEngineService.isPassing(BigDecimal.ONE, BigDecimal.valueOf(3), 34))
                     .isFalse();
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"FREE_TEXT", "CODE"})
+        void writtenAnswersLeaveTheVerdictToTheTeacher(String type) {
+            QuizEntity quiz = quiz();
+            QuizQuestionEntity written = new QuizQuestionEntity();
+            written.setId(13L);
+            written.setQuiz(quiz);
+            written.setText("Explain");
+            written.setType(type);
+            written.setPoints(8);
+            quiz.getQuestions().add(written);
+            openAttempt(quiz, student);
+
+            QuizResultDto result =
+                    submit(
+                            choose(11L, 111L),
+                            choose(12L, 121L),
+                            new AnswerDto(13L, null, "My answer", null));
+
+            assertThat(result.awaitingGrading()).isTrue();
+            assertThat(result.passed()).isNull();
+            assertThat(result.score()).isEqualByComparingTo("2");
+            assertThat(result.maxScore()).isEqualByComparingTo("10");
         }
     }
 

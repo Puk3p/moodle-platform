@@ -41,6 +41,9 @@ export interface QuizResult {
   quizTitle: string;
   score: number;
   maxScore: number;
-  passed: boolean;
+  /** Null while `awaitingGrading`: the teacher's grades for written answers decide it. */
+  passed: boolean | null;
+  /** The quiz has free-text or code answers that only the teacher can grade. */
+  awaitingGrading: boolean;
   completedAt: string;
 }

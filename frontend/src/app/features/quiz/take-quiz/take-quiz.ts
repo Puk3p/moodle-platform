@@ -434,7 +434,9 @@ export class TakeQuizComponent implements OnInit, OnDestroy {
         this.proctor.stop();
         sessionStorage.removeItem(this.draftKey);
         localStorage.removeItem(this.draftKey); // drafts saved by older versions of this page
-        alert(`Quiz Finished! Score: ${result.score}/${result.maxScore}. Passed: ${result.passed}`);
+        alert(result.awaitingGrading
+          ? "Quiz submitted! Your teacher will grade your written answers, so your final score isn't ready yet."
+          : `Quiz finished! Score: ${result.score}/${result.maxScore}. ${result.passed ? 'You passed.' : 'You did not pass.'}`);
         if (window.opener) window.close();
         else this.router.navigate(['/courses']);
       },
