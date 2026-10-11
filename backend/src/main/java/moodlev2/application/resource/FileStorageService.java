@@ -12,6 +12,8 @@ import java.util.Set;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
@@ -36,7 +38,19 @@ public class FileStorageService {
 
     private static final long MAX_FILE_SIZE_BYTES = 50L * 1024 * 1024;
 
-    private final Path fileStorageLocation = Paths.get("uploads").toAbsolutePath().normalize();
+    private final Path fileStorageLocation;
+
+    public FileStorageService() {
+        this("uploads");
+    }
+
+    /**
+     * @param directory where uploads are kept; relative paths resolve against the working directory
+     */
+    @Autowired
+    public FileStorageService(@Value("${app.uploads.dir:uploads}") String directory) {
+        this.fileStorageLocation = Paths.get(directory).toAbsolutePath().normalize();
+    }
 
     @PostConstruct
     void init() {
