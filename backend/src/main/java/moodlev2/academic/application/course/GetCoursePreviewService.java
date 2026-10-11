@@ -6,6 +6,7 @@ import moodlev2.academic.infrastructure.persistence.AnnouncementRepository;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
 import moodlev2.academic.web.course.dto.preview.CoursePreviewDto;
+import moodlev2.assessment.api.QuizCatalogApi;
 import moodlev2.progress.api.CalendarApi;
 import moodlev2.shared.exception.NotFoundException;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ public class GetCoursePreviewService {
     private final CalendarApi calendar;
     private final CoursePreviewMapper mapper;
     private final TeacherNames teacherNames;
+    private final QuizCatalogApi quizCatalog;
 
     @Transactional(readOnly = true)
     public CoursePreviewDto getPreviewData(String courseCode) {
@@ -34,6 +36,10 @@ public class GetCoursePreviewService {
         var deadlines = calendar.firstEntriesOfCourse(course.getId(), 3);
 
         return mapper.toDto(
-                course, teacherNames.of(course, "Unknown Instructor"), announcements, deadlines);
+                course,
+                teacherNames.of(course, "Unknown Instructor"),
+                announcements,
+                deadlines,
+                quizCatalog.publishedQuizzes(course.getId(), null));
     }
 }

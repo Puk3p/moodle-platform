@@ -9,7 +9,6 @@ import java.util.Set;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import moodlev2.assessment.infrastructure.persistence.entity.QuizEntity;
 
 @Entity
 @Table(name = "courses")
@@ -49,9 +48,6 @@ public class CourseEntity {
 
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
     private List<EnrollmentEntity> enrollments = new ArrayList<>();
-
-    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
-    private List<QuizEntity> quizzes = new ArrayList<>();
 
     @Column(name = "created_at")
     private Instant createdAt;

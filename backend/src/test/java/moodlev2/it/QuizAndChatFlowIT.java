@@ -161,6 +161,44 @@ class QuizAndChatFlowIT extends IntegrationTestBase {
     }
 
     @Test
+    void removingAModuleKeepsItsQuizzes() {
+        TestUser admin = admin();
+        TestUser teacher = teacher();
+        long classId = createClass(admin);
+        Course course = createCourse(teacher, classId);
+        long questionId = createQuestion(teacher, "Kept? " + course.code());
+        String title = "Kept " + course.code();
+        Map<String, Object> quiz = new HashMap<>();
+        quiz.put("title", title);
+        quiz.put("courseId", course.id());
+        quiz.put("moduleId", course.moduleId());
+        quiz.put("generationType", "MANUAL");
+        quiz.put("specificQuestionIds", List.of(questionId));
+        teacher.api().post("/api/quizzes/create", quiz).expect(200);
+
+        // Save the course with no modules: the module goes, the quiz stays (unfiled).
+        teacher.api()
+                .put(
+                        "/api/courses/" + course.code(),
+                        Map.of(
+                                "id", course.id(),
+                                "code", course.code(),
+                                "title", "Course " + course.code(),
+                                "term", "Fall 2026",
+                                "status", "PUBLISHED",
+                                "modules", List.of(),
+                                "selectedGroupIds", List.of(classId)))
+                .ok();
+
+        JsonNode kept =
+                findBy(
+                        teacher.api().get("/api/teacher/quizzes").expect(200).json(),
+                        "title",
+                        title);
+        assertThat(kept.get("context").asText()).isEmpty();
+    }
+
+    @Test
     void studentsCannotAuthorQuizzesOrBrowseTheBank() {
         TestUser student = student();
         student.api().get("/api/question-bank/categories").expect(403);

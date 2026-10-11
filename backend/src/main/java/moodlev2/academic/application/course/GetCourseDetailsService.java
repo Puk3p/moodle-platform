@@ -5,6 +5,8 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
@@ -17,8 +19,8 @@ import moodlev2.academic.web.course.dto.CourseDetailsResponse;
 import moodlev2.academic.web.course.dto.CourseModuleDto;
 import moodlev2.academic.web.course.dto.CourseModuleItemDto;
 import moodlev2.academic.web.course.dto.CourseStatsDto;
-import moodlev2.assessment.infrastructure.persistence.QuizAttemptRepository;
-import moodlev2.assessment.infrastructure.persistence.entity.QuizEntity;
+import moodlev2.assessment.api.QuizCatalogApi;
+import moodlev2.assessment.api.QuizCatalogApi.CourseQuiz;
 import moodlev2.identity.api.DirectoryApi;
 import moodlev2.identity.api.UserSummary;
 import moodlev2.shared.exception.NotFoundException;
@@ -31,7 +33,7 @@ public class GetCourseDetailsService {
 
     private final CourseRepository courseRepository;
     private final DirectoryApi directory;
-    private final QuizAttemptRepository quizAttemptRepository;
+    private final QuizCatalogApi quizCatalog;
     private final CourseAccess courseAccess;
 
     @Transactional(readOnly = true)
@@ -69,16 +71,24 @@ public class GetCourseDetailsService {
                                 .map(UserSummary::fullName)
                                 .orElse("Unknown Instructor");
 
+        List<CourseQuiz> quizzes = quizCatalog.publishedQuizzes(course.getId(), currentUser.id());
+        Map<Long, List<CourseQuiz>> quizzesByModule =
+                quizzes.stream()
+                        .filter(q -> q.moduleId() != null)
+                        .collect(Collectors.groupingBy(CourseQuiz::moduleId));
+
         List<CourseModuleDto> modules =
                 course.getModules().stream()
-                        .map(mod -> mapModuleWithStatus(mod, currentUser))
+                        .map(
+                                mod ->
+                                        mapModuleWithStatus(
+                                                mod,
+                                                quizzesByModule.getOrDefault(
+                                                        mod.getId(), List.of())))
                         .toList();
 
         List<CourseModuleItemDto> allQuizzes =
-                course.getQuizzes().stream()
-                        .filter(q -> "PUBLISHED".equalsIgnoreCase(q.getStatus()))
-                        .map(q -> mapQuizToItem(q, currentUser))
-                        .toList();
+                quizzes.stream().map(GetCourseDetailsService::mapQuizToItem).toList();
 
         DateTimeFormatter formatter =
                 DateTimeFormatter.ofPattern("MMM dd").withZone(ZoneId.systemDefault());
@@ -122,7 +132,8 @@ public class GetCourseDetailsService {
                 allQuizzes);
     }
 
-    private CourseModuleDto mapModuleWithStatus(CourseModuleEntity module, UserSummary user) {
+    private CourseModuleDto mapModuleWithStatus(
+            CourseModuleEntity module, List<CourseQuiz> moduleQuizzes) {
         LocalDate now = LocalDate.now();
         String status = "unlocked";
 
@@ -152,9 +163,7 @@ public class GetCourseDetailsService {
                                                 true));
 
         Stream<CourseModuleItemDto> quizItems =
-                module.getQuizzes().stream()
-                        .filter(q -> "PUBLISHED".equalsIgnoreCase(q.getStatus()))
-                        .map(q -> mapQuizToItem(q, user));
+                moduleQuizzes.stream().map(GetCourseDetailsService::mapQuizToItem);
 
         List<CourseModuleItemDto> combinedItems = Stream.concat(fileItems, quizItems).toList();
 
@@ -162,19 +171,8 @@ public class GetCourseDetailsService {
                 module.getTitle(), module.getDescription(), combinedItems, status);
     }
 
-    private CourseModuleItemDto mapQuizToItem(QuizEntity quiz, UserSummary user) {
-
-        boolean canAttempt = true;
-
-        if (quiz.getMaxAttempts() != null && quiz.getMaxAttempts() > 0) {
-            int attemptsUsed =
-                    quizAttemptRepository.countByQuizIdAndUserId(quiz.getId(), user.id());
-            if (attemptsUsed >= quiz.getMaxAttempts()) {
-                canAttempt = false;
-            }
-        }
-
+    private static CourseModuleItemDto mapQuizToItem(CourseQuiz quiz) {
         return new CourseModuleItemDto(
-                quiz.getId(), "quiz", quiz.getTitle(), null, false, canAttempt);
+                quiz.id(), "quiz", quiz.title(), null, false, quiz.canAttempt());
     }
 }

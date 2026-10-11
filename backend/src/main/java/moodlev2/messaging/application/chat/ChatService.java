@@ -16,8 +16,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import moodlev2.academic.infrastructure.persistence.CourseRepository;
-import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
+import moodlev2.academic.api.CourseSummary;
+import moodlev2.academic.api.MembershipApi;
 import moodlev2.assessment.api.ExamLockApi;
 import moodlev2.identity.api.DirectoryApi;
 import moodlev2.identity.api.UserSummary;
@@ -57,7 +57,7 @@ public class ChatService {
     private final ChatMessageRepository messageRepository;
     private final DirectoryApi directory;
     private final ExamLockApi examLocks;
-    private final CourseRepository courseRepository;
+    private final MembershipApi membership;
     private final SimpMessagingTemplate messaging;
 
     @Transactional(readOnly = true)
@@ -90,12 +90,11 @@ public class ChatService {
             collectStudentsOf(me, people, sharedCourses);
         } else {
             Map<Long, List<String>> codesByTeacher = new LinkedHashMap<>();
-            for (CourseEntity course :
-                    courseRepository.findAllCoursesForStudent(me.id(), me.classId())) {
-                if (course.getTeacherId() != null) {
+            for (CourseSummary course : membership.coursesOfStudent(me)) {
+                if (course.teacherId() != null) {
                     codesByTeacher
-                            .computeIfAbsent(course.getTeacherId(), k -> new ArrayList<>())
-                            .add(course.getCode());
+                            .computeIfAbsent(course.teacherId(), k -> new ArrayList<>())
+                            .add(course.code());
                 }
             }
             for (UserSummary teacher : directory.findUsers(codesByTeacher.keySet())) {
@@ -245,36 +244,12 @@ public class ChatService {
                 examLocks.openMessagingBlockingAttempts(user.id()), Instant.now());
     }
 
+    /** Everyone in the courses this teacher teaches, with the codes of the courses they share. */
     private void collectStudentsOf(
             UserSummary teacher, Map<Long, UserSummary> people, Map<Long, Set<String>> courses) {
-        List<CourseEntity> taught = courseRepository.findAllByTeacherId(teacher.id());
-        Map<Long, List<String>> courseCodesByStudent = new LinkedHashMap<>();
-        Map<Long, List<String>> courseCodesByClass = new HashMap<>();
-
-        for (CourseEntity course : taught) {
-            course.getEnrollments()
-                    .forEach(
-                            e ->
-                                    courseCodesByStudent
-                                            .computeIfAbsent(e.getUserId(), k -> new ArrayList<>())
-                                            .add(course.getCode()));
-            for (Long classId : course.getClassIds()) {
-                courseCodesByClass
-                        .computeIfAbsent(classId, k -> new ArrayList<>())
-                        .add(course.getCode());
-            }
-        }
-
-        for (UserSummary student : directory.findUsers(courseCodesByStudent.keySet())) {
-            courseCodesByStudent
-                    .get(student.id())
-                    .forEach(code -> add(people, courses, student, code));
-        }
-        if (!courseCodesByClass.isEmpty()) {
-            for (UserSummary member : directory.findUsersInClasses(courseCodesByClass.keySet())) {
-                courseCodesByClass
-                        .get(member.classId())
-                        .forEach(code -> add(people, courses, member, code));
+        for (CourseSummary course : membership.coursesTaughtBy(teacher.id())) {
+            for (UserSummary student : membership.studentsOf(course.id())) {
+                add(people, courses, student, course.code());
             }
         }
     }

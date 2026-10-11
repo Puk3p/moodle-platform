@@ -10,8 +10,6 @@ import java.util.Set;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
-import moodlev2.academic.infrastructure.persistence.entity.CourseModuleEntity;
 
 @Entity
 @Table(name = "quizzes")
@@ -28,13 +26,16 @@ public class QuizEntity {
 
     private String description;
 
-    @ManyToOne
-    @JoinColumn(name = "course_id")
-    private CourseEntity course;
+    /** The course (academic module) the quiz belongs to. */
+    @Column(name = "course_id")
+    private Long courseId;
 
-    @ManyToOne
-    @JoinColumn(name = "module_id")
-    private CourseModuleEntity module;
+    /**
+     * The course module it is filed under, {@code null} for none. Deleting the module clears this
+     * (the database sets it to NULL); the quiz itself stays.
+     */
+    @Column(name = "module_id")
+    private Long moduleId;
 
     private String status;
 

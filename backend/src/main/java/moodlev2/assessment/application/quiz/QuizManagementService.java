@@ -7,10 +7,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import moodlev2.academic.infrastructure.persistence.CourseModuleRepository;
-import moodlev2.academic.infrastructure.persistence.CourseRepository;
-import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
-import moodlev2.academic.infrastructure.persistence.entity.CourseModuleEntity;
+import moodlev2.academic.api.CourseCatalogApi;
+import moodlev2.academic.api.CourseSummary;
+import moodlev2.academic.api.ModuleSummary;
 import moodlev2.assessment.infrastructure.persistence.QuestionRepository;
 import moodlev2.assessment.infrastructure.persistence.QuizRepository;
 import moodlev2.assessment.infrastructure.persistence.entity.QuestionEntity;
@@ -34,8 +33,7 @@ public class QuizManagementService {
     private static final SecureRandom RANDOM = new SecureRandom();
 
     private final QuizRepository quizRepository;
-    private final CourseRepository courseRepository;
-    private final CourseModuleRepository moduleRepository;
+    private final CourseCatalogApi catalog;
     private final QuestionRepository questionRepository;
     private final DirectoryApi directory;
     private final PasswordEncoder passwordEncoder;
@@ -44,21 +42,21 @@ public class QuizManagementService {
     public void createQuiz(CreateQuizDto dto) {
         log.info("Creating quiz: {}", dto.title());
 
-        CourseEntity course =
-                courseRepository
-                        .findById(dto.courseId())
+        CourseSummary course =
+                catalog.findCourse(dto.courseId())
                         .orElseThrow(() -> new NotFoundException("Course not found"));
 
-        CourseModuleEntity module = null;
-        if (dto.moduleId() != null) {
-            module = moduleRepository.findById(dto.moduleId()).orElse(null);
-        }
+        // An unknown module is ignored rather than refused, as before.
+        Long moduleId =
+                dto.moduleId() == null
+                        ? null
+                        : catalog.findModule(dto.moduleId()).map(ModuleSummary::id).orElse(null);
 
         QuizEntity quiz = new QuizEntity();
         quiz.setTitle(dto.title());
         quiz.setDescription(dto.description());
-        quiz.setCourse(course);
-        quiz.setModule(module);
+        quiz.setCourseId(course.id());
+        quiz.setModuleId(moduleId);
 
         quiz.setDurationMinutes(dto.timeLimitMinutes());
         quiz.setPassingScore(dto.passingScore());

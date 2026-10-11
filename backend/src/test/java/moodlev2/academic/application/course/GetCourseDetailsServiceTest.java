@@ -11,7 +11,7 @@ import java.util.Optional;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
 import moodlev2.academic.web.course.dto.CourseDetailsResponse;
-import moodlev2.assessment.infrastructure.persistence.QuizAttemptRepository;
+import moodlev2.assessment.api.QuizCatalogApi;
 import moodlev2.identity.api.Role;
 import moodlev2.identity.api.UserSummary;
 import moodlev2.shared.exception.NotFoundException;
@@ -26,7 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class GetCourseDetailsServiceTest {
 
     @Mock private CourseRepository courseRepository;
-    @Mock private QuizAttemptRepository attemptRepository;
+    @Mock private QuizCatalogApi quizCatalog;
 
     private GetCourseDetailsService service;
 
@@ -41,7 +41,7 @@ class GetCourseDetailsServiceTest {
                 new GetCourseDetailsService(
                         courseRepository,
                         directory,
-                        attemptRepository,
+                        quizCatalog,
                         new CourseAccess(courseRepository));
         lenient().when(courseRepository.findById(10L)).thenReturn(Optional.of(course));
         lenient().when(courseRepository.findByCode("CS101")).thenReturn(Optional.of(course));

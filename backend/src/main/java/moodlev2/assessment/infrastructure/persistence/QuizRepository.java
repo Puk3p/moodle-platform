@@ -9,4 +9,6 @@ public interface QuizRepository extends JpaRepository<QuizEntity, Long> {
 
     @Query("SELECT q FROM QuizEntity q ORDER BY q.updatedAt DESC")
     List<QuizEntity> findAllQuizzes();
+
+    List<QuizEntity> findByCourseIdOrderByIdAsc(Long courseId);
 }

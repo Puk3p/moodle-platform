@@ -1,6 +1,5 @@
 package moodlev2.assessment.application.quiz;
 
-import static moodlev2.support.Fixtures.course;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
@@ -10,8 +9,8 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
-import moodlev2.academic.infrastructure.persistence.CourseModuleRepository;
-import moodlev2.academic.infrastructure.persistence.CourseRepository;
+import moodlev2.academic.api.CourseCatalogApi;
+import moodlev2.academic.api.CourseSummary;
 import moodlev2.assessment.domain.question.QuestionDifficulty;
 import moodlev2.assessment.domain.question.QuestionType;
 import moodlev2.assessment.infrastructure.persistence.QuestionRepository;
@@ -37,8 +36,7 @@ class QuizManagementServiceTest {
     private static final int TRIES = 20;
 
     @Mock private QuizRepository quizRepository;
-    @Mock private CourseRepository courseRepository;
-    @Mock private CourseModuleRepository moduleRepository;
+    @Mock private CourseCatalogApi catalog;
     @Mock private QuestionRepository questionRepository;
     @Mock private DirectoryApi directory;
     @Mock private PasswordEncoder passwordEncoder;
@@ -82,7 +80,17 @@ class QuizManagementServiceTest {
 
     @Test
     void dragDropOptionsAreInsertedShuffledButKeepTheirAnswerPosition() {
-        when(courseRepository.findById(10L)).thenReturn(Optional.of(course(10, "CS101")));
+        when(catalog.findCourse(10L))
+                .thenReturn(
+                        Optional.of(
+                                new CourseSummary(
+                                        10L,
+                                        "CS101",
+                                        "Course CS101",
+                                        "Fall 2026",
+                                        null,
+                                        null,
+                                        null)));
         when(questionRepository.findById(900L)).thenReturn(Optional.of(dragDropBankQuestion()));
 
         List<String> authored =

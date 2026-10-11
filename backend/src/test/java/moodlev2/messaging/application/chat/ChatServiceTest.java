@@ -16,7 +16,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.Duration;
 import java.util.List;
-import moodlev2.academic.infrastructure.persistence.CourseRepository;
+import moodlev2.academic.api.MembershipApi;
 import moodlev2.assessment.api.ExamLockApi;
 import moodlev2.identity.api.Role;
 import moodlev2.identity.api.UserSummary;
@@ -41,7 +41,7 @@ class ChatServiceTest {
 
     @Mock private ChatMessageRepository messageRepository;
     @Mock private ExamLockApi examLocks;
-    @Mock private CourseRepository courseRepository;
+    @Mock private MembershipApi membership;
     @Mock private SimpMessagingTemplate messaging;
 
     private ChatService chatService;
@@ -55,8 +55,7 @@ class ChatServiceTest {
     @BeforeEach
     void setUp() {
         chatService =
-                new ChatService(
-                        messageRepository, directory, examLocks, courseRepository, messaging);
+                new ChatService(messageRepository, directory, examLocks, membership, messaging);
         lenient().when(examLocks.openMessagingBlockingAttempts(anyLong())).thenReturn(List.of());
         lenient()
                 .when(messageRepository.save(any(ChatMessageEntity.class)))

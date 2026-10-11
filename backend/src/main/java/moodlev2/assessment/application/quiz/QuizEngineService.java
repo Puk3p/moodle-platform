@@ -11,6 +11,8 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import moodlev2.academic.api.CourseCatalogApi;
+import moodlev2.academic.api.CourseSummary;
 import moodlev2.academic.api.MembershipApi;
 import moodlev2.assessment.api.QuizAttemptChangedEvent;
 import moodlev2.assessment.infrastructure.mapper.QuizEngineMapper;
@@ -50,6 +52,7 @@ public class QuizEngineService {
     private final DirectoryApi directory;
     private final QuizAttemptRepository quizAttemptRepository;
     private final MembershipApi membership;
+    private final CourseCatalogApi catalog;
     private final PasswordEncoder passwordEncoder;
     private final QuizEngineMapper mapper;
     private final ApplicationEventPublisher events;
@@ -137,7 +140,7 @@ public class QuizEngineService {
      * exactly like quizzes that do not exist, so ids cannot be probed.
      */
     private void requireStudentMayOpen(QuizEntity quiz, UserSummary student) {
-        if (!quiz.isPublished() || !membership.isMember(quiz.getCourse().getId(), student)) {
+        if (!quiz.isPublished() || !membership.isMember(quiz.getCourseId(), student)) {
             throw new NotFoundException("Quiz not found");
         }
         Set<Long> assigned = quiz.getClassIds();
@@ -364,9 +367,7 @@ public class QuizEngineService {
 
         // Everyone expected to take it: the course's students and the quiz's own classes.
         Map<Long, UserSummary> uniqueStudentsMap = new HashMap<>();
-        membership
-                .studentsOf(quiz.getCourse().getId())
-                .forEach(u -> uniqueStudentsMap.put(u.id(), u));
+        membership.studentsOf(quiz.getCourseId()).forEach(u -> uniqueStudentsMap.put(u.id(), u));
         directory
                 .findUsersInClasses(quiz.getClassIds())
                 .forEach(u -> uniqueStudentsMap.put(u.id(), u));
@@ -428,7 +429,7 @@ public class QuizEngineService {
         return new QuizResultsResponse(
                 quiz.getId(),
                 quiz.getTitle(),
-                quiz.getCourse().getName(),
+                catalog.findCourse(quiz.getCourseId()).map(CourseSummary::name).orElse(""),
                 dueDateStr,
                 quiz.getDurationMinutes(),
                 quiz.isPublished(),

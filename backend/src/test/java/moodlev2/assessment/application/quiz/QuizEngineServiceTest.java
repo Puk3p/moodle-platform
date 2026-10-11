@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import moodlev2.academic.api.CourseCatalogApi;
 import moodlev2.academic.api.MembershipApi;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
 import moodlev2.assessment.infrastructure.mapper.QuizEngineMapper;
@@ -61,6 +62,7 @@ class QuizEngineServiceTest {
     @Mock private QuizRepository quizRepository;
     @Mock private QuizAttemptRepository attemptRepository;
     @Mock private MembershipApi membership;
+    @Mock private CourseCatalogApi catalog;
     @Mock private ApplicationEventPublisher events;
 
     private QuizEngineService service;
@@ -81,6 +83,7 @@ class QuizEngineServiceTest {
                         directory,
                         attemptRepository,
                         membership,
+                        catalog,
                         ENCODER,
                         new QuizEngineMapper(),
                         events);
@@ -110,7 +113,7 @@ class QuizEngineServiceTest {
         quiz.setId(7L);
         quiz.setTitle("Midterm");
         quiz.setStatus("PUBLISHED");
-        quiz.setCourse(course);
+        quiz.setCourseId(course.getId());
         quiz.getQuestions().add(question(quiz, 11L, 111L, 112L));
         quiz.getQuestions().add(question(quiz, 12L, 121L, 122L));
         lenient().when(quizRepository.findById(7L)).thenReturn(Optional.of(quiz));

@@ -7,7 +7,6 @@ import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import moodlev2.assessment.infrastructure.persistence.entity.QuizEntity;
 
 @Entity
 @Table(name = "course_modules")
@@ -34,9 +33,6 @@ public class CourseModuleEntity {
 
     @Column(name = "end_date")
     private LocalDate endDate;
-
-    @OneToMany(mappedBy = "module", cascade = CascadeType.ALL)
-    private List<QuizEntity> quizzes = new ArrayList<>();
 
     @OneToMany(mappedBy = "module", cascade = CascadeType.ALL)
     @OrderBy("sortOrder ASC")

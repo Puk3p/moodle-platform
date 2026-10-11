@@ -14,7 +14,7 @@ import moodlev2.academic.web.course.dto.preview.CoursePreviewDto;
 import moodlev2.academic.web.course.dto.preview.DeadlinePreviewDto;
 import moodlev2.academic.web.course.dto.preview.ModuleItemPreviewDto;
 import moodlev2.academic.web.course.dto.preview.ModulePreviewDto;
-import moodlev2.assessment.infrastructure.persistence.entity.QuizEntity;
+import moodlev2.assessment.api.QuizCatalogApi.CourseQuiz;
 import moodlev2.progress.api.CalendarEntry;
 import org.springframework.stereotype.Component;
 
@@ -27,20 +27,13 @@ public class CoursePreviewMapper {
             CourseEntity course,
             String instructorName,
             List<AnnouncementEntity> announcements,
-            List<CalendarEntry> events) {
+            List<CalendarEntry> events,
+            List<CourseQuiz> quizzes) {
 
         List<ModulePreviewDto> moduleDtos =
                 course.getModules().stream().map(this::mapModuleWithoutQuizzes).toList();
 
-        List<ModuleItemPreviewDto> allQuizzes = new ArrayList<>();
-
-        if (course.getQuizzes() != null) {
-            allQuizzes =
-                    course.getQuizzes().stream()
-                            .filter(q -> "PUBLISHED".equalsIgnoreCase(q.getStatus()))
-                            .map(this::mapQuizToItem)
-                            .toList();
-        }
+        List<ModuleItemPreviewDto> allQuizzes = quizzes.stream().map(this::mapQuizToItem).toList();
 
         return new CoursePreviewDto(
                 course.getCode(),
@@ -125,26 +118,22 @@ public class CoursePreviewMapper {
                 false);
     }
 
-    private ModuleItemPreviewDto mapQuizToItem(QuizEntity quiz) {
+    private ModuleItemPreviewDto mapQuizToItem(CourseQuiz quiz) {
         StringBuilder metaBuilder = new StringBuilder();
-        metaBuilder
-                .append(quiz.getQuestionsCount() != null ? quiz.getQuestionsCount() : 0)
-                .append(" Questions");
+        metaBuilder.append(quiz.questionsCount()).append(" Questions");
 
-        if (quiz.getDurationMinutes() != null && quiz.getDurationMinutes() > 0) {
-            metaBuilder.append(" • ").append(quiz.getDurationMinutes()).append(" min");
+        if (quiz.durationMinutes() != null && quiz.durationMinutes() > 0) {
+            metaBuilder.append(" • ").append(quiz.durationMinutes()).append(" min");
         }
 
-        boolean hasPassword = quiz.getPassword() != null && !quiz.getPassword().isEmpty();
-
         return new ModuleItemPreviewDto(
-                quiz.getId(),
-                quiz.getTitle(),
+                quiz.id(),
+                quiz.title(),
                 "quiz",
                 metaBuilder.toString(),
                 true,
                 null,
-                hasPassword);
+                quiz.passwordProtected());
     }
 
     private AnnouncementPreviewDto mapAnnouncement(AnnouncementEntity a) {
