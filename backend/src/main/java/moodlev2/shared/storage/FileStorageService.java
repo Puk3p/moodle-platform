@@ -1,4 +1,4 @@
-package moodlev2.academic.application.resource;
+package moodlev2.shared.storage;
 
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;

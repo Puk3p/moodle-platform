@@ -19,6 +19,7 @@ import moodlev2.academic.web.resource.dto.UploadOptionsDto;
 import moodlev2.progress.infrastructure.persistence.CalendarEventRepository;
 import moodlev2.progress.infrastructure.persistence.entity.CalendarEventEntity;
 import moodlev2.shared.exception.NotFoundException;
+import moodlev2.shared.storage.FileStorageService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

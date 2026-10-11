@@ -8,6 +8,7 @@ import moodlev2.academic.infrastructure.persistence.entity.ModuleItemEntity;
 import moodlev2.identity.api.DirectoryApi;
 import moodlev2.identity.api.UserSummary;
 import moodlev2.shared.exception.NotFoundException;
+import moodlev2.shared.storage.FileStorageService;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

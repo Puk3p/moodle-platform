@@ -20,6 +20,7 @@ import moodlev2.academic.web.resource.dto.TeacherSubmissionViewDto;
 import moodlev2.identity.api.DirectoryApi;
 import moodlev2.identity.api.UserSummary;
 import moodlev2.shared.exception.NotFoundException;
+import moodlev2.shared.storage.FileStorageService;
 import moodlev2.shared.util.SlidingWindowCounter;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;

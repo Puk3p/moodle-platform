@@ -17,6 +17,7 @@ import moodlev2.academic.infrastructure.persistence.entity.CourseModuleEntity;
 import moodlev2.academic.infrastructure.persistence.entity.ModuleItemEntity;
 import moodlev2.academic.web.resource.dto.CreateResourceDto;
 import moodlev2.progress.infrastructure.persistence.CalendarEventRepository;
+import moodlev2.shared.storage.FileStorageService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;

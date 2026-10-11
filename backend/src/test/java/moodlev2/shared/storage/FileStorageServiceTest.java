@@ -1,4 +1,4 @@
-package moodlev2.academic.application.resource;
+package moodlev2.shared.storage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

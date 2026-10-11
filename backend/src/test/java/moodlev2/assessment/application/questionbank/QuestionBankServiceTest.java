@@ -9,13 +9,13 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
-import moodlev2.academic.application.resource.FileStorageService;
 import moodlev2.assessment.domain.question.QuestionDifficulty;
 import moodlev2.assessment.domain.question.QuestionType;
 import moodlev2.assessment.infrastructure.persistence.CategoryRepository;
 import moodlev2.assessment.infrastructure.persistence.QuestionRepository;
 import moodlev2.assessment.infrastructure.persistence.entity.CategoryEntity;
 import moodlev2.assessment.web.questionbank.dto.CreateQuestionRequest;
+import moodlev2.shared.storage.FileStorageService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;

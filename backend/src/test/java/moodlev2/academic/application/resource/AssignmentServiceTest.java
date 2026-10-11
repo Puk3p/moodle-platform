@@ -33,6 +33,7 @@ import moodlev2.academic.web.resource.dto.StudentAssignmentDetailsDto;
 import moodlev2.identity.api.Role;
 import moodlev2.identity.api.UserSummary;
 import moodlev2.shared.exception.NotFoundException;
+import moodlev2.shared.storage.FileStorageService;
 import moodlev2.support.FakeDirectory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
