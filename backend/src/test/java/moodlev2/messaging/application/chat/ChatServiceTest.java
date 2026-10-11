@@ -17,7 +17,7 @@ import static org.mockito.Mockito.when;
 import java.time.Duration;
 import java.util.List;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
-import moodlev2.assessment.infrastructure.persistence.QuizAttemptRepository;
+import moodlev2.assessment.api.ExamLockApi;
 import moodlev2.identity.api.Role;
 import moodlev2.identity.api.UserSummary;
 import moodlev2.messaging.infrastructure.persistence.ChatMessageRepository;
@@ -40,7 +40,7 @@ import org.springframework.web.server.ResponseStatusException;
 class ChatServiceTest {
 
     @Mock private ChatMessageRepository messageRepository;
-    @Mock private QuizAttemptRepository attemptRepository;
+    @Mock private ExamLockApi examLocks;
     @Mock private CourseRepository courseRepository;
     @Mock private SimpMessagingTemplate messaging;
 
@@ -56,14 +56,8 @@ class ChatServiceTest {
     void setUp() {
         chatService =
                 new ChatService(
-                        messageRepository,
-                        directory,
-                        attemptRepository,
-                        courseRepository,
-                        messaging);
-        lenient()
-                .when(attemptRepository.findOpenMessagingBlockingAttempts(anyLong()))
-                .thenReturn(List.of());
+                        messageRepository, directory, examLocks, courseRepository, messaging);
+        lenient().when(examLocks.openMessagingBlockingAttempts(anyLong())).thenReturn(List.of());
         lenient()
                 .when(messageRepository.save(any(ChatMessageEntity.class)))
                 .thenAnswer(
@@ -75,7 +69,7 @@ class ChatServiceTest {
     }
 
     private void lock(UserSummary u) {
-        when(attemptRepository.findOpenMessagingBlockingAttempts(u.id()))
+        when(examLocks.openMessagingBlockingAttempts(u.id()))
                 .thenReturn(List.of(openAttempt(Duration.ofMinutes(5), 30)));
     }
 
@@ -169,7 +163,7 @@ class ChatServiceTest {
     @Test
     void teacherPreviewingABlockingQuizIsNotLocked() {
         lenient()
-                .when(attemptRepository.findOpenMessagingBlockingAttempts(teacher.id()))
+                .when(examLocks.openMessagingBlockingAttempts(teacher.id()))
                 .thenReturn(List.of(openAttempt(Duration.ofMinutes(1), 30)));
 
         assertThat(chatService.status(teacher.email()).available()).isTrue();
@@ -246,7 +240,7 @@ class ChatServiceTest {
 
     @Test
     void statusIsOpenOnceTheQuizTimeHasRunOut() {
-        when(attemptRepository.findOpenMessagingBlockingAttempts(student.id()))
+        when(examLocks.openMessagingBlockingAttempts(student.id()))
                 .thenReturn(List.of(openAttempt(Duration.ofHours(3), 30)));
 
         assertThat(chatService.status(student.email())).isEqualTo(ChatStatusDto.open());

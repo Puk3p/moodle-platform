@@ -3,8 +3,7 @@ package moodlev2.messaging.application.chat;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Set;
-import moodlev2.assessment.infrastructure.persistence.entity.QuizAttemptEntity;
-import moodlev2.assessment.infrastructure.persistence.entity.QuizEntity;
+import moodlev2.assessment.api.ExamLockApi.OpenExam;
 import moodlev2.identity.api.Role;
 import moodlev2.identity.api.UserSummary;
 
@@ -30,15 +29,7 @@ final class ChatTestData {
     }
 
     /** An open attempt on a messaging-blocking quiz, started {@code ago} before now. */
-    static QuizAttemptEntity openAttempt(Duration ago, Integer durationMinutes) {
-        QuizEntity quiz = new QuizEntity();
-        quiz.setDurationMinutes(durationMinutes);
-        quiz.setBlockMessaging(true);
-
-        QuizAttemptEntity attempt = new QuizAttemptEntity();
-        attempt.setQuiz(quiz);
-        attempt.setStatus("IN_PROGRESS");
-        attempt.setStartedAt(Instant.now().minus(ago));
-        return attempt;
+    static OpenExam openAttempt(Duration ago, Integer durationMinutes) {
+        return new OpenExam(Instant.now().minus(ago), durationMinutes);
     }
 }

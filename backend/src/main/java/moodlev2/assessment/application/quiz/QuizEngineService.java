@@ -12,6 +12,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import moodlev2.academic.api.MembershipApi;
+import moodlev2.assessment.api.QuizAttemptChangedEvent;
 import moodlev2.assessment.infrastructure.mapper.QuizEngineMapper;
 import moodlev2.assessment.infrastructure.persistence.QuizAttemptRepository;
 import moodlev2.assessment.infrastructure.persistence.QuizRepository;

@@ -1,4 +1,4 @@
-package moodlev2.assessment.application.quiz;
+package moodlev2.assessment.api;
 
 /**
  * Published when a student's attempt starts, resumes or is submitted. Other modules react to it

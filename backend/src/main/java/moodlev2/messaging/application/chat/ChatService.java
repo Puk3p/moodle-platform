@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
-import moodlev2.assessment.infrastructure.persistence.QuizAttemptRepository;
+import moodlev2.assessment.api.ExamLockApi;
 import moodlev2.identity.api.DirectoryApi;
 import moodlev2.identity.api.UserSummary;
 import moodlev2.messaging.infrastructure.persistence.ChatMessageRepository;
@@ -56,7 +56,7 @@ public class ChatService {
 
     private final ChatMessageRepository messageRepository;
     private final DirectoryApi directory;
-    private final QuizAttemptRepository attemptRepository;
+    private final ExamLockApi examLocks;
     private final CourseRepository courseRepository;
     private final SimpMessagingTemplate messaging;
 
@@ -242,7 +242,7 @@ public class ChatService {
             return Optional.empty();
         }
         return ChatAccessRules.lockedUntil(
-                attemptRepository.findOpenMessagingBlockingAttempts(user.id()), Instant.now());
+                examLocks.openMessagingBlockingAttempts(user.id()), Instant.now());
     }
 
     private void collectStudentsOf(

@@ -5,7 +5,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
-import moodlev2.assessment.infrastructure.persistence.entity.QuizAttemptEntity;
+import moodlev2.assessment.api.ExamLockApi.OpenExam;
 import moodlev2.identity.api.UserSummary;
 
 /**
@@ -61,7 +61,7 @@ public final class ChatAccessRules {
      * start attempts to preview their own quizzes.
      */
     public static Optional<Instant> lockedUntil(
-            Collection<QuizAttemptEntity> openBlockingAttempts, Instant now) {
+            Collection<OpenExam> openBlockingAttempts, Instant now) {
         return openBlockingAttempts.stream()
                 .map(ChatAccessRules::lockEnd)
                 .flatMap(Optional::stream)
@@ -70,12 +70,12 @@ public final class ChatAccessRules {
     }
 
     /** The time budget of an attempt, plus grace; attempts without a start time never lock. */
-    static Optional<Instant> lockEnd(QuizAttemptEntity attempt) {
-        Instant started = attempt.getStartedAt();
+    static Optional<Instant> lockEnd(OpenExam attempt) {
+        Instant started = attempt.startedAt();
         if (started == null) {
             return Optional.empty();
         }
-        Integer minutes = attempt.getQuiz().getDurationMinutes();
+        Integer minutes = attempt.durationMinutes();
         if (minutes == null || minutes <= 0) {
             return Optional.of(started.plus(UNTIMED_LOCK_CAP));
         }

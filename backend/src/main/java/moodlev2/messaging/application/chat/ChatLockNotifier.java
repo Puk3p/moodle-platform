@@ -1,7 +1,7 @@
 package moodlev2.messaging.application.chat;
 
 import lombok.RequiredArgsConstructor;
-import moodlev2.assessment.application.quiz.QuizAttemptChangedEvent;
+import moodlev2.assessment.api.QuizAttemptChangedEvent;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;

@@ -7,7 +7,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import moodlev2.assessment.infrastructure.persistence.entity.QuizAttemptEntity;
+import moodlev2.assessment.api.ExamLockApi.OpenExam;
 import moodlev2.identity.api.Role;
 import moodlev2.identity.api.UserSummary;
 import org.junit.jupiter.api.Test;
@@ -72,11 +72,9 @@ class ChatAccessRulesTest {
 
     @Test
     void lockHoldsForTheQuizDurationPlusGrace() {
-        QuizAttemptEntity attempt = openAttempt(Duration.ofMinutes(10), 30);
+        OpenExam attempt = openAttempt(Duration.ofMinutes(10), 30);
         Instant expectedEnd =
-                attempt.getStartedAt()
-                        .plus(Duration.ofMinutes(30))
-                        .plus(ChatAccessRules.LOCK_GRACE);
+                attempt.startedAt().plus(Duration.ofMinutes(30)).plus(ChatAccessRules.LOCK_GRACE);
 
         assertThat(ChatAccessRules.lockedUntil(List.of(attempt), Instant.now()))
                 .contains(expectedEnd);
@@ -84,13 +82,13 @@ class ChatAccessRulesTest {
 
     @Test
     void lockStillHoldsInsideTheGraceWindow() {
-        QuizAttemptEntity attempt = openAttempt(Duration.ofMinutes(32), 30);
+        OpenExam attempt = openAttempt(Duration.ofMinutes(32), 30);
         assertThat(ChatAccessRules.lockedUntil(List.of(attempt), Instant.now())).isPresent();
     }
 
     @Test
     void abandonedAttemptStopsLockingOnceItsTimeIsUp() {
-        QuizAttemptEntity attempt = openAttempt(Duration.ofHours(2), 30);
+        OpenExam attempt = openAttempt(Duration.ofHours(2), 30);
         assertThat(ChatAccessRules.lockedUntil(List.of(attempt), Instant.now())).isEmpty();
     }
 
@@ -108,15 +106,14 @@ class ChatAccessRulesTest {
 
     @Test
     void attemptWithoutStartTimeNeverLocks() {
-        QuizAttemptEntity attempt = openAttempt(Duration.ZERO, 30);
-        attempt.setStartedAt(null);
+        OpenExam attempt = new OpenExam(null, 30);
         assertThat(ChatAccessRules.lockedUntil(List.of(attempt), Instant.now())).isEmpty();
     }
 
     @Test
     void theLatestEndingAttemptWins() {
-        QuizAttemptEntity shortOne = openAttempt(Duration.ofMinutes(1), 10);
-        QuizAttemptEntity longOne = openAttempt(Duration.ofMinutes(1), 90);
+        OpenExam shortOne = openAttempt(Duration.ofMinutes(1), 10);
+        OpenExam longOne = openAttempt(Duration.ofMinutes(1), 90);
 
         assertThat(ChatAccessRules.lockedUntil(List.of(shortOne, longOne), Instant.now()))
                 .contains(ChatAccessRules.lockEnd(longOne).orElseThrow());
