@@ -5,7 +5,6 @@ import java.time.LocalDate;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
 
 @Entity
 @Table(name = "calendar_events")
@@ -17,9 +16,9 @@ public class CalendarEventEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "course_id")
-    private CourseEntity course;
+    /** The course (academic module) this entry belongs to. */
+    @Column(name = "course_id")
+    private Long courseId;
 
     private String title;
 

@@ -98,7 +98,9 @@ class CourseworkFlowIT extends IntegrationTestBase {
                 .expect(409);
 
         // Pages that aggregate across areas keep answering.
-        student.api().get("/api/grades").expect(200);
+        // A class member is in the course for grades too, not only direct enrollees.
+        JsonNode grades = student.api().get("/api/grades").expect(200).json();
+        assertThat(grades.get("courses").toString()).contains(course.code());
         teacher.api().get("/api/teacher/dashboard").expect(200);
         JsonNode students =
                 teacher.api().get("/api/courses/" + course.code() + "/students").expect(200).json();

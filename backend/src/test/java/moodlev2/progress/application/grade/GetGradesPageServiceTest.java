@@ -1,7 +1,8 @@
 package moodlev2.progress.application.grade;
 
-import static moodlev2.support.Fixtures.course;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -9,9 +10,10 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.Collection;
 import java.util.List;
-import moodlev2.academic.infrastructure.persistence.CourseRepository;
-import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
+import moodlev2.academic.api.CourseSummary;
+import moodlev2.academic.api.MembershipApi;
 import moodlev2.identity.api.Role;
 import moodlev2.progress.infrastructure.persistence.CalendarEventRepository;
 import moodlev2.progress.infrastructure.persistence.GradeRepository;
@@ -33,14 +35,14 @@ class GetGradesPageServiceTest {
     private static final LocalDate TODAY = LocalDate.of(2026, 9, 30);
 
     @Mock private GradeRepository gradeRepository;
-    @Mock private CourseRepository courseRepository;
+    @Mock private MembershipApi membership;
     @Mock private CalendarEventRepository calendarEventRepository;
 
     private GetGradesPageService service;
 
-    private final CourseEntity strong = course(1, "CS201");
-    private final CourseEntity weak = course(2, "CS350");
-    private final CourseEntity empty = course(3, "MA101");
+    private final CourseSummary strong = course(1, "CS201");
+    private final CourseSummary weak = course(2, "CS350");
+    private final CourseSummary empty = course(3, "MA101");
 
     private final FakeDirectory directory = new FakeDirectory();
 
@@ -49,20 +51,16 @@ class GetGradesPageServiceTest {
         Clock clock = Clock.fixed(Instant.parse("2026-09-30T10:00:00Z"), ZoneOffset.UTC);
         service =
                 new GetGradesPageService(
-                        gradeRepository,
-                        courseRepository,
-                        calendarEventRepository,
-                        directory,
-                        clock);
+                        gradeRepository, membership, calendarEventRepository, directory, clock);
         directory.add(1L, EMAIL, null, Role.STUDENT);
-        when(courseRepository.findAllByEnrolledUserId(1L)).thenReturn(List.of(strong, weak, empty));
+        when(membership.coursesOfStudent(any())).thenReturn(List.of(strong, weak, empty));
         when(gradeRepository.findAllByUserIdOrderByGradedAtDesc(1L))
                 .thenReturn(
                         List.of(
                                 grade(strong, "Quiz 1", "18.50", "20.00", "quiz"),
                                 grade(weak, "Lab 1", "6", "10", "lab"),
                                 grade(weak, "Lab 2", "8", "10", "lab")));
-        when(calendarEventRepository.findAllForUser(1L, null)).thenReturn(List.of());
+        calendarHas();
     }
 
     @Test
@@ -113,14 +111,12 @@ class GetGradesPageServiceTest {
 
     @Test
     void upcomingListsOnlyFutureEventsOfEnrolledCoursesSoonestFirst() {
-        CourseEntity notEnrolled = course(9, "XX999");
-        when(calendarEventRepository.findAllForUser(1L, null))
-                .thenReturn(
-                        List.of(
-                                event(strong, "Quiz 2", TODAY.plusDays(12)),
-                                event(weak, "Lab 4", TODAY.plusDays(3)),
-                                event(strong, "Old quiz", TODAY.minusDays(1)),
-                                event(notEnrolled, "Taught course", TODAY.plusDays(1))));
+        CourseSummary notEnrolled = course(9, "XX999");
+        calendarHas(
+                event(strong, "Quiz 2", TODAY.plusDays(12)),
+                event(weak, "Lab 4", TODAY.plusDays(3)),
+                event(strong, "Old quiz", TODAY.minusDays(1)),
+                event(notEnrolled, "Taught course", TODAY.plusDays(1)));
 
         GradesPageResponse page = service.getGradesPageForUser(EMAIL);
 
@@ -133,10 +129,28 @@ class GetGradesPageServiceTest {
         return page.courses().stream().filter(c -> c.code().equals(code)).findFirst().orElseThrow();
     }
 
+    private static CourseSummary course(long id, String code) {
+        return new CourseSummary(id, code, "Course " + code, "Fall 2026", "PUBLISHED", null, null);
+    }
+
+    /** The calendar answers only for the course ids it is asked about, like the real query. */
+    @SuppressWarnings("unchecked")
+    private void calendarHas(CalendarEventEntity... events) {
+        when(calendarEventRepository.findAllByCourseIdIn(anyCollection()))
+                .thenAnswer(
+                        inv ->
+                                List.of(events).stream()
+                                        .filter(
+                                                e ->
+                                                        ((Collection<Long>) inv.getArgument(0))
+                                                                .contains(e.getCourseId()))
+                                        .toList());
+    }
+
     private static GradeEntity grade(
-            CourseEntity course, String name, String score, String max, String type) {
+            CourseSummary course, String name, String score, String max, String type) {
         GradeEntity g = new GradeEntity();
-        g.setCourse(course);
+        g.setCourseId(course.id());
         g.setItemName(name);
         g.setScoreReceived(new BigDecimal(score));
         g.setMaxScore(new BigDecimal(max));
@@ -145,9 +159,9 @@ class GetGradesPageServiceTest {
         return g;
     }
 
-    private static CalendarEventEntity event(CourseEntity course, String title, LocalDate date) {
+    private static CalendarEventEntity event(CourseSummary course, String title, LocalDate date) {
         CalendarEventEntity e = new CalendarEventEntity();
-        e.setCourse(course);
+        e.setCourseId(course.id());
         e.setTitle(title);
         e.setEventDate(date);
         e.setEventType("quiz");

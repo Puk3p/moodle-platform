@@ -7,16 +7,18 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
+import moodlev2.academic.api.AssignmentPublishedEvent;
 import moodlev2.academic.infrastructure.persistence.CourseModuleRepository;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import moodlev2.academic.infrastructure.persistence.ModuleItemRepository;
 import moodlev2.academic.infrastructure.persistence.entity.CourseModuleEntity;
 import moodlev2.academic.infrastructure.persistence.entity.ModuleItemEntity;
 import moodlev2.academic.web.resource.dto.CreateResourceDto;
-import moodlev2.progress.infrastructure.persistence.CalendarEventRepository;
 import moodlev2.shared.storage.FileStorageService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +29,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class)
 class ResourceServiceTest {
@@ -35,11 +38,45 @@ class ResourceServiceTest {
     @Mock private CourseModuleRepository courseModuleRepository;
     @Mock private ModuleItemRepository moduleItemRepository;
     @Mock private FileStorageService fileStorageService;
-    @Mock private CalendarEventRepository calendarEventRepository;
+    @Mock private ApplicationEventPublisher events;
 
     @InjectMocks private ResourceService service;
 
     private final CourseModuleEntity module = module(20, course(10, "CS101"));
+
+    @Test
+    void anAssignmentWithADeadlineIsAnnouncedForTheCalendar() {
+        when(courseModuleRepository.findById(20L)).thenReturn(Optional.of(module));
+        when(moduleItemRepository.save(any(ModuleItemEntity.class)))
+                .thenAnswer(
+                        inv -> {
+                            ModuleItemEntity item = inv.getArgument(0);
+                            item.setId(99L);
+                            return item;
+                        });
+        CreateResourceDto dto = new CreateResourceDto();
+        dto.setModuleId(20L);
+        dto.setTitle("Essay");
+        dto.setType("Assignment");
+        dto.setMaxGrade(10);
+        dto.setDueDate("2026-12-01T23:59");
+
+        service.createResource(dto);
+
+        verify(events)
+                .publishEvent(
+                        new AssignmentPublishedEvent(
+                                10L, 99L, "Essay", LocalDateTime.parse("2026-12-01T23:59")));
+    }
+
+    @Test
+    void anythingWithoutADeadlineIsNotAnnounced() {
+        when(courseModuleRepository.findById(20L)).thenReturn(Optional.of(module));
+
+        service.createResource(link("https://example.com/notes"));
+
+        verifyNoInteractions(events);
+    }
 
     private static CreateResourceDto link(String url) {
         CreateResourceDto dto = new CreateResourceDto();

@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import moodlev2.academic.infrastructure.persistence.CourseRepository;
-import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
+import moodlev2.academic.api.CourseSummary;
+import moodlev2.academic.api.MembershipApi;
 import moodlev2.identity.api.DirectoryApi;
 import moodlev2.identity.api.UserSummary;
 import moodlev2.progress.infrastructure.persistence.CalendarEventRepository;
@@ -35,7 +35,7 @@ public class GetGradesPageService {
     static final int MAX_UPCOMING = 4;
 
     private final GradeRepository gradeRepository;
-    private final CourseRepository courseRepository;
+    private final MembershipApi membership;
     private final CalendarEventRepository calendarEventRepository;
     private final DirectoryApi directory;
     private final Clock clock;
@@ -43,12 +43,12 @@ public class GetGradesPageService {
     @Autowired
     public GetGradesPageService(
             GradeRepository gradeRepository,
-            CourseRepository courseRepository,
+            MembershipApi membership,
             CalendarEventRepository calendarEventRepository,
             DirectoryApi directory) {
         this(
                 gradeRepository,
-                courseRepository,
+                membership,
                 calendarEventRepository,
                 directory,
                 Clock.systemDefaultZone());
@@ -56,12 +56,12 @@ public class GetGradesPageService {
 
     GetGradesPageService(
             GradeRepository gradeRepository,
-            CourseRepository courseRepository,
+            MembershipApi membership,
             CalendarEventRepository calendarEventRepository,
             DirectoryApi directory,
             Clock clock) {
         this.gradeRepository = gradeRepository;
-        this.courseRepository = courseRepository;
+        this.membership = membership;
         this.calendarEventRepository = calendarEventRepository;
         this.directory = directory;
         this.clock = clock;
@@ -74,20 +74,20 @@ public class GetGradesPageService {
                 user == null
                         ? List.of()
                         : gradeRepository.findAllByUserIdOrderByGradedAtDesc(user.id());
-        List<CourseEntity> courses =
-                user == null ? List.of() : courseRepository.findAllByEnrolledUserId(user.id());
+        // Every course the student belongs to, enrolled directly or through their class.
+        List<CourseSummary> courses = user == null ? List.of() : membership.coursesOfStudent(user);
         Map<Long, String> instructors = instructorNames(courses);
 
         Map<Long, List<GradeEntity>> gradesByCourse =
-                allGrades.stream().collect(Collectors.groupingBy(g -> g.getCourse().getId()));
+                allGrades.stream().collect(Collectors.groupingBy(GradeEntity::getCourseId));
 
         List<CourseGradeDto> courseGrades = new ArrayList<>();
-        for (CourseEntity course : courses) {
+        for (CourseSummary course : courses) {
             courseGrades.add(
                     toCourseGrade(
                             course,
-                            instructors.getOrDefault(course.getTeacherId(), "Unknown Instructor"),
-                            gradesByCourse.getOrDefault(course.getId(), List.of())));
+                            instructors.getOrDefault(course.teacherId(), "Unknown Instructor"),
+                            gradesByCourse.getOrDefault(course.id(), List.of())));
         }
 
         List<CourseGradeDto> graded =
@@ -116,7 +116,7 @@ public class GetGradesPageService {
     }
 
     private CourseGradeDto toCourseGrade(
-            CourseEntity course, String instructor, List<GradeEntity> grades) {
+            CourseSummary course, String instructor, List<GradeEntity> grades) {
         List<GradeEntity> scored =
                 grades.stream()
                         .filter(g -> g.getScoreReceived() != null)
@@ -136,9 +136,9 @@ public class GetGradesPageService {
         List<RecentGradeItemDto> items = scored.stream().map(this::toItem).toList();
 
         return new CourseGradeDto(
-                course.getCode(),
-                course.getName(),
-                course.getTerm(),
+                course.code(),
+                course.name(),
+                course.term(),
                 instructor,
                 average == null ? null : letterFor(average),
                 average,
@@ -186,32 +186,31 @@ public class GetGradesPageService {
                 byLetter.getOrDefault("-", 0L).intValue());
     }
 
-    private Map<Long, String> instructorNames(List<CourseEntity> courses) {
+    private Map<Long, String> instructorNames(List<CourseSummary> courses) {
         Set<Long> ids =
                 courses.stream()
-                        .map(CourseEntity::getTeacherId)
+                        .map(CourseSummary::teacherId)
                         .filter(java.util.Objects::nonNull)
                         .collect(Collectors.toSet());
         return directory.findUsers(ids).stream()
                 .collect(Collectors.toMap(UserSummary::id, UserSummary::fullName));
     }
 
-    private List<UpcomingGradeDto> upcoming(UserSummary user, List<CourseEntity> enrolled) {
+    private List<UpcomingGradeDto> upcoming(UserSummary user, List<CourseSummary> enrolled) {
         if (user == null) {
             return List.of();
         }
-        Set<Long> enrolledIds =
-                enrolled.stream().map(CourseEntity::getId).collect(Collectors.toSet());
+        Map<Long, String> codes =
+                enrolled.stream().collect(Collectors.toMap(CourseSummary::id, CourseSummary::code));
         LocalDate today = LocalDate.now(clock);
-        return calendarEventRepository.findAllForUser(user.id(), user.classId()).stream()
-                .filter(e -> e.getCourse() != null && enrolledIds.contains(e.getCourse().getId()))
+        return calendarEventRepository.findAllByCourseIdIn(codes.keySet()).stream()
                 .filter(e -> e.getEventDate() != null && !e.getEventDate().isBefore(today))
                 .sorted(Comparator.comparing(e -> e.getEventDate()))
                 .limit(MAX_UPCOMING)
                 .map(
                         e ->
                                 new UpcomingGradeDto(
-                                        e.getCourse().getCode(),
+                                        codes.get(e.getCourseId()),
                                         e.getTitle(),
                                         e.getEventDate().toString(),
                                         e.getEventType()))

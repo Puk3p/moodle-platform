@@ -6,7 +6,6 @@ import java.time.LocalDate;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
 
 @Entity
 @Table(name = "grades")
@@ -22,9 +21,9 @@ public class GradeEntity {
     @Column(name = "user_id")
     private Long userId;
 
-    @ManyToOne
-    @JoinColumn(name = "course_id")
-    private CourseEntity course;
+    /** The course (academic module) the grade was given in. */
+    @Column(name = "course_id")
+    private Long courseId;
 
     @Column(name = "item_name")
     private String itemName;

@@ -15,7 +15,7 @@ import moodlev2.academic.web.course.dto.preview.DeadlinePreviewDto;
 import moodlev2.academic.web.course.dto.preview.ModuleItemPreviewDto;
 import moodlev2.academic.web.course.dto.preview.ModulePreviewDto;
 import moodlev2.assessment.infrastructure.persistence.entity.QuizEntity;
-import moodlev2.progress.infrastructure.persistence.entity.CalendarEventEntity;
+import moodlev2.progress.api.CalendarEntry;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -27,7 +27,7 @@ public class CoursePreviewMapper {
             CourseEntity course,
             String instructorName,
             List<AnnouncementEntity> announcements,
-            List<CalendarEventEntity> events) {
+            List<CalendarEntry> events) {
 
         List<ModulePreviewDto> moduleDtos =
                 course.getModules().stream().map(this::mapModuleWithoutQuizzes).toList();
@@ -158,11 +158,8 @@ public class CoursePreviewMapper {
         return new AnnouncementPreviewDto(a.getTitle(), a.getBody(), timeAgo);
     }
 
-    private DeadlinePreviewDto mapDeadline(CalendarEventEntity e) {
+    private DeadlinePreviewDto mapDeadline(CalendarEntry e) {
         return new DeadlinePreviewDto(
-                e.getTitle(),
-                e.getEventDate().format(dateFormatter),
-                true,
-                "fa-triangle-exclamation");
+                e.title(), e.date().format(dateFormatter), true, "fa-triangle-exclamation");
     }
 }

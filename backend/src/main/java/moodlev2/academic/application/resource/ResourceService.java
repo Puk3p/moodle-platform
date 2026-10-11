@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import moodlev2.academic.api.AssignmentPublishedEvent;
 import moodlev2.academic.infrastructure.persistence.CourseModuleRepository;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import moodlev2.academic.infrastructure.persistence.ModuleItemRepository;
@@ -16,10 +17,9 @@ import moodlev2.academic.web.resource.dto.CourseOptionDto;
 import moodlev2.academic.web.resource.dto.CreateResourceDto;
 import moodlev2.academic.web.resource.dto.ModuleOptionDto;
 import moodlev2.academic.web.resource.dto.UploadOptionsDto;
-import moodlev2.progress.infrastructure.persistence.CalendarEventRepository;
-import moodlev2.progress.infrastructure.persistence.entity.CalendarEventEntity;
 import moodlev2.shared.exception.NotFoundException;
 import moodlev2.shared.storage.FileStorageService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,7 +36,7 @@ public class ResourceService {
     private final CourseModuleRepository courseModuleRepository;
     private final ModuleItemRepository moduleItemRepository;
     private final FileStorageService fileStorageService;
-    private final CalendarEventRepository calendarEventRepository;
+    private final ApplicationEventPublisher events;
 
     @Transactional(readOnly = true)
     public UploadOptionsDto getUploadOptions(String userEmail) {
@@ -85,15 +85,6 @@ public class ResourceService {
             if (dto.getDueDate() != null && !dto.getDueDate().isBlank()) {
                 LocalDateTime dueDate = LocalDateTime.parse(dto.getDueDate());
                 item.setDueDate(dueDate);
-
-                CalendarEventEntity event = new CalendarEventEntity();
-                event.setCourse(module.getCourse());
-                event.setTitle(dto.getTitle() + " (Deadline)");
-                event.setEventDate(dueDate.toLocalDate());
-                event.setEventType("assignment");
-                event.setDescription("Deadline for assignment: " + dto.getTitle());
-
-                calendarEventRepository.save(event);
             }
 
             if (dto.getFile() != null && !dto.getFile().isEmpty()) {
@@ -128,6 +119,16 @@ public class ResourceService {
         }
 
         moduleItemRepository.save(item);
+
+        // The calendar (progress module) files the deadline in this same transaction.
+        if (item.getDueDate() != null) {
+            events.publishEvent(
+                    new AssignmentPublishedEvent(
+                            module.getCourse().getId(),
+                            item.getId(),
+                            item.getTitle(),
+                            item.getDueDate()));
+        }
     }
 
     /**

@@ -12,12 +12,6 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
 
     List<CourseEntity> findAllByTeacherId(Long teacherId);
 
-    /** Courses the user is enrolled in directly (not through a class). */
-    @Query(
-            "SELECT c FROM CourseEntity c JOIN EnrollmentEntity e ON c.id = e.course.id "
-                    + "WHERE e.userId = :userId")
-    List<CourseEntity> findAllByEnrolledUserId(@Param("userId") Long userId);
-
     /**
      * Courses a student belongs to: enrolled directly, or through their class ({@code classId},
      * {@code null} when they have none) being assigned to the course.
