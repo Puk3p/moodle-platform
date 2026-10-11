@@ -57,10 +57,8 @@ public class SecurityConfig {
                                 csrf.csrfTokenRepository(csrfTokenRepository())
                                         .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
                                         // The OAuth callback is the provider's cross-site GET
-                                        // redirect (protected by the OAuth state parameter); /ws is
-                                        // a GET upgrade whose frames are receive-only.
-                                        .ignoringRequestMatchers(
-                                                "/login/oauth2/**", "/oauth2/**", "/ws/**"))
+                                        // redirect (protected by the OAuth state parameter).
+                                        .ignoringRequestMatchers("/login/oauth2/**", "/oauth2/**"))
                 .headers(
                         headers ->
                                 headers.contentSecurityPolicy(
@@ -131,9 +129,6 @@ public class SecurityConfig {
                                         .requestMatchers("/oauth2/**")
                                         .permitAll()
                                         .requestMatchers("/login/oauth2/**")
-                                        .permitAll()
-                                        // Authenticated in the handshake itself (cookie + origin).
-                                        .requestMatchers("/ws/**")
                                         .permitAll()
                                         .requestMatchers("/actuator/health", "/actuator/info")
                                         .permitAll()

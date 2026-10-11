@@ -11,39 +11,20 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 /**
- * Question bank → quiz → a student's attempt, and the chat lock that a messaging-blocking quiz puts
- * on that student while it runs. This is the one place quiz and chat already talk through an event,
- * so it pins down the behaviour that has to survive the split.
+ * Question bank → quiz → a student's attempt. Chat lives in messaging-service now; core's part of
+ * the chat lock is reporting a messaging-blocking attempt while it runs, which is checked here
+ * through the internal API messaging-service calls (the chat side is in the end-to-end suite).
  */
-class QuizAndChatFlowIT extends IntegrationTestBase {
+class QuizFlowIT extends IntegrationTestBase {
 
     @Test
-    void messagingBlockingQuizLocksChatUntilSubmitted() {
+    void aMessagingBlockingAttemptIsReportedUntilSubmitted() {
         TestUser admin = admin();
         TestUser teacher = teacher();
         TestUser student = student();
         long classId = createClass(admin);
         placeInClass(admin, student, classId);
         Course course = createCourse(teacher, classId);
-
-        // Before the quiz: teacher and student can message each other.
-        assertThat(
-                        student.api()
-                                .get("/api/chat/status")
-                                .expect(200)
-                                .json()
-                                .get("available")
-                                .asBoolean())
-                .isTrue();
-        JsonNode contacts = student.api().get("/api/chat/contacts").expect(200).json();
-        findBy(contacts, "email", teacher.email());
-        student.api()
-                .post(
-                        "/api/chat/messages",
-                        Map.of("recipient", teacher.email(), "content", "Hello teacher"))
-                .expect(201);
-        JsonNode teacherHistory = teacher.api().get("/api/chat/history").expect(200).json();
-        assertThat(teacherHistory.toString()).contains("Hello teacher");
 
         long questionId = createQuestion(teacher, "What is 2 + 2? " + course.code());
         String title = "Quiz " + course.code();
@@ -83,14 +64,9 @@ class QuizAndChatFlowIT extends IntegrationTestBase {
         assertThat(attempt.get("messagingBlocked").asBoolean()).isTrue();
         long attemptId = attempt.get("attemptId").asLong();
 
-        JsonNode locked = student.api().get("/api/chat/status").expect(200).json();
-        assertThat(locked.get("available").asBoolean()).isFalse();
-        assertThat(locked.get("reason").asText()).isEqualTo("QUIZ_IN_PROGRESS");
-        student.api()
-                .post(
-                        "/api/chat/messages",
-                        Map.of("recipient", teacher.email(), "content", "psst, the answer?"))
-                .expect(423);
+        JsonNode locks = internalGet("/internal/exam-locks/users/" + student.id());
+        assertThat(locks).hasSize(1);
+        assertThat(locks.get(0).get("durationMinutes").asInt()).isEqualTo(30);
 
         student.api()
                 .post(
@@ -133,14 +109,7 @@ class QuizAndChatFlowIT extends IntegrationTestBase {
                 .isEqualByComparingTo(result.get("maxScore").decimalValue());
 
         // Submitting lifts the lock.
-        assertThat(
-                        student.api()
-                                .get("/api/chat/status")
-                                .expect(200)
-                                .json()
-                                .get("available")
-                                .asBoolean())
-                .isTrue();
+        assertThat(internalGet("/internal/exam-locks/users/" + student.id())).isEmpty();
 
         // The teacher sees the attempt, its review and its proctoring timeline.
         JsonNode results =

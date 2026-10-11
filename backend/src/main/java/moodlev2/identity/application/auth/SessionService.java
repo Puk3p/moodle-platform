@@ -35,8 +35,8 @@ import org.springframework.transaction.annotation.Transactional;
  *       from the database, so a demotion takes effect on the next request.
  * </ul>
  *
- * <p>Revocations publish {@link SessionsRevokedEvent} so open WebSocket connections using those
- * sessions are closed too.
+ * <p>Revocations publish {@link SessionsRevokedEvent}: other services (the gateway's token cache,
+ * messaging's open sockets) drop whatever still uses those sessions.
  */
 @Service
 public class SessionService {

@@ -9,26 +9,20 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 /**
- * Admin account management. Today these are single transactions that reach into users, sessions and
- * chat; after the split they become events and a saga, so the observable outcome is pinned here
- * first.
+ * Admin account management in core. What other services do about it (chat history following a
+ * rename, or going with a deleted account) is driven by core's events: EventsToKafkaIT checks they
+ * are published, the end-to-end suite checks the outcome.
  */
 class AdminFlowIT extends IntegrationTestBase {
 
     @Test
-    void changingAStudentsEmailKeepsTheirChatAndSignsThemOut() {
+    void changingAStudentsEmailSignsThemOut() {
         TestUser admin = admin();
         TestUser teacher = teacher();
         TestUser student = student();
         long classId = createClass(admin);
         placeInClass(admin, student, classId);
         createCourse(teacher, classId);
-
-        student.api()
-                .post(
-                        "/api/chat/messages",
-                        Map.of("recipient", teacher.email(), "content", "Before the rename"))
-                .expect(201);
 
         String newEmail = "renamed-" + student.id() + "@it.test";
         JsonNode me = student.api().get("/api/users/me").expect(200).json();
@@ -52,14 +46,6 @@ class AdminFlowIT extends IntegrationTestBase {
         JsonNode session = renamed.get("/api/auth/session").expect(200).json();
         assertThat(session.get("email").asText()).isEqualTo(newEmail);
 
-        // The conversation followed the account.
-        JsonNode history = renamed.get("/api/chat/history").expect(200).json();
-        JsonNode message = findBy(history, "content", "Before the rename");
-        assertThat(message.get("sender").asText()).isEqualTo(newEmail);
-        JsonNode teacherView = teacher.api().get("/api/chat/history").expect(200).json();
-        assertThat(findBy(teacherView, "content", "Before the rename").get("sender").asText())
-                .isEqualTo(newEmail);
-
         JsonNode listed =
                 findBy(
                         admin.api().get("/api/admin/students").expect(200).json(),
@@ -77,16 +63,6 @@ class AdminFlowIT extends IntegrationTestBase {
         long classId = createClass(admin);
         placeInClass(admin, student, classId);
         Course course = createCourse(teacher, classId);
-
-        student.api()
-                .post(
-                        "/api/chat/messages",
-                        Map.of(
-                                "recipient",
-                                teacher.email(),
-                                "content",
-                                "Delete me " + student.id()))
-                .expect(201);
 
         Map<String, Object> parts = new LinkedHashMap<>();
         parts.put("courseCode", course.code());
@@ -125,8 +101,6 @@ class AdminFlowIT extends IntegrationTestBase {
 
         assertThat(admin.api().get("/api/admin/students").expect(200).body())
                 .doesNotContain(student.email());
-        assertThat(teacher.api().get("/api/chat/history").expect(200).body())
-                .doesNotContain("Delete me " + student.id());
         assertThat(
                         teacher.api()
                                 .get("/api/assignments/" + assignmentId + "/overview")

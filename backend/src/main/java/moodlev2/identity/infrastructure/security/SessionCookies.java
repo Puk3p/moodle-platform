@@ -75,22 +75,6 @@ public class SessionCookies {
         return read(request, challengeName);
     }
 
-    /** For the WebSocket handshake, which only exposes raw headers. */
-    public Optional<String> readSessionFromHeader(String cookieHeader) {
-        if (cookieHeader == null) {
-            return Optional.empty();
-        }
-        for (String part : cookieHeader.split(";")) {
-            String p = part.trim();
-            int eq = p.indexOf('=');
-            if (eq > 0 && p.substring(0, eq).equals(sessionName)) {
-                String value = p.substring(eq + 1);
-                return value.isEmpty() ? Optional.empty() : Optional.of(value);
-            }
-        }
-        return Optional.empty();
-    }
-
     private ResponseCookie build(String name, String value, Duration maxAge) {
         return ResponseCookie.from(name, value)
                 .httpOnly(true)

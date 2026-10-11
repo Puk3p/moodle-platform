@@ -24,7 +24,4 @@
     <Match>
         <Package name="moodlev2.platform.config"/>
     </Match>
-    <Match>
-        <Class name="moodlev2.messaging.infrastructure.websocket.WebSocketConfig"/>
-    </Match>
 </FindBugsFilter>

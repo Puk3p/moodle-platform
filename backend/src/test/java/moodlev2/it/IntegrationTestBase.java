@@ -231,6 +231,47 @@ public abstract class IntegrationTestBase {
         return new Course(courseId, code, moduleId);
     }
 
+    /** GET on core's internal API as a service (client-credentials token), returns the body. */
+    protected JsonNode internalGet(String path) {
+        try {
+            var http = java.net.http.HttpClient.newHttpClient();
+            String basic =
+                    java.util.Base64.getEncoder()
+                            .encodeToString("it-service:it-service-secret".getBytes());
+            var token =
+                    http.send(
+                            java.net.http.HttpRequest.newBuilder(
+                                            java.net.URI.create(
+                                                    "http://127.0.0.1:"
+                                                            + port
+                                                            + "/internal/oauth2/token"))
+                                    .header("Authorization", "Basic " + basic)
+                                    .header("Content-Type", "application/x-www-form-urlencoded")
+                                    .POST(
+                                            java.net.http.HttpRequest.BodyPublishers.ofString(
+                                                    "grant_type=client_credentials"))
+                                    .build(),
+                            java.net.http.HttpResponse.BodyHandlers.ofString());
+            String access = ApiClient.JSON.readTree(token.body()).get("access_token").asText();
+            var response =
+                    http.send(
+                            java.net.http.HttpRequest.newBuilder(
+                                            java.net.URI.create("http://127.0.0.1:" + port + path))
+                                    .header("Authorization", "Bearer " + access)
+                                    .build(),
+                            java.net.http.HttpResponse.BodyHandlers.ofString());
+            assertThat(response.statusCode())
+                    .as("GET %s -> %s", path, response.body())
+                    .isEqualTo(200);
+            return ApiClient.JSON.readTree(response.body());
+        } catch (java.io.IOException e) {
+            throw new IllegalStateException(e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(e);
+        }
+    }
+
     public record TestUser(long id, String email, String password, ApiClient api) {}
 
     public record Course(long id, String code, long moduleId) {}
