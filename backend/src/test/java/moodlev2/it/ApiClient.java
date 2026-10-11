@@ -126,6 +126,10 @@ public final class ApiClient {
         return cookies.containsKey(name);
     }
 
+    public String cookie(String name) {
+        return cookies.get(name);
+    }
+
     private Response sendJson(String method, String path, Object body) {
         try {
             HttpRequest.BodyPublisher publisher =

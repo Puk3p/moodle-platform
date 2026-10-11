@@ -57,6 +57,7 @@ public abstract class IntegrationTestBase {
         registry.add("security.jwt.secret", () -> jwtSecret);
 
         registry.add("app.session.cookie-secure", () -> "false");
+        registry.add("app.internal.clients.it-service", () -> "it-service-secret");
         Path uploads = Files.createTempDirectory("moodle-it-uploads");
         Path pictures = Files.createTempDirectory("moodle-it-pictures");
         registry.add("app.uploads.dir", uploads::toString);
