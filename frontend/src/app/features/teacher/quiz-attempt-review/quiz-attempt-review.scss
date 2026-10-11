@@ -87,6 +87,97 @@ $text-gray: #6b7280;
 }
 
 
+// --- Proctoring (same card language as .header-card) ---
+
+.proctor-card {
+    background: var(--app-surface);
+    border: 1px solid $border;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    margin-bottom: 2rem;
+
+    .proctor-head {
+        display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;
+        flex-wrap: wrap;
+
+        h2 {
+            margin: 0; font-size: 1rem; font-weight: 700; color: $text-dark;
+            display: flex; align-items: center; gap: 0.5rem;
+            fa-icon { color: #9ca3af; font-size: 0.9rem; }
+        }
+    }
+
+    .proctor-sub { margin: 4px 0 0; font-size: 0.85rem; color: $text-gray; max-width: 60ch; }
+
+    .proctor-flag {
+        flex-shrink: 0;
+        padding: 4px 10px; border-radius: 6px;
+        font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+        background: #fff7ed; color: #c2410c; border: 1px solid #ffedd5;
+
+        &.clean { background: #f0fdf4; color: #15803d; border-color: #dcfce7; }
+    }
+
+    .proctor-stats {
+        display: flex; flex-wrap: wrap; gap: 1rem 2rem;
+        margin-top: 1.25rem;
+
+        .stat-col {
+            display: flex; flex-direction: column;
+            &.border-left { padding-left: 2rem; border-left: 1px solid $border; }
+
+            .label { font-size: 0.7rem; text-transform: uppercase; color: #9ca3af; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 4px; }
+            .value { font-size: 1.1rem; font-weight: 700; color: $text-dark; font-variant-numeric: tabular-nums; }
+        }
+    }
+
+    .timeline-toggle {
+        margin-top: 1.25rem;
+        background: none; border: none; padding: 0;
+        color: $primary; font-weight: 600; font-size: 0.85rem;
+        cursor: pointer;
+        &:hover { text-decoration: underline; }
+        &:focus-visible { outline: 2px solid $primary; outline-offset: 2px; border-radius: 4px; }
+    }
+
+    .proctor-timeline {
+        list-style: none; margin: 1rem 0 0; padding: 0;
+        border-top: 1px solid $border;
+
+        li {
+            display: grid;
+            grid-template-columns: 5.5rem minmax(0, 1fr) auto;
+            align-items: baseline; gap: 0.75rem;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 0.875rem;
+
+            &:last-child { border-bottom: none; }
+        }
+
+        time { color: $text-gray; font-variant-numeric: tabular-nums; }
+
+        .event-label { color: $text-dark; }
+
+        .away-for { color: $text-gray; font-size: 0.8rem; white-space: nowrap; }
+
+        // Colour sits next to the words, never alone.
+        li[data-kind='away'] .event-label { color: #c2410c; font-weight: 600; }
+        li[data-kind='clipboard'] .event-label { color: #7e22ce; }
+    }
+}
+
+@media (max-width: 640px) {
+    .proctor-card .proctor-stats .stat-col.border-left { padding-left: 0; border-left: none; }
+
+    .proctor-card .proctor-timeline li {
+        grid-template-columns: 4.75rem minmax(0, 1fr);
+
+        .away-for { grid-column: 2; }
+    }
+}
+
 .questions-list {
     display: flex; flex-direction: column; gap: 1.5rem;
 }

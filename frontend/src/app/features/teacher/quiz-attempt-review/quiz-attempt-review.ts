@@ -14,12 +14,34 @@ import {
   faArrowRight,
   faGripVertical,
   faPen,
+  faEye,
 } from '@fortawesome/free-solid-svg-icons';
 import { QuizzesService } from '../../../core/services/quizzes.service';
+import { ProctorReport, ProctorTimelineEntry } from '../../../core/models/proctor-report.model';
 import { CodemirrorModule } from '@ctrl/ngx-codemirror';
 import 'codemirror/mode/clike/clike';
 import 'codemirror/mode/python/python';
 
+
+type ProctorEventKind = 'away' | 'back' | 'clipboard' | 'other';
+
+/** A timeline row, with how long the student was gone when it is a return. */
+interface ProctorRow extends ProctorTimelineEntry {
+  kind: ProctorEventKind;
+  label: string;
+  awaySeconds: number | null;
+}
+
+const PROCTOR_LABELS: Record<string, string> = {
+  TAB_HIDDEN: 'Switched to another tab or app',
+  TAB_VISIBLE: 'Came back to the quiz tab',
+  WINDOW_BLUR: 'Left the quiz window',
+  WINDOW_FOCUS: 'Came back to the quiz window',
+  FULLSCREEN_EXIT: 'Exited full screen',
+  FULLSCREEN_ENTER: 'Entered full screen',
+  PASTE: 'Pasted text',
+  COPY: 'Copied text',
+};
 
 interface DragDropReviewData {
   textSegments: any[]; 
@@ -49,6 +71,7 @@ export class QuizAttemptReviewComponent implements OnInit {
   faArrowRight = faArrowRight;
   faGripVertical = faGripVertical;
   faPen = faPen; 
+  faEye = faEye;
 
   attemptId: string | null = null;
   data: any = null;
@@ -56,6 +79,12 @@ export class QuizAttemptReviewComponent implements OnInit {
 
   
   dragDropReviewMap: { [questionId: number]: DragDropReviewData } = {};
+
+  /** Proctoring report; loaded alongside the review and shown above the questions. */
+  proctor: ProctorReport | null = null;
+  proctorRows: ProctorRow[] = [];
+  proctorState: 'loading' | 'ready' | 'unavailable' = 'loading';
+  showProctorTimeline = false;
 
   
   editingQuestionId: number | null = null;
@@ -70,6 +99,7 @@ export class QuizAttemptReviewComponent implements OnInit {
 
   loadData(id: string) {
     this.isLoading = true;
+    this.loadProctorReport(id);
     this.quizzesService.getAttemptReview(id).subscribe({
       next: (res) => {
         this.data = res;
@@ -84,6 +114,53 @@ export class QuizAttemptReviewComponent implements OnInit {
   }
 
   
+
+  private loadProctorReport(id: string) {
+    this.proctorState = 'loading';
+    this.quizzesService.getProctorReport(id).subscribe({
+      next: (report) => {
+        this.proctor = report;
+        this.proctorRows = this.buildProctorRows(report.timeline ?? []);
+        this.proctorState = 'ready';
+      },
+      error: () => (this.proctorState = 'unavailable'),
+    });
+  }
+
+  /** Mirrors the server's pairing: an exit opens an absence, the next return closes it. */
+  private buildProctorRows(timeline: ProctorTimelineEntry[]): ProctorRow[] {
+    let leftAt: number | null = null;
+    return timeline.map((e) => {
+      const kind = this.proctorKind(e.type);
+      const at = new Date(e.occurredAt).getTime();
+      let awaySeconds: number | null = null;
+      if (kind === 'away' && leftAt === null) {
+        leftAt = at;
+      } else if (kind === 'back' && leftAt !== null) {
+        awaySeconds = Math.max(0, Math.round((at - leftAt) / 1000));
+        leftAt = null;
+      }
+      return { ...e, kind, label: PROCTOR_LABELS[e.type] ?? e.type, awaySeconds };
+    });
+  }
+
+  /** Same sets as the server's AWAY_TYPES / BACK_TYPES, so per-row durations add up to its total. */
+  private proctorKind(type: string): ProctorEventKind {
+    if (type === 'TAB_HIDDEN' || type === 'WINDOW_BLUR') return 'away';
+    if (type === 'TAB_VISIBLE' || type === 'WINDOW_FOCUS') return 'back';
+    if (type === 'PASTE' || type === 'COPY') return 'clipboard';
+    return 'other';
+  }
+
+  formatDuration(totalSeconds: number): string {
+    const s = Math.max(0, Math.round(totalSeconds));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    if (h > 0) return `${h}h ${m}m`;
+    if (m > 0) return sec ? `${m}m ${sec}s` : `${m}m`;
+    return `${sec}s`;
+  }
 
   startEditScore(q: any) {
     this.editingQuestionId = q.questionId;

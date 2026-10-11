@@ -71,7 +71,8 @@ public class QuizController {
                                                         e.type(), e.detail(), e.clientTs()))
                                 .toList();
 
-        proctorService.record(attemptId, auth.getName(), inputs);
+        proctorService.record(
+                attemptId, auth.getName(), inputs, batch == null ? null : batch.sentAt());
     }
 
     @DeleteMapping("/{id}")

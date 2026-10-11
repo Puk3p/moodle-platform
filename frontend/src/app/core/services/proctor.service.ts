@@ -1,5 +1,6 @@
 import { Injectable, NgZone, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { firstValueFrom, timeout } from 'rxjs';
 import { readXsrfToken } from '../http/api-request';
 import { API_BASE_URL } from '../config/api-endpoints';
 
@@ -45,6 +46,10 @@ export class ProctorService {
 
   private readonly FLUSH_INTERVAL_MS = 10_000;
   private readonly FLUSH_AT_SIZE = 15;
+  /** Unsent events kept across failed sends; beyond this the oldest are dropped. */
+  private readonly MAX_BUFFER = 500;
+  /** How long submitting waits for the last batch before going ahead without it. */
+  private readonly FINAL_FLUSH_TIMEOUT_MS = 4_000;
 
   // Bound handlers kept so removeEventListener actually detaches them.
   private onVisibility = () => {
@@ -116,7 +121,8 @@ export class ProctorService {
     if (type === 'TAB_HIDDEN' || type === 'WINDOW_BLUR') {
       if (this.away) return;
       this.away = true;
-      this.leaveCount++;
+      // Listeners run outside the zone; re-enter it so the on-screen count updates now.
+      this.zone.run(() => this.leaveCount++);
     } else if (type === 'TAB_VISIBLE' || type === 'WINDOW_FOCUS') {
       if (!this.away) return;
       this.away = false;
@@ -124,24 +130,53 @@ export class ProctorService {
 
     this.buffer.push({ type, detail, clientTs: Date.now() });
 
-    if (this.buffer.length >= this.FLUSH_AT_SIZE) {
+    // A hidden page may be frozen or discarded (phones do this when switching apps), and the
+    // exit is the event that matters most, so it goes out now rather than on the next tick.
+    if (type === 'TAB_HIDDEN') {
+      this.flush(true);
+    } else if (this.buffer.length >= this.FLUSH_AT_SIZE) {
       this.flush();
     }
   }
 
-  private flush(isUnload = false): void {
+  /**
+   * Sends everything buffered and waits for it, so the last exits reach the server before the
+   * attempt is submitted (the server ignores events for a submitted attempt). Never rejects and
+   * never waits longer than FINAL_FLUSH_TIMEOUT_MS: proctoring must not block a submission.
+   */
+  async flushNow(): Promise<void> {
     if (this.attemptId === null || this.buffer.length === 0) return;
 
     const events = this.buffer.splice(0, this.buffer.length);
-    const url = `${API_BASE_URL}/api/quizzes/attempts/${this.attemptId}/proctor-events`;
-    const body = JSON.stringify({ events });
+    try {
+      await firstValueFrom(
+        this.http
+          .post(this.url(), { events, sentAt: Date.now() })
+          .pipe(timeout(this.FINAL_FLUSH_TIMEOUT_MS)),
+        { defaultValue: null },
+      );
+    } catch {
+      // Submitting goes ahead regardless; a late batch is dropped by the server anyway.
+    }
+  }
 
-    if (isUnload) {
+  private url(): string {
+    return `${API_BASE_URL}/api/quizzes/attempts/${this.attemptId}/proctor-events`;
+  }
+
+  private flush(keepalive = false): void {
+    if (this.attemptId === null || this.buffer.length === 0) return;
+
+    const events = this.buffer.splice(0, this.buffer.length);
+    // The client's clock at send time lets the server correct every clientTs for clock skew.
+    const payload = { events, sentAt: Date.now() };
+
+    if (keepalive) {
       // sendBeacon cannot carry the CSRF header, so use fetch with keepalive, which survives
       // the page going away AND keeps custom headers. The session cookie rides along.
       const xsrf = readXsrfToken();
       try {
-        fetch(url, {
+        fetch(this.url(), {
           method: 'POST',
           keepalive: true,
           credentials: 'include',
@@ -149,18 +184,30 @@ export class ProctorService {
             'Content-Type': 'application/json',
             ...(xsrf ? { 'X-XSRF-TOKEN': xsrf } : {}),
           },
-          body,
-        }).catch(() => {});
+          body: JSON.stringify(payload),
+        })
+          .then((res) => {
+            if (res.status >= 500) this.requeue(events);
+          })
+          .catch(() => this.requeue(events));
       } catch {
         /* page is going away; nothing useful to do */
       }
       return;
     }
 
-    this.http.post(url, { events }).subscribe({
-      error: () => {
-        // Losing proctoring telemetry must never break the exam for the student.
+    this.http.post(this.url(), payload).subscribe({
+      error: (err: HttpErrorResponse) => {
+        // Losing proctoring telemetry must never break the exam for the student, but a
+        // dropped connection should not lose the exits either: retry on the next tick.
+        if (err.status === 0 || err.status >= 500) this.requeue(events);
       },
     });
+  }
+
+  /** Puts unsent events back in front of anything recorded since, keeping order. */
+  private requeue(events: BufferedEvent[]): void {
+    if (this.attemptId === null) return;
+    this.buffer = [...events, ...this.buffer].slice(-this.MAX_BUFFER);
   }
 }

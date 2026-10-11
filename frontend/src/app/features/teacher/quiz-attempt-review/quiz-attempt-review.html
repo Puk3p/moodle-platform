@@ -44,8 +44,67 @@
     </div>
   </div>
 
+  <section class="proctor-card" *ngIf="proctorState !== 'loading'" aria-labelledby="proctor-title">
+    <div class="proctor-head">
+      <div>
+        <h2 id="proctor-title"><fa-icon [icon]="faEye"></fa-icon> Proctoring</h2>
+        <p class="proctor-sub">
+          Records when the student left the quiz tab or window, and copy/paste. It cannot see
+          which sites or apps they used.
+        </p>
+      </div>
+      <span *ngIf="proctor && proctorState === 'ready'"
+            class="proctor-flag"
+            [class.clean]="proctor.leaveCount === 0">
+        {{ proctor.leaveCount === 0 ? 'No exits recorded'
+           : proctor.leaveCount + (proctor.leaveCount === 1 ? ' exit' : ' exits') }}
+      </span>
+    </div>
+
+    <ng-container *ngIf="proctorState === 'ready' && proctor as p">
+      <div class="proctor-stats">
+        <div class="stat-col">
+          <span class="label">Exits</span>
+          <span class="value">{{ p.leaveCount }}</span>
+        </div>
+        <div class="stat-col border-left">
+          <span class="label">Time away</span>
+          <span class="value">{{ formatDuration(p.totalAwaySeconds) }}</span>
+        </div>
+        <div class="stat-col border-left">
+          <span class="label">Pastes</span>
+          <span class="value">{{ p.pasteCount }}</span>
+        </div>
+      </div>
+
+      <button *ngIf="proctorRows.length > 0"
+              type="button"
+              class="timeline-toggle"
+              (click)="showProctorTimeline = !showProctorTimeline"
+              [attr.aria-expanded]="showProctorTimeline"
+              aria-controls="proctor-timeline">
+        {{ showProctorTimeline ? 'Hide' : 'Show' }} timeline ({{ proctorRows.length }}
+        {{ proctorRows.length === 1 ? 'event' : 'events' }})
+      </button>
+
+      <ol id="proctor-timeline" class="proctor-timeline" *ngIf="showProctorTimeline">
+        <li *ngFor="let row of proctorRows" [attr.data-kind]="row.kind">
+          <time [attr.datetime]="row.occurredAt">{{ row.occurredAt | date: 'HH:mm:ss' }}</time>
+          <span class="event-label">{{ row.label }}</span>
+          <span class="away-for" *ngIf="row.awaySeconds !== null">
+            after {{ formatDuration(row.awaySeconds) }} away
+          </span>
+        </li>
+      </ol>
+    </ng-container>
+
+    <p *ngIf="proctorState === 'unavailable'" class="proctor-sub">
+      Proctoring data couldn't be loaded for this attempt.
+    </p>
+  </section>
+
   <div class="questions-list">
-      
+
       <div class="question-card" *ngFor="let q of data.questions; let i = index">
           
           <div class="q-header" [class.correct-bg]="q.isCorrect" [class.wrong-bg]="!q.isCorrect">

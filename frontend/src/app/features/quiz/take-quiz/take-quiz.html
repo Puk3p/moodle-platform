@@ -201,6 +201,34 @@
     </aside>
 
   </div>
+
+  <!-- In-page, not confirm(): a native dialog takes focus from the window, and proctoring
+       would record that as the student leaving the exam. -->
+  <div class="finish-confirm" *ngIf="showFinishConfirm" (click)="cancelFinish()">
+    <div class="finish-confirm__card"
+         role="alertdialog"
+         aria-modal="true"
+         aria-labelledby="finish-confirm-title"
+         aria-describedby="finish-confirm-text"
+         (click)="$event.stopPropagation()">
+      <h2 id="finish-confirm-title">Finish this attempt?</h2>
+      <p id="finish-confirm-text">
+        <ng-container *ngIf="unansweredCount > 0">
+          {{ unansweredCount }} {{ unansweredCount === 1 ? 'question is' : 'questions are' }} still unanswered.
+        </ng-container>
+        Once submitted, your answers can't be changed.
+      </p>
+      <p class="finish-confirm__error" *ngIf="submitError" role="alert">{{ submitError }}</p>
+      <div class="finish-confirm__actions">
+        <button #finishKeepBtn type="button" class="btn-keep" (click)="cancelFinish()">
+          Keep working
+        </button>
+        <button type="button" class="btn-submit" (click)="confirmFinish()">
+          {{ submitError ? 'Try again' : 'Submit attempt' }}
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <ng-template #singleChoiceTpl>

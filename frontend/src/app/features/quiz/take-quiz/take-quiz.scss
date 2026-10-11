@@ -797,6 +797,96 @@ ngx-codemirror { display: block; width: 100%; }
 
 @keyframes qz-spin { to { transform: rotate(360deg); } }
 
+/* ------------------------------------------------------ finish confirm --- */
+/* Replaces confirm(): a native dialog blurs the window, which proctoring
+   would record as the student leaving the exam. */
+
+.finish-confirm {
+  position: fixed;
+  inset: 0;
+  isolation: isolate;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(24, 19, 16, .36);
+  animation: qz-fade-in .16s ease-out;
+}
+
+.finish-confirm__card {
+  width: min(420px, 100%);
+  padding: 24px;
+  border-radius: var(--qz-r-lg);
+  background: var(--qz-surface);
+  box-shadow: 0 24px 48px -12px rgba(24, 19, 16, .28);
+  animation: qz-rise-in .2s cubic-bezier(.22, 1, .36, 1);
+
+  h2 {
+    margin: 0 0 8px;
+    font-size: 1.125rem;
+    font-weight: 700;
+    letter-spacing: -.01em;
+  }
+
+  p {
+    margin: 0;
+    font-size: .9375rem;
+    line-height: 1.5;
+    color: var(--qz-text-muted);
+    text-wrap: pretty;
+  }
+}
+
+.finish-confirm__error {
+  margin-top: 12px !important;
+  padding: 10px 12px;
+  border-radius: var(--qz-r-sm);
+  background: var(--qz-danger-wash);
+  color: var(--qz-danger) !important;
+  font-size: .875rem !important;
+}
+
+.finish-confirm__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+
+  button {
+    padding: 11px 20px;
+    border-radius: var(--qz-r-sm);
+    border: 1px solid transparent;
+    font-family: inherit;
+    font-size: .875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .16s, border-color .16s, transform .16s;
+
+    &:active { transform: translateY(1px); }
+  }
+
+  .btn-keep {
+    background: var(--qz-surface);
+    border-color: var(--qz-border);
+    color: var(--qz-text);
+    &:hover { background: var(--qz-surface-sunk); border-color: var(--qz-border-strong); }
+  }
+
+  .btn-submit {
+    background: var(--qz-text);
+    color: var(--qz-bg);
+    &:hover { background: color-mix(in srgb, var(--qz-text) 86%, transparent); }
+  }
+}
+
+@keyframes qz-fade-in { from { opacity: 0; } }
+@keyframes qz-rise-in { from { opacity: 0; transform: translateY(8px) scale(.98); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .finish-confirm,
+  .finish-confirm__card { animation: none; }
+}
+
 /* ----------------------------------------------------------- responsive --- */
 
 /* The old fixed `1fr 320px` never collapsed, so the navigator crushed the

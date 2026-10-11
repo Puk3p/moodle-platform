@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, HostListener, inject } from '@angular/core';
+import { Component, ElementRef, OnInit, OnDestroy, HostListener, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -42,6 +42,18 @@ export class TakeQuizComponent implements OnInit, OnDestroy {
 
   /** Once submitted, the draft must not be written back (ngOnDestroy used to re-save it). */
   private submitted = false;
+
+  /**
+   * In-page "finish attempt?" confirmation. Native confirm()/alert() take focus from the
+   * window, which proctoring records as the student leaving the exam.
+   */
+  showFinishConfirm = false;
+  submitError = '';
+
+  /** Focus lands on the safe choice whenever the confirmation opens. */
+  @ViewChild('finishKeepBtn') set finishKeepBtn(btn: ElementRef<HTMLButtonElement> | undefined) {
+    btn?.nativeElement.focus();
+  }
 
   /**
    * Draft answers live in sessionStorage, which is scoped to this quiz tab and gone when it
@@ -372,9 +384,14 @@ export class TakeQuizComponent implements OnInit, OnDestroy {
   }
 
   
-  submitAttemptApi() {
+  async submitAttemptApi() {
     this.syncVisualStateToModel(); 
     this.isLoading = true;
+    this.submitError = '';
+
+    // The server stops accepting proctoring events once the attempt is submitted, so anything
+    // still buffered (an exit in the last few seconds) has to land first.
+    await this.proctor.flushNow();
     
     const answers = this.questions.map(q => {
         const payload: any = { questionId: q.id };
@@ -413,6 +430,8 @@ export class TakeQuizComponent implements OnInit, OnDestroy {
     this.quizService.submitQuiz(submissionPayload).subscribe({
       next: (result) => {
         this.submitted = true;
+        // Before the alert below, which would otherwise be recorded as leaving the exam.
+        this.proctor.stop();
         sessionStorage.removeItem(this.draftKey);
         localStorage.removeItem(this.draftKey); // drafts saved by older versions of this page
         alert(`Quiz Finished! Score: ${result.score}/${result.maxScore}. Passed: ${result.passed}`);
@@ -421,8 +440,12 @@ export class TakeQuizComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         console.error('Submit failed', err);
-        alert('Submission failed. Please try again.');
+        // Shown in the page, not alert(): the attempt is still proctored at this point.
+        this.submitError = 'Your answers were not submitted. Check your connection and try again.';
+        this.showFinishConfirm = true;
         this.isLoading = false;
+        // The clock was stopped for the submission; the attempt is still running.
+        if (this.timeRemaining > 0) this.startTimer();
       }
     });
   }
@@ -501,11 +524,27 @@ export class TakeQuizComponent implements OnInit, OnDestroy {
       return String.fromCharCode(65 + index); 
   }
   
-  finishAttempt(force = false) { 
-      if (force || confirm('Are you sure you want to finish this attempt?')) { 
-          clearInterval(this.timerInterval); 
-          this.submitAttemptApi(); 
-      } 
+  finishAttempt(force = false) {
+      if (!force) {
+          this.submitError = '';
+          this.showFinishConfirm = true;
+          return;
+      }
+      this.confirmFinish();
+  }
+
+  confirmFinish() {
+      this.showFinishConfirm = false;
+      clearInterval(this.timerInterval);
+      this.submitAttemptApi();
+  }
+
+  cancelFinish() {
+      this.showFinishConfirm = false;
+  }
+
+  get unansweredCount(): number {
+      return (this.questions?.length ?? 0) - this.answeredCount;
   }
   
   startTimer() { 
@@ -519,6 +558,11 @@ export class TakeQuizComponent implements OnInit, OnDestroy {
       }, 1000); 
   }
   
+  @HostListener('document:keydown.escape')
+  onEscape() {
+      if (this.showFinishConfirm && !this.isLoading) this.cancelFinish();
+  }
+
   @HostListener('window:beforeunload', ['$event']) 
   unloadNotification($event: any) { 
       if (this.timeRemaining > 0) $event.returnValue = true; 

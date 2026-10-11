@@ -4,6 +4,7 @@ import { API_BASE_URL } from '../config/api-endpoints';
 import { Quiz } from '../models/quiz.model';
 import { Observable } from 'rxjs';
 import { QuizResult, QuizSubmission, StudentQuizView } from '../models/quiz-take.model';
+import { ProctorReport } from '../models/proctor-report.model';
 
 @Injectable({ providedIn: 'root' })
 export class QuizzesService {
@@ -47,6 +48,10 @@ export class QuizzesService {
 
   getAttemptReview(attemptId: string): Observable<any> {
     return this.http.get<any>(`${API_BASE_URL}/api/teacher/quizzes/attempts/${attemptId}/review`);
+  }
+
+  getProctorReport(attemptId: string): Observable<ProctorReport> {
+    return this.http.get<ProctorReport>(`${this.teacherUrl}/attempts/${attemptId}/proctor`);
   }
 
   startQuiz(quizId: number, password?: string): Observable<StudentQuizView> {

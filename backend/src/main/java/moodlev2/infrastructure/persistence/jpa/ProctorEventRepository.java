@@ -6,7 +6,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ProctorEventRepository extends JpaRepository<ProctorEventEntity, Long> {
 
-    List<ProctorEventEntity> findByAttemptIdOrderByOccurredAtAsc(Long attemptId);
+    List<ProctorEventEntity> findByAttemptIdOrderByOccurredAtAscIdAsc(Long attemptId);
+
+    long countByAttemptId(Long attemptId);
 
     long countByAttemptIdAndEventTypeIn(Long attemptId, List<String> eventTypes);
 }
