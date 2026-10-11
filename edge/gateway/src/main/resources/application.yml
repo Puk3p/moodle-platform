@@ -1,0 +1,96 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          # Only proxies on these addresses may set X-Forwarded-* (nginx, the Docker network); the
+          # gateway then appends the client it sees, and core takes the client IP from there
+          # (rate limits, session logs). Anyone else's X-Forwarded-* is ignored.
+          trusted-proxies: ${TRUSTED_PROXIES:127\.0\.0\.1|0:0:0:0:0:0:0:1|::1|10\..*|192\.168\..*|172\.(1[6-9]|2[0-9]|3[01])\..*}
+          routes:
+            # Core's service-to-service API is never reachable from outside.
+            - id: internal-api-blocked
+              uri: no://op
+              order: -100
+              predicates:
+                - Path=/internal/**
+              filters:
+                - SetStatus=404
+
+            # ── messaging-service: chat REST and its WebSocket ─────────────
+            - id: messaging-api
+              uri: ${MESSAGING_URL:http://localhost:8082}
+              order: -10
+              predicates:
+                - Path=/api/chat/**
+              filters:
+                - DoubleSubmitCsrf
+                - SessionToken
+                - SecureHeaders
+              metadata:
+                cors:
+                  allowedOrigins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:4200}
+                  allowedMethods: GET,POST,PUT,PATCH,DELETE,OPTIONS
+                  allowedHeaders: Content-Type,Accept,X-XSRF-TOKEN
+                  allowCredentials: true
+                  maxAge: 3600
+            - id: messaging-websocket
+              uri: ${MESSAGING_URL:http://localhost:8082}
+              order: -10
+              predicates:
+                - Path=/ws/**
+              filters:
+                - SessionToken
+
+            # ── core: everything else, untouched (it authenticates itself) ──
+            - id: core
+              uri: ${CORE_URL:http://localhost:8081}
+              order: 100
+              predicates:
+                - Path=/**
+
+  security:
+    oauth2:
+      client:
+        registration:
+          core:
+            client-id: ${INTERNAL_CLIENT_ID:gateway}
+            client-secret: ${INTERNAL_CLIENT_SECRET:}
+            authorization-grant-type: client_credentials
+            client-authentication-method: client_secret_basic
+        provider:
+          core:
+            token-uri: ${app.core.url}/internal/oauth2/token
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+app:
+  core:
+    url: ${CORE_URL:http://localhost:8081}
+    timeout: 2s
+  session:
+    # __Host-mdl_session in production (HTTPS); mdl_session when core runs with
+    # APP_SESSION_COOKIE_SECURE=false for plain-HTTP local development.
+    cookie-name: ${SESSION_COOKIE_NAME:__Host-mdl_session}
+    cache-ttl: 20s
+  kafka:
+    instance-group: ${spring.application.name}-${random.uuid}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true

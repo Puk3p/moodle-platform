@@ -18,5 +18,6 @@
         <!-- The original application; services are carved out of it one at a time. -->
         <module>backend</module>
         <module>services/messaging-service</module>
+        <module>edge/gateway</module>
     </modules>
 </project>
