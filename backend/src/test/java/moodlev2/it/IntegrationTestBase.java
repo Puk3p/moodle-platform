@@ -18,6 +18,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.kafka.KafkaContainer;
 
 /**
  * Boots the whole application on a random port against a throwaway MySQL (Flyway migrates and seeds
@@ -36,8 +37,11 @@ public abstract class IntegrationTestBase {
                     .withUsername("moodle")
                     .withPassword("moodle");
 
+    static final KafkaContainer KAFKA = new KafkaContainer("apache/kafka:3.9.1");
+
     static {
         MYSQL.start();
+        KAFKA.start();
     }
 
     @DynamicPropertySource
@@ -45,6 +49,7 @@ public abstract class IntegrationTestBase {
         registry.add("spring.datasource.url", MYSQL::getJdbcUrl);
         registry.add("spring.datasource.username", MYSQL::getUsername);
         registry.add("spring.datasource.password", MYSQL::getPassword);
+        registry.add("spring.kafka.bootstrap-servers", KAFKA::getBootstrapServers);
 
         byte[] secret = new byte[48];
         new SecureRandom().nextBytes(secret);

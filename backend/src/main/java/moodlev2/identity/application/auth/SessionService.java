@@ -206,6 +206,7 @@ public class SessionService {
         sessions.deleteAll(doomed);
         events.publishEvent(
                 new SessionsRevokedEvent(
+                        doomed.get(0).getUser().getId(),
                         doomed.stream().map(UserSessionEntity::getTokenSignature).toList()));
     }
 

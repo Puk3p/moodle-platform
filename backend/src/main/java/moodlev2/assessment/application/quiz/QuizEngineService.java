@@ -100,7 +100,8 @@ public class QuizEngineService {
                 quizAttemptRepository.findByQuizIdAndUserIdAndStatus(
                         quizId, user.id(), "IN_PROGRESS");
         if (existingAttempt.isPresent()) {
-            events.publishEvent(new QuizAttemptChangedEvent(userEmail, quiz.isBlockMessaging()));
+            events.publishEvent(
+                    new QuizAttemptChangedEvent(user.id(), userEmail, quiz.isBlockMessaging()));
             return mapper.toStudentView(quiz, existingAttempt.get().getId());
         }
 
@@ -130,7 +131,8 @@ public class QuizEngineService {
         attempt.setScore(BigDecimal.ZERO);
 
         attemptRepository.save(attempt);
-        events.publishEvent(new QuizAttemptChangedEvent(userEmail, quiz.isBlockMessaging()));
+        events.publishEvent(
+                new QuizAttemptChangedEvent(user.id(), userEmail, quiz.isBlockMessaging()));
 
         return mapper.toStudentView(quiz, attempt.getId());
     }
@@ -310,7 +312,9 @@ public class QuizEngineService {
         attempt.setScore(totalScore);
 
         attemptRepository.save(attempt);
-        events.publishEvent(new QuizAttemptChangedEvent(userEmail, quiz.isBlockMessaging()));
+        events.publishEvent(
+                new QuizAttemptChangedEvent(
+                        attempt.getUserId(), userEmail, quiz.isBlockMessaging()));
 
         boolean awaitingGrading = questions.stream().anyMatch(QuizEngineService::isGradedByTeacher);
 

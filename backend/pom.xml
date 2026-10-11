@@ -33,11 +33,36 @@
         <spotbugs.version>4.8.6.6</spotbugs.version>
         <!-- 1.21.4+ speaks Docker API 1.44, the minimum Docker Engine 29 accepts. -->
         <testcontainers.version>1.21.4</testcontainers.version>
+        <spring-modulith.version>1.4.13</spring-modulith.version>
     </properties>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.modulith</groupId>
+                <artifactId>spring-modulith-bom</artifactId>
+                <version>${spring-modulith.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <!--
+          Event publication registry (transactional outbox, stored in EVENT_PUBLICATION) and its
+          externalization to Kafka, so other services hear about changes made here.
+        -->
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-starter-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.modulith</groupId>
+            <artifactId>spring-modulith-events-kafka</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -104,6 +129,11 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>mysql</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>kafka</artifactId>
             <scope>test</scope>
         </dependency>
         <!-- https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt -->
