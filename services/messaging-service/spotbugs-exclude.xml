@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- Lombok-generated accessors and records handing out their own fields -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <!-- JPA entities are mutable by design -->
+    <Match>
+        <Package name="moodlev2.messaging.infrastructure.persistence.entity"/>
+    </Match>
+</FindBugsFilter>
