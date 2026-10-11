@@ -9,8 +9,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class QuizMapper {
 
-    public TeacherQuizDto toTeacherDto(QuizEntity entity) {
-        String context = (entity.getModule() != null) ? entity.getModule().getTitle() : "";
+    /**
+     * @param courseName the quiz's course
+     * @param moduleTitle the module it is filed under, {@code ""} for none
+     */
+    public TeacherQuizDto toTeacherDto(QuizEntity entity, String courseName, String moduleTitle) {
+        String context = moduleTitle;
 
         String attemptsLabel;
         if (entity.getMaxAttempts() == null || entity.getMaxAttempts() == 0) {
@@ -27,11 +31,12 @@ public class QuizMapper {
         return new TeacherQuizDto(
                 String.valueOf(entity.getId()),
                 entity.getTitle(),
-                entity.getCourse().getName(),
+                courseName,
                 context,
                 entity.getStatus(),
-                entity.getQuestionsCount(),
-                entity.getDurationMinutes(),
+                entity.getQuestionsCount() != null ? entity.getQuestionsCount() : 0,
+                // Untimed quizzes have no duration; 0 rather than a null unboxing failure.
+                entity.getDurationMinutes() != null ? entity.getDurationMinutes() : 0,
                 attemptsLabel,
                 lastUpdated,
                 entity.isBlockMessaging());
