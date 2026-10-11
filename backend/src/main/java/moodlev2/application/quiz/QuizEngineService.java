@@ -290,21 +290,32 @@ public class QuizEngineService {
         attemptRepository.save(attempt);
         events.publishEvent(new QuizAttemptChangedEvent(userEmail, quiz.isBlockMessaging()));
 
-        boolean passed =
-                totalScore.intValue()
-                        >= (quiz.getPassingScore() != null ? quiz.getPassingScore() : 50);
-
         return new QuizResultDto(
                 attempt.getId(),
                 quiz.getTitle(),
                 totalScore,
                 maxScore,
-                passed,
+                isPassing(totalScore, maxScore, quiz.getPassingScore()),
                 attempt.getCompletedAt().toString());
     }
 
     private static BigDecimal pointsOf(QuizQuestionEntity question) {
         return BigDecimal.valueOf(question.getPoints() != null ? question.getPoints() : 0);
+    }
+
+    /**
+     * Whether {@code score} out of {@code maxScore} reaches the pass mark, which is a percentage
+     * (0-100, 50 when unset). A quiz worth no points counts as 0%.
+     */
+    static boolean isPassing(BigDecimal score, BigDecimal maxScore, Integer passingScore) {
+        int threshold = passingScore != null ? passingScore : 50;
+        if (score == null || maxScore.signum() <= 0) {
+            return threshold <= 0;
+        }
+        // score / maxScore * 100 >= threshold, cross-multiplied so no rounding can tip it.
+        return score.multiply(BigDecimal.valueOf(100))
+                        .compareTo(maxScore.multiply(BigDecimal.valueOf(threshold)))
+                >= 0;
     }
 
     @Transactional(readOnly = true)
@@ -438,17 +449,8 @@ public class QuizEngineService {
                         .map(q -> BigDecimal.valueOf(q.getPoints()))
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        double percentage = 0.0;
-        if (maxScore.compareTo(BigDecimal.ZERO) > 0 && attempt.getScore() != null) {
-            percentage = (attempt.getScore().doubleValue() / maxScore.doubleValue()) * 100.0;
-        }
-
-        int passingScoreThreshold =
-                attempt.getQuiz().getPassingScore() != null
-                        ? attempt.getQuiz().getPassingScore()
-                        : 50;
-
-        boolean passed = percentage >= passingScoreThreshold;
+        boolean passed =
+                isPassing(attempt.getScore(), maxScore, attempt.getQuiz().getPassingScore());
 
         return new QuizAttemptListDto(
                 attempt.getId(),

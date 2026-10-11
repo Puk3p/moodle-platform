@@ -36,6 +36,7 @@ import moodlev2.infrastructure.persistence.jpa.entity.QuizEntity;
 import moodlev2.infrastructure.persistence.jpa.entity.QuizOptionEntity;
 import moodlev2.infrastructure.persistence.jpa.entity.QuizQuestionEntity;
 import moodlev2.infrastructure.persistence.jpa.entity.UserEntity;
+import moodlev2.web.quiz.dto.QuizAttemptListDto;
 import moodlev2.web.quiz.dto.QuizResultDto;
 import moodlev2.web.quiz.dto.QuizSubmissionDto;
 import moodlev2.web.quiz.dto.QuizSubmissionDto.AnswerDto;
@@ -254,6 +255,90 @@ class QuizEngineServiceTest {
                             student.getEmail());
 
             assertThat(result.score()).isEqualByComparingTo("0");
+        }
+    }
+
+    // ── Pass mark is a percentage of the maximum, not raw points ────────────
+
+    @Nested
+    class Passing {
+
+        private QuizResultDto submit(AnswerDto... answers) {
+            return service.submitAttempt(
+                    new QuizSubmissionDto(500L, List.of(answers)), student.getEmail());
+        }
+
+        @Test
+        void fullMarksOnATwoPointQuizPasses() {
+            QuizEntity quiz = quiz();
+            quiz.setPassingScore(50);
+            openAttempt(quiz, student);
+
+            QuizResultDto result = submit(choose(11L, 111L), choose(12L, 121L));
+
+            assertThat(result.score()).isEqualByComparingTo("2");
+            assertThat(result.passed()).isTrue();
+        }
+
+        @Test
+        void halfMarksMeetAFiftyPercentThreshold() {
+            QuizEntity quiz = quiz();
+            quiz.setPassingScore(50);
+            openAttempt(quiz, student);
+
+            QuizResultDto result = submit(choose(11L, 111L), choose(12L, 122L));
+
+            assertThat(result.score()).isEqualByComparingTo("1");
+            assertThat(result.passed()).isTrue();
+        }
+
+        @Test
+        void noMarksFail() {
+            QuizEntity quiz = quiz();
+            quiz.setPassingScore(50);
+            openAttempt(quiz, student);
+
+            QuizResultDto result = submit(choose(11L, 112L), choose(12L, 122L));
+
+            assertThat(result.score()).isEqualByComparingTo("0");
+            assertThat(result.passed()).isFalse();
+        }
+
+        @Test
+        void zeroPointQuizDoesNotDivideByZero() {
+            QuizEntity quiz = quiz();
+            quiz.getQuestions().forEach(q -> q.setPoints(0));
+            openAttempt(quiz, student);
+
+            QuizResultDto result = submit(choose(11L, 111L), choose(12L, 121L));
+
+            assertThat(result.maxScore()).isEqualByComparingTo("0");
+            assertThat(result.passed()).isFalse();
+        }
+
+        @Test
+        void teacherListAgreesWithTheSubmissionResult() {
+            QuizEntity quiz = quiz();
+            QuizAttemptEntity attempt = openAttempt(quiz, student);
+            QuizResultDto result = submit(choose(11L, 111L), choose(12L, 121L));
+            when(attemptRepository.findByQuizIdOrderByCompletedAtDesc(7L))
+                    .thenReturn(List.of(attempt));
+
+            List<QuizAttemptListDto> list = service.getAttemptsForQuiz(7L);
+
+            assertThat(result.passed()).isTrue();
+            assertThat(list).singleElement().extracting(QuizAttemptListDto::passed).isEqualTo(true);
+        }
+
+        @Test
+        void thresholdIsComparedExactly() {
+            // 57 / 100 * 100 in doubles is 56.99999999999999.
+            assertThat(
+                            QuizEngineService.isPassing(
+                                    BigDecimal.valueOf(57), BigDecimal.valueOf(100), 57))
+                    .isTrue();
+            assertThat(QuizEngineService.isPassing(BigDecimal.ONE, BigDecimal.valueOf(3), 34))
+                    .isFalse();
         }
     }
 
