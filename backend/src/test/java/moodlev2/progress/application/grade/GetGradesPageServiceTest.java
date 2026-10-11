@@ -12,12 +12,14 @@ import java.time.ZoneOffset;
 import java.util.List;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
+import moodlev2.identity.api.Role;
 import moodlev2.progress.infrastructure.persistence.CalendarEventRepository;
 import moodlev2.progress.infrastructure.persistence.GradeRepository;
 import moodlev2.progress.infrastructure.persistence.entity.CalendarEventEntity;
 import moodlev2.progress.infrastructure.persistence.entity.GradeEntity;
 import moodlev2.progress.web.grade.dto.CourseGradeDto;
 import moodlev2.progress.web.grade.dto.GradesPageResponse;
+import moodlev2.support.FakeDirectory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,20 +42,27 @@ class GetGradesPageServiceTest {
     private final CourseEntity weak = course(2, "CS350");
     private final CourseEntity empty = course(3, "MA101");
 
+    private final FakeDirectory directory = new FakeDirectory();
+
     @BeforeEach
     void setUp() {
         Clock clock = Clock.fixed(Instant.parse("2026-09-30T10:00:00Z"), ZoneOffset.UTC);
         service =
                 new GetGradesPageService(
-                        gradeRepository, courseRepository, calendarEventRepository, clock);
-        when(courseRepository.findAllByUserEmail(EMAIL)).thenReturn(List.of(strong, weak, empty));
-        when(gradeRepository.findAllByUserEmail(EMAIL))
+                        gradeRepository,
+                        courseRepository,
+                        calendarEventRepository,
+                        directory,
+                        clock);
+        directory.add(1L, EMAIL, null, Role.STUDENT);
+        when(courseRepository.findAllByEnrolledUserId(1L)).thenReturn(List.of(strong, weak, empty));
+        when(gradeRepository.findAllByUserIdOrderByGradedAtDesc(1L))
                 .thenReturn(
                         List.of(
                                 grade(strong, "Quiz 1", "18.50", "20.00", "quiz"),
                                 grade(weak, "Lab 1", "6", "10", "lab"),
                                 grade(weak, "Lab 2", "8", "10", "lab")));
-        when(calendarEventRepository.findAllByUserEmail(EMAIL)).thenReturn(List.of());
+        when(calendarEventRepository.findAllForUser(1L, null)).thenReturn(List.of());
     }
 
     @Test
@@ -93,7 +102,7 @@ class GetGradesPageServiceTest {
 
     @Test
     void nothingToReportBeforeAnyGradeExists() {
-        when(gradeRepository.findAllByUserEmail(EMAIL)).thenReturn(List.of());
+        when(gradeRepository.findAllByUserIdOrderByGradedAtDesc(1L)).thenReturn(List.of());
 
         GradesPageResponse page = service.getGradesPageForUser(EMAIL);
 
@@ -105,7 +114,7 @@ class GetGradesPageServiceTest {
     @Test
     void upcomingListsOnlyFutureEventsOfEnrolledCoursesSoonestFirst() {
         CourseEntity notEnrolled = course(9, "XX999");
-        when(calendarEventRepository.findAllByUserEmail(EMAIL))
+        when(calendarEventRepository.findAllForUser(1L, null))
                 .thenReturn(
                         List.of(
                                 event(strong, "Quiz 2", TODAY.plusDays(12)),

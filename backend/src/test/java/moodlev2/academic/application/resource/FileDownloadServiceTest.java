@@ -2,8 +2,8 @@ package moodlev2.academic.application.resource;
 
 import static moodlev2.support.Fixtures.course;
 import static moodlev2.support.Fixtures.module;
+import static moodlev2.support.Fixtures.person;
 import static moodlev2.support.Fixtures.resource;
-import static moodlev2.support.Fixtures.user;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -15,7 +15,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.Optional;
 import moodlev2.academic.application.course.CourseAccess;
 import moodlev2.academic.infrastructure.persistence.AssignmentSubmissionRepository;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
@@ -23,10 +22,10 @@ import moodlev2.academic.infrastructure.persistence.ModuleItemRepository;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
 import moodlev2.academic.infrastructure.persistence.entity.CourseModuleEntity;
 import moodlev2.academic.infrastructure.persistence.entity.ModuleItemEntity;
-import moodlev2.identity.domain.user.Role;
-import moodlev2.identity.infrastructure.persistence.SpringDataUserRepository;
-import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
+import moodlev2.identity.api.Role;
+import moodlev2.identity.api.UserSummary;
 import moodlev2.shared.exception.NotFoundException;
+import moodlev2.support.FakeDirectory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,7 +43,6 @@ class FileDownloadServiceTest {
     private static final String URL = "/uploads/" + STORED;
 
     @Mock private FileStorageService fileStorageService;
-    @Mock private SpringDataUserRepository userRepository;
     @Mock private ModuleItemRepository moduleItemRepository;
     @Mock private AssignmentSubmissionRepository submissionRepository;
     @Mock private CourseRepository courseRepository;
@@ -53,8 +51,9 @@ class FileDownloadServiceTest {
 
     private final CourseEntity course = course(10, "CS101");
     private final CourseModuleEntity module = module(20, course);
-    private final UserEntity student = user(1, "student@test.com", Role.STUDENT);
-    private final UserEntity teacher = user(2, "teacher@test.com", Role.TEACHER);
+    private final FakeDirectory directory = new FakeDirectory();
+    private final UserSummary student = directory.add(person(1, "student@test.com", Role.STUDENT));
+    private final UserSummary teacher = directory.add(person(2, "teacher@test.com", Role.TEACHER));
     private final Resource file = new ByteArrayResource(new byte[] {1});
 
     @BeforeEach
@@ -62,13 +61,10 @@ class FileDownloadServiceTest {
         service =
                 new FileDownloadService(
                         fileStorageService,
-                        userRepository,
+                        directory,
                         moduleItemRepository,
                         submissionRepository,
                         new CourseAccess(courseRepository));
-        for (UserEntity u : List.of(student, teacher)) {
-            lenient().when(userRepository.findByEmail(u.getEmail())).thenReturn(Optional.of(u));
-        }
         lenient().when(fileStorageService.loadFileAsResource(anyString())).thenReturn(file);
         lenient().when(moduleItemRepository.findVisibleByUrl(anyString())).thenReturn(List.of());
         lenient()
@@ -79,12 +75,12 @@ class FileDownloadServiceTest {
     private void visibleItemIn(boolean member) {
         ModuleItemEntity item = resource(30, module, URL);
         when(moduleItemRepository.findVisibleByUrl(URL)).thenReturn(List.of(item));
-        when(courseRepository.isMember(10L, 1L)).thenReturn(member);
+        when(courseRepository.isMember(10L, 1L, null)).thenReturn(member);
     }
 
     @Test
     void staffMayDownloadAnyStoredFile() {
-        FileDownloadService.Download d = service.open(STORED, teacher.getEmail());
+        FileDownloadService.Download d = service.open(STORED, teacher.email());
 
         assertThat(d.resource()).isSameAs(file);
         assertThat(d.downloadName()).isEqualTo("notes.pdf");
@@ -95,14 +91,14 @@ class FileDownloadServiceTest {
     void studentMayDownloadAVisibleResourceOfTheirCourse() {
         visibleItemIn(true);
 
-        assertThat(service.open(STORED, student.getEmail()).resource()).isSameAs(file);
+        assertThat(service.open(STORED, student.email()).resource()).isSameAs(file);
     }
 
     @Test
     void studentCannotDownloadAResourceOfAnotherCourse() {
         visibleItemIn(false);
 
-        assertThatThrownBy(() -> service.open(STORED, student.getEmail()))
+        assertThatThrownBy(() -> service.open(STORED, student.email()))
                 .isInstanceOf(NotFoundException.class);
         verify(fileStorageService, never()).loadFileAsResource(any());
     }
@@ -110,7 +106,7 @@ class FileDownloadServiceTest {
     @Test
     void hiddenOrUnknownFilesAreNotFoundForStudents() {
         // findVisibleByUrl only returns visible items, so a hidden one yields nothing.
-        assertThatThrownBy(() -> service.open(STORED, student.getEmail()))
+        assertThatThrownBy(() -> service.open(STORED, student.email()))
                 .isInstanceOf(NotFoundException.class);
         verify(fileStorageService, never()).loadFileAsResource(any());
     }
@@ -120,7 +116,7 @@ class FileDownloadServiceTest {
         when(submissionRepository.findFileUrlsOfStudentContaining(1L, URL))
                 .thenReturn(List.of("/uploads/other.pdf;" + URL));
 
-        assertThat(service.open(STORED, student.getEmail()).resource()).isSameAs(file);
+        assertThat(service.open(STORED, student.email()).resource()).isSameAs(file);
     }
 
     @Test
@@ -129,14 +125,14 @@ class FileDownloadServiceTest {
         when(submissionRepository.findFileUrlsOfStudentContaining(1L, "/uploads/notes.pdf"))
                 .thenReturn(List.of("/uploads/my-notes.pdf.bak;/uploads/x.pdf"));
 
-        assertThatThrownBy(() -> service.open("notes.pdf", student.getEmail()))
+        assertThatThrownBy(() -> service.open("notes.pdf", student.email()))
                 .isInstanceOf(NotFoundException.class);
     }
 
     @ParameterizedTest
     @ValueSource(strings = {"../application.properties", "a/b.pdf", "a\\b.pdf", " "})
     void pathLikeNamesAreRejectedForEveryone(String name) {
-        assertThatThrownBy(() -> service.open(name, teacher.getEmail()))
+        assertThatThrownBy(() -> service.open(name, teacher.email()))
                 .isInstanceOf(NotFoundException.class);
         verify(fileStorageService, never()).loadFileAsResource(any());
     }
@@ -146,7 +142,7 @@ class FileDownloadServiceTest {
         when(fileStorageService.loadFileAsResource(STORED))
                 .thenThrow(new IllegalArgumentException("File not found " + STORED));
 
-        assertThatThrownBy(() -> service.open(STORED, teacher.getEmail()))
+        assertThatThrownBy(() -> service.open(STORED, teacher.email()))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("File not found");
     }

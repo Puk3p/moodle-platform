@@ -245,4 +245,23 @@
         </plugins>
     </build>
 
+    <profiles>
+        <!--
+          Build somewhere other than ./target, e.g. when the checkout sits in an iCloud-synced
+          folder that keeps copying build output into "Foo 2.class" duplicates:
+            ./mvnw verify -Dmoodle.build.root=$HOME/Library/Caches/moodle-platform
+        -->
+        <profile>
+            <id>external-build-dir</id>
+            <activation>
+                <property>
+                    <name>moodle.build.root</name>
+                </property>
+            </activation>
+            <build>
+                <directory>${moodle.build.root}/${project.artifactId}</directory>
+            </build>
+        </profile>
+    </profiles>
+
 </project>

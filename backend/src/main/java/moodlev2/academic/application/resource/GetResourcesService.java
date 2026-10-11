@@ -10,8 +10,8 @@ import moodlev2.academic.infrastructure.persistence.entity.ModuleItemEntity;
 import moodlev2.academic.web.resource.dto.CourseResourcesDto;
 import moodlev2.academic.web.resource.dto.ResourceFileDto;
 import moodlev2.academic.web.resource.dto.ResourcesPageResponse;
-import moodlev2.identity.infrastructure.persistence.SpringDataUserRepository;
-import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
+import moodlev2.identity.api.DirectoryApi;
+import moodlev2.identity.api.UserSummary;
 import moodlev2.shared.exception.NotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class GetResourcesService {
 
-    private final SpringDataUserRepository userRepository;
+    private final DirectoryApi directory;
     private final CourseRepository courseRepository;
 
     @Transactional(readOnly = true)
@@ -29,12 +29,13 @@ public class GetResourcesService {
         if (email == null) {
             return new ResourcesPageResponse(List.of());
         }
-        UserEntity user =
-                userRepository
-                        .findByEmail(email)
+        UserSummary user =
+                directory
+                        .findUserByEmail(email)
                         .orElseThrow(() -> new NotFoundException("User not found"));
 
-        List<CourseEntity> courses = courseRepository.findAllCoursesForStudent(user.getId());
+        List<CourseEntity> courses =
+                courseRepository.findAllCoursesForStudent(user.id(), user.classId());
 
         List<CourseResourcesDto> resultList = new ArrayList<>();
 

@@ -1,7 +1,7 @@
 package moodlev2.academic.application.course;
 
 import static moodlev2.support.Fixtures.course;
-import static moodlev2.support.Fixtures.user;
+import static moodlev2.support.Fixtures.person;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -10,8 +10,8 @@ import static org.mockito.Mockito.when;
 
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
-import moodlev2.identity.domain.user.Role;
-import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
+import moodlev2.identity.api.Role;
+import moodlev2.identity.api.UserSummary;
 import moodlev2.shared.exception.NotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,12 +27,12 @@ class CourseAccessTest {
     @InjectMocks private CourseAccess courseAccess;
 
     private final CourseEntity course = course(10, "CS101");
-    private final UserEntity student = user(1, "student@test.com", Role.STUDENT);
+    private final UserSummary student = person(1, "student@test.com", Role.STUDENT);
 
     @Test
     void teachersAndAdminsManageEveryCourseWithoutALookup() {
-        UserEntity teacher = user(2, "teacher@test.com", Role.TEACHER);
-        UserEntity admin = user(3, "admin@test.com", Role.ADMIN);
+        UserSummary teacher = person(2, "teacher@test.com", Role.TEACHER);
+        UserSummary admin = person(3, "admin@test.com", Role.ADMIN);
 
         assertThatCode(() -> courseAccess.requireMember(course, teacher))
                 .doesNotThrowAnyException();
@@ -42,7 +42,7 @@ class CourseAccessTest {
 
     @Test
     void enrolledOrClassAssignedStudentIsAMember() {
-        when(courseRepository.isMember(10L, 1L)).thenReturn(true);
+        when(courseRepository.isMember(10L, 1L, null)).thenReturn(true);
 
         assertThatCode(() -> courseAccess.requireMember(course, student))
                 .doesNotThrowAnyException();
@@ -50,7 +50,7 @@ class CourseAccessTest {
 
     @Test
     void outsiderStudentGetsNotFoundSoCoursesCannotBeProbed() {
-        when(courseRepository.isMember(10L, 1L)).thenReturn(false);
+        when(courseRepository.isMember(10L, 1L, null)).thenReturn(false);
 
         assertThatThrownBy(() -> courseAccess.requireMember(course, student))
                 .isInstanceOf(NotFoundException.class)
@@ -59,11 +59,19 @@ class CourseAccessTest {
 
     @Test
     void userWithoutRolesIsNotStaff() {
-        UserEntity nobody = user(4, "nobody@test.com");
-        when(courseRepository.isMember(10L, 4L)).thenReturn(false);
+        UserSummary nobody = person(4, "nobody@test.com");
+        when(courseRepository.isMember(10L, 4L, null)).thenReturn(false);
 
         assertThat(CourseAccess.isStaff(nobody)).isFalse();
         assertThat(courseAccess.isMember(course, nobody)).isFalse();
+    }
+
+    @Test
+    void classIsPassedSoClassAssignedStudentsCount() {
+        UserSummary inClass = person(5, "c@test.com", 7L, Role.STUDENT);
+        when(courseRepository.isMember(10L, 5L, 7L)).thenReturn(true);
+
+        assertThat(courseAccess.isMember(course, inClass)).isTrue();
     }
 
     @Test

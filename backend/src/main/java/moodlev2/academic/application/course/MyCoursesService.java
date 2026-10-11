@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import moodlev2.academic.infrastructure.persistence.AnnouncementRepository;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
@@ -15,8 +16,8 @@ import moodlev2.academic.web.course.dto.ActivityDto;
 import moodlev2.academic.web.course.dto.CompletedCourseDto;
 import moodlev2.academic.web.course.dto.DashboardHomeResponse;
 import moodlev2.academic.web.course.dto.DeadlineDto;
-import moodlev2.identity.domain.user.User;
-import moodlev2.identity.domain.user.ports.UserRepositoryPort;
+import moodlev2.identity.api.DirectoryApi;
+import moodlev2.identity.api.UserSummary;
 import moodlev2.progress.infrastructure.persistence.CalendarEventRepository;
 import moodlev2.progress.infrastructure.persistence.entity.CalendarEventEntity;
 import moodlev2.shared.util.ColorUtil;
@@ -27,7 +28,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class MyCoursesService {
 
-    private final UserRepositoryPort userRepository;
+    private final DirectoryApi directory;
+    private final TeacherNames teacherNames;
     private final CourseRepository courseRepository;
     private final CalendarEventRepository calendarRepository;
     private final AnnouncementRepository announcementRepository;
@@ -35,28 +37,24 @@ public class MyCoursesService {
     @Transactional(readOnly = true)
     public DashboardHomeResponse getDashboardForUserEmail(String email) {
         String userName = "Student";
-        Long userId = null;
-
-        if (email != null) {
-            User user = userRepository.findByEmail(email).orElse(null);
-            if (user != null) {
-                userName = user.getFirstName();
-                userId = user.getId();
-            }
+        UserSummary user = email != null ? directory.findUserByEmail(email).orElse(null) : null;
+        if (user != null) {
+            userName = user.firstName();
         }
 
-        List<CourseEntity> courseEntities = new ArrayList<>();
-        if (userId != null) {
-            courseEntities = courseRepository.findAllCoursesForStudent(userId);
-        }
+        List<CourseEntity> courseEntities =
+                user != null
+                        ? courseRepository.findAllCoursesForStudent(user.id(), user.classId())
+                        : new ArrayList<>();
+        Map<Long, String> instructors = teacherNames.of(courseEntities);
 
         List<ActiveCourseDto> activeCourses =
-                courseEntities.stream().map(this::mapToActiveCourseDto).toList();
+                courseEntities.stream().map(c -> mapToActiveCourseDto(c, instructors)).toList();
 
         List<DeadlineDto> deadlines = new ArrayList<>();
-        if (email != null) {
-            List<CalendarEventEntity> allEvents = calendarRepository.findAllByUserEmail(email);
-
+        if (user != null) {
+            List<CalendarEventEntity> allEvents =
+                    calendarRepository.findAllForUser(user.id(), user.classId());
             deadlines =
                     allEvents.stream()
                             .filter(
@@ -70,8 +68,9 @@ public class MyCoursesService {
         }
 
         List<ActivityDto> activities = new ArrayList<>();
-        if (email != null) {
-            List<AnnouncementEntity> anns = announcementRepository.findAllByUserEmail(email);
+        if (user != null) {
+            List<AnnouncementEntity> anns =
+                    announcementRepository.findAllForEnrolledUser(user.id());
             activities = anns.stream().limit(4).map(this::mapToActivityDto).toList();
         }
 
@@ -81,11 +80,8 @@ public class MyCoursesService {
                 userName, activeCourses, completedCourses, deadlines, activities);
     }
 
-    private ActiveCourseDto mapToActiveCourseDto(CourseEntity c) {
-        String instructorName =
-                (c.getTeacher() != null)
-                        ? c.getTeacher().getFirstName() + " " + c.getTeacher().getLastName()
-                        : "Unknown";
+    private ActiveCourseDto mapToActiveCourseDto(CourseEntity c, Map<Long, String> instructors) {
+        String instructorName = instructors.getOrDefault(c.getTeacherId(), "Unknown");
 
         String color = ColorUtil.randomPastelColor();
 

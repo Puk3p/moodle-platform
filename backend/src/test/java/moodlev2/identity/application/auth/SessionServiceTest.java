@@ -15,6 +15,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import moodlev2.identity.api.SessionsRevokedEvent;
 import moodlev2.identity.infrastructure.persistence.SpringDataUserRepository;
 import moodlev2.identity.infrastructure.persistence.UserSessionRepository;
 import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
@@ -107,8 +108,8 @@ class SessionServiceTest {
 
         assertThat(service.resolve("tok", OTHER, "203.0.113.9")).isEmpty();
         verify(sessions).deleteAll(List.of(s));
-        ArgumentCaptor<SessionService.SessionsRevokedEvent> event =
-                ArgumentCaptor.forClass(SessionService.SessionsRevokedEvent.class);
+        ArgumentCaptor<SessionsRevokedEvent> event =
+                ArgumentCaptor.forClass(SessionsRevokedEvent.class);
         verify(events).publishEvent(event.capture());
         assertThat(event.getValue().tokenHashes()).containsExactly(s.getTokenSignature());
     }

@@ -6,8 +6,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
 import moodlev2.academic.application.course.CourseAccess;
+import moodlev2.academic.application.course.CourseRoster;
 import moodlev2.academic.infrastructure.persistence.AssignmentSubmissionRepository;
-import moodlev2.academic.infrastructure.persistence.EnrollmentRepository;
 import moodlev2.academic.infrastructure.persistence.ModuleItemRepository;
 import moodlev2.academic.infrastructure.persistence.entity.AssignmentSubmissionEntity;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
@@ -17,9 +17,8 @@ import moodlev2.academic.web.resource.dto.StudentAssignmentDetailsDto;
 import moodlev2.academic.web.resource.dto.StudentSubmissionSummaryDto;
 import moodlev2.academic.web.resource.dto.TeacherAssignmentOverviewDto;
 import moodlev2.academic.web.resource.dto.TeacherSubmissionViewDto;
-import moodlev2.identity.infrastructure.persistence.SpringDataUserRepository;
-import moodlev2.identity.infrastructure.persistence.entity.ClassEntity;
-import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
+import moodlev2.identity.api.DirectoryApi;
+import moodlev2.identity.api.UserSummary;
 import moodlev2.shared.exception.NotFoundException;
 import moodlev2.shared.util.SlidingWindowCounter;
 import org.springframework.http.HttpStatus;
@@ -43,9 +42,9 @@ public class AssignmentService {
 
     private final ModuleItemRepository moduleItemRepository;
     private final AssignmentSubmissionRepository submissionRepository;
-    private final SpringDataUserRepository userRepository;
+    private final DirectoryApi directory;
     private final FileStorageService fileStorageService;
-    private final EnrollmentRepository enrollmentRepository;
+    private final CourseRoster roster;
     private final CourseAccess courseAccess;
 
     /**
@@ -59,15 +58,15 @@ public class AssignmentService {
     @Transactional(readOnly = true)
     public StudentAssignmentDetailsDto getAssignmentDetailsForStudent(
             Long assignmentId, String userEmail) {
-        UserEntity student =
-                userRepository
-                        .findByEmail(userEmail)
+        UserSummary student =
+                directory
+                        .findUserByEmail(userEmail)
                         .orElseThrow(() -> new NotFoundException("User not found"));
 
         ModuleItemEntity assignment = findAccessibleAssignment(assignmentId, student);
 
         var existingSubmissionOpt =
-                submissionRepository.findByAssignmentAndStudent(assignment, student);
+                submissionRepository.findByAssignmentAndStudentId(assignment, student.id());
 
         MySubmissionDto mySubmission = null;
         if (existingSubmissionOpt.isPresent()) {
@@ -105,9 +104,9 @@ public class AssignmentService {
     @Transactional
     public void submitStudentAssignment(
             Long assignmentId, String textResponse, List<MultipartFile> files, String userEmail) {
-        UserEntity student =
-                userRepository
-                        .findByEmail(userEmail)
+        UserSummary student =
+                directory
+                        .findUserByEmail(userEmail)
                         .orElseThrow(() -> new NotFoundException("User not found"));
 
         ModuleItemEntity assignment = findAccessibleAssignment(assignmentId, student);
@@ -132,21 +131,21 @@ public class AssignmentService {
         }
 
         Optional<AssignmentSubmissionEntity> existing =
-                submissionRepository.findByAssignmentAndStudent(assignment, student);
+                submissionRepository.findByAssignmentAndStudentId(assignment, student.id());
         if (existing.isPresent() && existing.get().getGrade() != null) {
             throw new ResponseStatusException(
                     HttpStatus.CONFLICT,
                     "This assignment has already been graded and can no longer be changed.");
         }
 
-        if (!submissionLimiter.tryAcquire(String.valueOf(student.getId()))) {
+        if (!submissionLimiter.tryAcquire(String.valueOf(student.id()))) {
             throw new ResponseStatusException(
                     HttpStatus.TOO_MANY_REQUESTS, "Too many submissions. Try again later.");
         }
 
         AssignmentSubmissionEntity submission = existing.orElseGet(AssignmentSubmissionEntity::new);
         submission.setAssignment(assignment);
-        submission.setStudent(student);
+        submission.setStudentId(student.id());
         submission.setSubmittedAt(LocalDateTime.now());
 
         if (textResponse != null) {
@@ -172,7 +171,7 @@ public class AssignmentService {
      * Staff may open any assignment. A student only sees visible assignments of courses they belong
      * to; anything else is "not found", the same as an id that does not exist.
      */
-    private ModuleItemEntity findAccessibleAssignment(Long assignmentId, UserEntity user) {
+    private ModuleItemEntity findAccessibleAssignment(Long assignmentId, UserSummary user) {
         ModuleItemEntity item =
                 moduleItemRepository
                         .findById(assignmentId)
@@ -260,42 +259,30 @@ public class AssignmentService {
 
         CourseEntity course = assignment.getModule().getCourse();
 
-        Map<Long, UserEntity> uniqueStudentsMap = new HashMap<>();
-
-        enrollmentRepository
-                .findAllByCourseCode(course.getCode())
-                .forEach(e -> uniqueStudentsMap.put(e.getUser().getId(), e.getUser()));
-
-        if (course.getAssignedClasses() != null) {
-            for (ClassEntity clazz : course.getAssignedClasses()) {
-                userRepository.findAll().stream()
-                        .filter(
-                                u ->
-                                        u.getClazz() != null
-                                                && u.getClazz().getId().equals(clazz.getId()))
-                        .forEach(u -> uniqueStudentsMap.put(u.getId(), u));
-            }
-        }
-
         List<AssignmentSubmissionEntity> submissions =
                 submissionRepository.findByAssignmentId(assignmentId);
-        for (AssignmentSubmissionEntity sub : submissions) {
-            if (!uniqueStudentsMap.containsKey(sub.getStudent().getId())) {
-                uniqueStudentsMap.put(sub.getStudent().getId(), sub.getStudent());
-            }
-        }
 
-        List<UserEntity> allStudents = new ArrayList<>(uniqueStudentsMap.values());
+        // Everyone in the course, plus anyone who submitted and has since left it.
+        Map<Long, UserSummary> uniqueStudentsMap = new HashMap<>();
+        roster.studentsOf(course).forEach(u -> uniqueStudentsMap.put(u.id(), u));
+        List<Long> formerMembers =
+                submissions.stream()
+                        .map(AssignmentSubmissionEntity::getStudentId)
+                        .filter(id -> !uniqueStudentsMap.containsKey(id))
+                        .distinct()
+                        .toList();
+        directory.findUsers(formerMembers).forEach(u -> uniqueStudentsMap.put(u.id(), u));
+
+        List<UserSummary> allStudents = new ArrayList<>(uniqueStudentsMap.values());
         allStudents.sort(
-                Comparator.comparing(UserEntity::getLastName)
-                        .thenComparing(UserEntity::getFirstName));
+                Comparator.comparing(UserSummary::lastName).thenComparing(UserSummary::firstName));
 
         List<StudentSubmissionSummaryDto> studentSummaries = new ArrayList<>();
 
-        for (UserEntity student : allStudents) {
+        for (UserSummary student : allStudents) {
             var submissionOpt =
                     submissions.stream()
-                            .filter(s -> s.getStudent().getId().equals(student.getId()))
+                            .filter(s -> s.getStudentId().equals(student.id()))
                             .findFirst();
 
             String status = "Missing";
@@ -320,9 +307,9 @@ public class AssignmentService {
 
             studentSummaries.add(
                     new StudentSubmissionSummaryDto(
-                            student.getId(),
-                            student.getFirstName() + " " + student.getLastName(),
-                            student.getEmail(),
+                            student.id(),
+                            student.fullName(),
+                            student.email(),
                             avatarColor,
                             status,
                             grade,
@@ -341,12 +328,11 @@ public class AssignmentService {
                         .findById(submissionId)
                         .orElseThrow(() -> new NotFoundException("Submission not found"));
 
+        UserSummary student = directory.findUser(submission.getStudentId()).orElse(null);
         return new TeacherSubmissionViewDto(
                 submission.getId(),
-                submission.getStudent().getFirstName()
-                        + " "
-                        + submission.getStudent().getLastName(),
-                submission.getStudent().getEmail(),
+                student != null ? student.fullName() : "Deleted user",
+                student != null ? student.email() : "",
                 submission.getAssignment().getTitle(),
                 submission.getAssignment().getModule().getCourse().getCode(),
                 submission.getSubmittedAt(),

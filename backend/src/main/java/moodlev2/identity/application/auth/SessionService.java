@@ -8,6 +8,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import moodlev2.identity.api.SessionsRevokedEvent;
 import moodlev2.identity.infrastructure.persistence.SpringDataUserRepository;
 import moodlev2.identity.infrastructure.persistence.UserSessionRepository;
 import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
@@ -233,7 +234,4 @@ public class SessionService {
         }
         return "Unknown device";
     }
-
-    /** Hashes of sessions that no longer exist; listeners close anything still using them. */
-    public record SessionsRevokedEvent(List<String> tokenHashes) {}
 }

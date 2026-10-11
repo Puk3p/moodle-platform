@@ -13,8 +13,8 @@ import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
 import moodlev2.academic.infrastructure.persistence.entity.CourseModuleEntity;
 import moodlev2.academic.web.course.dto.edit.CourseEditDto;
 import moodlev2.academic.web.course.dto.edit.ModuleEditDto;
-import moodlev2.identity.infrastructure.persistence.ClassRepository;
-import moodlev2.identity.infrastructure.persistence.entity.ClassEntity;
+import moodlev2.identity.api.ClassSummary;
+import moodlev2.identity.api.DirectoryApi;
 import moodlev2.shared.exception.NotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,7 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UpdateCourseService {
 
     private final CourseRepository courseRepository;
-    private final ClassRepository classRepository;
+    private final DirectoryApi directory;
 
     @Transactional
     public void updateCourse(String currentCode, CourseEditDto dto) {
@@ -47,8 +47,11 @@ public class UpdateCourseService {
         }
 
         if (dto.selectedGroupIds() != null) {
-            List<ClassEntity> selectedClasses = classRepository.findAllById(dto.selectedGroupIds());
-            course.setAssignedClasses(new HashSet<>(selectedClasses));
+            // Only classes that exist; unknown ids are dropped, as findAllById did before.
+            course.setClassIds(
+                    directory.findClasses(dto.selectedGroupIds()).stream()
+                            .map(ClassSummary::id)
+                            .collect(Collectors.toCollection(HashSet::new)));
         }
 
         updateModules(course, dto.modules());

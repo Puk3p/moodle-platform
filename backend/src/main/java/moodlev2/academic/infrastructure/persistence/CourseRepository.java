@@ -12,28 +12,35 @@ public interface CourseRepository extends JpaRepository<CourseEntity, Long> {
 
     List<CourseEntity> findAllByTeacherId(Long teacherId);
 
+    /** Courses the user is enrolled in directly (not through a class). */
     @Query(
-            "SELECT c FROM CourseEntity c JOIN EnrollmentEntity e ON c.id = e.course.id WHERE e.user.email = :email")
-    List<CourseEntity> findAllByUserEmail(String email);
-
-    @Query(
-            "SELECT DISTINCT c FROM CourseEntity c "
-                    + "LEFT JOIN c.enrollments e "
-                    + "LEFT JOIN c.assignedClasses cl "
-                    + "WHERE e.user.id = :userId "
-                    + "OR cl.id = (SELECT u.clazz.id FROM UserEntity u WHERE u.id = :userId)")
-    List<CourseEntity> findAllCoursesForStudent(@Param("userId") Long userId);
+            "SELECT c FROM CourseEntity c JOIN EnrollmentEntity e ON c.id = e.course.id "
+                    + "WHERE e.userId = :userId")
+    List<CourseEntity> findAllByEnrolledUserId(@Param("userId") Long userId);
 
     /**
-     * Whether the user belongs to the course: enrolled directly, or in a class the course is
-     * assigned to. Same rule as {@link #findAllCoursesForStudent}, answered for one course.
+     * Courses a student belongs to: enrolled directly, or through their class ({@code classId},
+     * {@code null} when they have none) being assigned to the course.
+     */
+    @Query(
+            "SELECT c FROM CourseEntity c "
+                    + "WHERE EXISTS (SELECT e.id FROM EnrollmentEntity e "
+                    + "WHERE e.course = c AND e.userId = :userId) "
+                    + "OR (:classId IS NOT NULL AND :classId MEMBER OF c.classIds)")
+    List<CourseEntity> findAllCoursesForStudent(
+            @Param("userId") Long userId, @Param("classId") Long classId);
+
+    /**
+     * Whether the student belongs to the course; same rule as {@link #findAllCoursesForStudent}.
      */
     @Query(
             "SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END FROM CourseEntity c "
                     + "WHERE c.id = :courseId AND ("
                     + "EXISTS (SELECT e.id FROM EnrollmentEntity e "
-                    + "WHERE e.course.id = c.id AND e.user.id = :userId) "
-                    + "OR EXISTS (SELECT u.id FROM UserEntity u JOIN u.clazz cl "
-                    + "WHERE u.id = :userId AND cl MEMBER OF c.assignedClasses))")
-    boolean isMember(@Param("courseId") Long courseId, @Param("userId") Long userId);
+                    + "WHERE e.course = c AND e.userId = :userId) "
+                    + "OR (:classId IS NOT NULL AND :classId MEMBER OF c.classIds))")
+    boolean isMember(
+            @Param("courseId") Long courseId,
+            @Param("userId") Long userId,
+            @Param("classId") Long classId);
 }

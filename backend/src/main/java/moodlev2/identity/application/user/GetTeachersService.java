@@ -2,7 +2,7 @@ package moodlev2.identity.application.user;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import moodlev2.identity.domain.user.Role;
+import moodlev2.identity.api.Role;
 import moodlev2.identity.infrastructure.persistence.SpringDataUserRepository;
 import moodlev2.shared.web.SimpleDto;
 import org.springframework.stereotype.Service;

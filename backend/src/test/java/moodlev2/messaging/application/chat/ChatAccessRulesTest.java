@@ -8,17 +8,17 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import moodlev2.assessment.infrastructure.persistence.entity.QuizAttemptEntity;
-import moodlev2.identity.domain.user.Role;
-import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
+import moodlev2.identity.api.Role;
+import moodlev2.identity.api.UserSummary;
 import org.junit.jupiter.api.Test;
 
 class ChatAccessRulesTest {
 
-    private final UserEntity teacher = user(1, "t@x.com", Role.TEACHER);
-    private final UserEntity otherTeacher = user(2, "t2@x.com", Role.TEACHER);
-    private final UserEntity student = user(3, "s@x.com", Role.STUDENT);
-    private final UserEntity otherStudent = user(4, "s2@x.com", Role.STUDENT);
-    private final UserEntity admin = user(5, "a@x.com", Role.ADMIN);
+    private final UserSummary teacher = user(1, "t@x.com", Role.TEACHER);
+    private final UserSummary otherTeacher = user(2, "t2@x.com", Role.TEACHER);
+    private final UserSummary student = user(3, "s@x.com", Role.STUDENT);
+    private final UserSummary otherStudent = user(4, "s2@x.com", Role.STUDENT);
+    private final UserSummary admin = user(5, "a@x.com", Role.ADMIN);
 
     @Test
     void teacherAndStudentMayMessageEachOtherInBothDirections() {
@@ -45,13 +45,13 @@ class ChatAccessRulesTest {
 
     @Test
     void adminWhoAlsoTeachesCountsAsTeacher() {
-        UserEntity adminTeacher = user(6, "at@x.com", Role.ADMIN, Role.TEACHER);
+        UserSummary adminTeacher = user(6, "at@x.com", Role.ADMIN, Role.TEACHER);
         assertThat(ChatAccessRules.mayMessage(adminTeacher, student)).isTrue();
     }
 
     @Test
     void userWithBothRolesCountsAsTeacherSoCannotMessageAnotherTeacher() {
-        UserEntity assistant = user(7, "ta@x.com", Role.STUDENT, Role.TEACHER);
+        UserSummary assistant = user(7, "ta@x.com", Role.STUDENT, Role.TEACHER);
         assertThat(ChatAccessRules.isTeacher(assistant)).isTrue();
         assertThat(ChatAccessRules.isStudent(assistant)).isFalse();
         assertThat(ChatAccessRules.mayMessage(assistant, student)).isTrue();
@@ -60,8 +60,7 @@ class ChatAccessRulesTest {
 
     @Test
     void deactivatedAccountsCannotSendOrReceive() {
-        UserEntity inactive = user(8, "gone@x.com", Role.STUDENT);
-        inactive.setActive(false);
+        UserSummary inactive = ChatTestData.deactivated(user(8, "gone@x.com", Role.STUDENT));
         assertThat(ChatAccessRules.mayMessage(teacher, inactive)).isFalse();
         assertThat(ChatAccessRules.mayMessage(inactive, teacher)).isFalse();
     }

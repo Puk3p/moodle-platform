@@ -8,10 +8,10 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import moodlev2.academic.application.course.CourseAccess;
-import moodlev2.academic.infrastructure.persistence.EnrollmentRepository;
+import moodlev2.academic.api.MembershipApi;
 import moodlev2.assessment.infrastructure.mapper.QuizEngineMapper;
 import moodlev2.assessment.infrastructure.persistence.QuizAttemptRepository;
 import moodlev2.assessment.infrastructure.persistence.QuizRepository;
@@ -28,9 +28,8 @@ import moodlev2.assessment.web.quiz.dto.QuizResultDto;
 import moodlev2.assessment.web.quiz.dto.QuizResultsResponse;
 import moodlev2.assessment.web.quiz.dto.QuizSubmissionDto;
 import moodlev2.assessment.web.quiz.dto.StudentQuizViewDto;
-import moodlev2.identity.infrastructure.persistence.SpringDataUserRepository;
-import moodlev2.identity.infrastructure.persistence.entity.ClassEntity;
-import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
+import moodlev2.identity.api.DirectoryApi;
+import moodlev2.identity.api.UserSummary;
 import moodlev2.shared.exception.NotFoundException;
 import moodlev2.shared.util.ColorUtil;
 import moodlev2.shared.util.SlidingWindowCounter;
@@ -47,13 +46,12 @@ public class QuizEngineService {
 
     private final QuizRepository quizRepository;
     private final QuizAttemptRepository attemptRepository;
-    private final SpringDataUserRepository userRepository;
+    private final DirectoryApi directory;
     private final QuizAttemptRepository quizAttemptRepository;
-    private final EnrollmentRepository enrollmentRepository;
+    private final MembershipApi membership;
     private final PasswordEncoder passwordEncoder;
     private final QuizEngineMapper mapper;
     private final ApplicationEventPublisher events;
-    private final CourseAccess courseAccess;
 
     private static final Set<String> TEACHER_GRADED_TYPES = Set.of("FREE_TEXT", "CODE");
 
@@ -77,9 +75,9 @@ public class QuizEngineService {
      */
     @Transactional
     public StudentQuizViewDto startAttempt(Long quizId, String userEmail, String providedPassword) {
-        UserEntity user =
-                userRepository
-                        .findByEmail(userEmail)
+        UserSummary user =
+                directory
+                        .findUserByEmail(userEmail)
                         .orElseThrow(() -> new NotFoundException("User not found"));
 
         QuizEntity quiz =
@@ -87,7 +85,7 @@ public class QuizEngineService {
                         .findById(quizId)
                         .orElseThrow(() -> new NotFoundException("Quiz not found"));
 
-        boolean staff = CourseAccess.isStaff(user);
+        boolean staff = user.isStaff();
         if (!staff) {
             requireStudentMayOpen(quiz, user);
         }
@@ -96,7 +94,7 @@ public class QuizEngineService {
         // attempt's own time limit is enforced separately.
         var existingAttempt =
                 quizAttemptRepository.findByQuizIdAndUserIdAndStatus(
-                        quizId, user.getId(), "IN_PROGRESS");
+                        quizId, user.id(), "IN_PROGRESS");
         if (existingAttempt.isPresent()) {
             events.publishEvent(new QuizAttemptChangedEvent(userEmail, quiz.isBlockMessaging()));
             return mapper.toStudentView(quiz, existingAttempt.get().getId());
@@ -110,7 +108,7 @@ public class QuizEngineService {
 
         if (quiz.getMaxAttempts() != null && quiz.getMaxAttempts() > 0) {
             int existingAttemptsCount =
-                    quizAttemptRepository.countByQuizIdAndUserId(quizId, user.getId());
+                    quizAttemptRepository.countByQuizIdAndUserId(quizId, user.id());
             if (existingAttemptsCount >= quiz.getMaxAttempts()) {
                 throw new ResponseStatusException(
                         HttpStatus.CONFLICT,
@@ -121,7 +119,7 @@ public class QuizEngineService {
         }
 
         QuizAttemptEntity attempt = new QuizAttemptEntity();
-        attempt.setUser(user);
+        attempt.setUserId(user.id());
         attempt.setQuiz(quiz);
         attempt.setStartedAt(Instant.now());
         attempt.setStatus("IN_PROGRESS");
@@ -137,15 +135,14 @@ public class QuizEngineService {
      * Draft and unpublished quizzes, and quizzes of courses the student does not belong to, look
      * exactly like quizzes that do not exist, so ids cannot be probed.
      */
-    private void requireStudentMayOpen(QuizEntity quiz, UserEntity student) {
-        if (!quiz.isPublished() || !courseAccess.isMember(quiz.getCourse(), student)) {
+    private void requireStudentMayOpen(QuizEntity quiz, UserSummary student) {
+        if (!quiz.isPublished() || !membership.isMember(quiz.getCourse().getId(), student)) {
             throw new NotFoundException("Quiz not found");
         }
-        List<ClassEntity> assigned = quiz.getAssignedClasses();
+        Set<Long> assigned = quiz.getClassIds();
         if (assigned != null && !assigned.isEmpty()) {
-            Long classId = student.getClazz() != null ? student.getClazz().getId() : null;
-            boolean assignedToMe =
-                    classId != null && assigned.stream().anyMatch(c -> classId.equals(c.getId()));
+            Long classId = student.classId();
+            boolean assignedToMe = classId != null && assigned.contains(classId);
             if (!assignedToMe) {
                 throw new ResponseStatusException(
                         HttpStatus.FORBIDDEN, "This quiz is not assigned to your class.");
@@ -177,7 +174,7 @@ public class QuizEngineService {
      * Quiz passwords are short and shared by a whole class, so wrong guesses are limited per
      * student and quiz; after {@link #MAX_PASSWORD_FAILURES} the student waits out the window.
      */
-    private void checkAccessPassword(QuizEntity quiz, UserEntity user, String providedPassword) {
+    private void checkAccessPassword(QuizEntity quiz, UserSummary user, String providedPassword) {
         String dbPassword = quiz.getPassword();
         if (dbPassword == null || dbPassword.isBlank()) {
             return;
@@ -185,7 +182,7 @@ public class QuizEngineService {
         if (providedPassword == null || providedPassword.isBlank()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Password is required");
         }
-        String key = user.getId() + ":" + quiz.getId();
+        String key = user.id() + ":" + quiz.getId();
         if (passwordFailures.isExhausted(key)) {
             throw new ResponseStatusException(
                     HttpStatus.TOO_MANY_REQUESTS,
@@ -217,7 +214,7 @@ public class QuizEngineService {
                         .findById(dto.attemptId())
                         .orElseThrow(() -> new NotFoundException("Attempt not found"));
 
-        if (attempt.getUser() == null || !attempt.getUser().getEmail().equals(userEmail)) {
+        if (!ownedBy(attempt, userEmail)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your attempt");
         }
 
@@ -349,8 +346,11 @@ public class QuizEngineService {
 
     @Transactional(readOnly = true)
     public List<QuizAttemptListDto> getAttemptsForQuiz(Long quizId) {
-        return attemptRepository.findByQuizIdOrderByCompletedAtDesc(quizId).stream()
-                .map(this::mapAttemptToListDto)
+        List<QuizAttemptEntity> attempts =
+                attemptRepository.findByQuizIdOrderByCompletedAtDesc(quizId);
+        Map<Long, UserSummary> users = usersOf(attempts);
+        return attempts.stream()
+                .map(a -> mapAttemptToListDto(a, users.get(a.getUserId())))
                 .toList();
     }
 
@@ -361,55 +361,35 @@ public class QuizEngineService {
                         .findById(quizId)
                         .orElseThrow(() -> new NotFoundException("Quiz not found"));
 
-        String courseCode = quiz.getCourse().getCode();
-
-        Map<Long, UserEntity> uniqueStudentsMap = new HashMap<>();
-
-        enrollmentRepository
-                .findAllByCourseCode(courseCode)
-                .forEach(e -> uniqueStudentsMap.put(e.getUser().getId(), e.getUser()));
-
-        if (quiz.getCourse().getAssignedClasses() != null) {
-            for (ClassEntity clazz : quiz.getCourse().getAssignedClasses()) {
-                userRepository.findAll().stream()
-                        .filter(
-                                u ->
-                                        u.getClazz() != null
-                                                && u.getClazz().getId().equals(clazz.getId()))
-                        .forEach(u -> uniqueStudentsMap.put(u.getId(), u));
-            }
-        }
-
-        if (quiz.getAssignedClasses() != null) {
-            for (ClassEntity clazz : quiz.getAssignedClasses()) {
-                userRepository.findAll().stream()
-                        .filter(
-                                u ->
-                                        u.getClazz() != null
-                                                && u.getClazz().getId().equals(clazz.getId()))
-                        .forEach(u -> uniqueStudentsMap.put(u.getId(), u));
-            }
-        }
+        // Everyone expected to take it: the course's students and the quiz's own classes.
+        Map<Long, UserSummary> uniqueStudentsMap = new HashMap<>();
+        membership
+                .studentsOf(quiz.getCourse().getId())
+                .forEach(u -> uniqueStudentsMap.put(u.id(), u));
+        directory
+                .findUsersInClasses(quiz.getClassIds())
+                .forEach(u -> uniqueStudentsMap.put(u.id(), u));
 
         List<QuizAttemptEntity> allAttempts =
                 attemptRepository.findByQuizIdOrderByCompletedAtDesc(quizId);
 
+        // Plus anyone who took it and has since left the course.
+        List<Long> formerMembers =
+                allAttempts.stream()
+                        .map(QuizAttemptEntity::getUserId)
+                        .filter(id -> !uniqueStudentsMap.containsKey(id))
+                        .distinct()
+                        .toList();
+        directory.findUsers(formerMembers).forEach(u -> uniqueStudentsMap.put(u.id(), u));
+
         Map<Long, QuizAttemptEntity> userAttemptMap = new HashMap<>();
-
         for (QuizAttemptEntity a : allAttempts) {
-            if (!uniqueStudentsMap.containsKey(a.getUser().getId())) {
-                uniqueStudentsMap.put(a.getUser().getId(), a.getUser());
-            }
-
-            if (!userAttemptMap.containsKey(a.getUser().getId())) {
-                userAttemptMap.put(a.getUser().getId(), a);
-            }
+            userAttemptMap.putIfAbsent(a.getUserId(), a);
         }
 
-        List<UserEntity> sortedStudents = new ArrayList<>(uniqueStudentsMap.values());
+        List<UserSummary> sortedStudents = new ArrayList<>(uniqueStudentsMap.values());
         sortedStudents.sort(
-                Comparator.comparing(UserEntity::getLastName)
-                        .thenComparing(UserEntity::getFirstName));
+                Comparator.comparing(UserSummary::lastName).thenComparing(UserSummary::firstName));
 
         List<QuizAttemptListDto> resultsList = new ArrayList<>();
 
@@ -418,22 +398,20 @@ public class QuizEngineService {
                         .map(q -> BigDecimal.valueOf(q.getPoints()))
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        for (UserEntity student : sortedStudents) {
-            QuizAttemptEntity attempt = userAttemptMap.get(student.getId());
+        for (UserSummary student : sortedStudents) {
+            QuizAttemptEntity attempt = userAttemptMap.get(student.id());
 
             if (attempt != null) {
-                resultsList.add(mapAttemptToListDto(attempt));
+                resultsList.add(mapAttemptToListDto(attempt, student));
             } else {
-                String group =
-                        (student.getClazz() != null) ? student.getClazz().getName() : "No Group";
-                String studentName = student.getFirstName() + " " + student.getLastName();
+                String group = (student.className() != null) ? student.className() : "No Group";
 
                 resultsList.add(
                         new QuizAttemptListDto(
                                 null,
-                                student.getId(),
-                                studentName,
-                                student.getEmail(),
+                                student.id(),
+                                student.fullName(),
+                                student.email(),
                                 ColorUtil.randomPastelColor(),
                                 group,
                                 "MISSING",
@@ -456,13 +434,10 @@ public class QuizEngineService {
                 resultsList);
     }
 
-    private QuizAttemptListDto mapAttemptToListDto(QuizAttemptEntity attempt) {
-        String studentName =
-                attempt.getUser().getFirstName() + " " + attempt.getUser().getLastName();
-        String group =
-                (attempt.getUser().getClazz() != null)
-                        ? attempt.getUser().getClazz().getName()
-                        : "No Group";
+    /** {@code user} is {@code null} for an account that no longer exists. */
+    private QuizAttemptListDto mapAttemptToListDto(QuizAttemptEntity attempt, UserSummary user) {
+        String studentName = user != null ? user.fullName() : "Deleted user";
+        String group = (user != null && user.className() != null) ? user.className() : "No Group";
 
         String submittedAt;
         if ("IN_PROGRESS".equals(attempt.getStatus())) {
@@ -483,15 +458,30 @@ public class QuizEngineService {
 
         return new QuizAttemptListDto(
                 attempt.getId(),
-                attempt.getUser().getId(),
+                attempt.getUserId(),
                 studentName,
-                attempt.getUser().getEmail(),
+                user != null ? user.email() : "",
                 ColorUtil.randomPastelColor(),
                 group,
                 submittedAt,
                 attempt.getScore() != null ? attempt.getScore() : BigDecimal.ZERO,
                 maxScore,
                 passed);
+    }
+
+    private Map<Long, UserSummary> usersOf(List<QuizAttemptEntity> attempts) {
+        return directory
+                .findUsers(attempts.stream().map(QuizAttemptEntity::getUserId).distinct().toList())
+                .stream()
+                .collect(Collectors.toMap(UserSummary::id, Function.identity()));
+    }
+
+    private boolean ownedBy(QuizAttemptEntity attempt, String userEmail) {
+        return attempt.getUserId() != null
+                && directory
+                        .findUserByEmail(userEmail)
+                        .map(u -> attempt.getUserId().equals(u.id()))
+                        .orElse(false);
     }
 
     @Transactional(readOnly = true)
@@ -519,10 +509,11 @@ public class QuizEngineService {
                         .map(q -> BigDecimal.valueOf(q.getPoints()))
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        UserSummary user = directory.findUser(attempt.getUserId()).orElse(null);
         return new QuizAttemptReviewDto(
                 attempt.getId(),
-                attempt.getUser().getFirstName() + " " + attempt.getUser().getLastName(),
-                attempt.getUser().getClazz() != null ? attempt.getUser().getClazz().getName() : "-",
+                user != null ? user.fullName() : "Deleted user",
+                user != null && user.className() != null ? user.className() : "-",
                 attempt.getQuiz().getTitle(),
                 attempt.getScore(),
                 maxScore,

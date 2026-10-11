@@ -12,6 +12,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
+import moodlev2.identity.api.DirectoryApi;
+import moodlev2.identity.api.UserSummary;
 import moodlev2.progress.infrastructure.persistence.CalendarEventRepository;
 import moodlev2.progress.infrastructure.persistence.GradeRepository;
 import moodlev2.progress.infrastructure.persistence.entity.GradeEntity;
@@ -35,31 +37,46 @@ public class GetGradesPageService {
     private final GradeRepository gradeRepository;
     private final CourseRepository courseRepository;
     private final CalendarEventRepository calendarEventRepository;
+    private final DirectoryApi directory;
     private final Clock clock;
 
     @Autowired
     public GetGradesPageService(
             GradeRepository gradeRepository,
             CourseRepository courseRepository,
-            CalendarEventRepository calendarEventRepository) {
-        this(gradeRepository, courseRepository, calendarEventRepository, Clock.systemDefaultZone());
+            CalendarEventRepository calendarEventRepository,
+            DirectoryApi directory) {
+        this(
+                gradeRepository,
+                courseRepository,
+                calendarEventRepository,
+                directory,
+                Clock.systemDefaultZone());
     }
 
     GetGradesPageService(
             GradeRepository gradeRepository,
             CourseRepository courseRepository,
             CalendarEventRepository calendarEventRepository,
+            DirectoryApi directory,
             Clock clock) {
         this.gradeRepository = gradeRepository;
         this.courseRepository = courseRepository;
         this.calendarEventRepository = calendarEventRepository;
+        this.directory = directory;
         this.clock = clock;
     }
 
     public GradesPageResponse getGradesPageForUser(String email) {
+        UserSummary user = directory.findUserByEmail(email).orElse(null);
         // Newest first, so each course's item list reads as a timeline.
-        List<GradeEntity> allGrades = gradeRepository.findAllByUserEmail(email);
-        List<CourseEntity> courses = courseRepository.findAllByUserEmail(email);
+        List<GradeEntity> allGrades =
+                user == null
+                        ? List.of()
+                        : gradeRepository.findAllByUserIdOrderByGradedAtDesc(user.id());
+        List<CourseEntity> courses =
+                user == null ? List.of() : courseRepository.findAllByEnrolledUserId(user.id());
+        Map<Long, String> instructors = instructorNames(courses);
 
         Map<Long, List<GradeEntity>> gradesByCourse =
                 allGrades.stream().collect(Collectors.groupingBy(g -> g.getCourse().getId()));
@@ -67,7 +84,10 @@ public class GetGradesPageService {
         List<CourseGradeDto> courseGrades = new ArrayList<>();
         for (CourseEntity course : courses) {
             courseGrades.add(
-                    toCourseGrade(course, gradesByCourse.getOrDefault(course.getId(), List.of())));
+                    toCourseGrade(
+                            course,
+                            instructors.getOrDefault(course.getTeacherId(), "Unknown Instructor"),
+                            gradesByCourse.getOrDefault(course.getId(), List.of())));
         }
 
         List<CourseGradeDto> graded =
@@ -92,10 +112,11 @@ public class GetGradesPageService {
                 breakdown(courseGrades),
                 best,
                 needsAttention,
-                upcoming(email, courses));
+                upcoming(user, courses));
     }
 
-    private CourseGradeDto toCourseGrade(CourseEntity course, List<GradeEntity> grades) {
+    private CourseGradeDto toCourseGrade(
+            CourseEntity course, String instructor, List<GradeEntity> grades) {
         List<GradeEntity> scored =
                 grades.stream()
                         .filter(g -> g.getScoreReceived() != null)
@@ -111,13 +132,6 @@ public class GetGradesPageService {
                                                 .mapToDouble(GetGradesPageService::percentOf)
                                                 .average()
                                                 .orElse(0));
-
-        String instructor =
-                course.getTeacher() != null
-                        ? course.getTeacher().getFirstName()
-                                + " "
-                                + course.getTeacher().getLastName()
-                        : "Unknown Instructor";
 
         List<RecentGradeItemDto> items = scored.stream().map(this::toItem).toList();
 
@@ -172,11 +186,24 @@ public class GetGradesPageService {
                 byLetter.getOrDefault("-", 0L).intValue());
     }
 
-    private List<UpcomingGradeDto> upcoming(String email, List<CourseEntity> enrolled) {
+    private Map<Long, String> instructorNames(List<CourseEntity> courses) {
+        Set<Long> ids =
+                courses.stream()
+                        .map(CourseEntity::getTeacherId)
+                        .filter(java.util.Objects::nonNull)
+                        .collect(Collectors.toSet());
+        return directory.findUsers(ids).stream()
+                .collect(Collectors.toMap(UserSummary::id, UserSummary::fullName));
+    }
+
+    private List<UpcomingGradeDto> upcoming(UserSummary user, List<CourseEntity> enrolled) {
+        if (user == null) {
+            return List.of();
+        }
         Set<Long> enrolledIds =
                 enrolled.stream().map(CourseEntity::getId).collect(Collectors.toSet());
         LocalDate today = LocalDate.now(clock);
-        return calendarEventRepository.findAllByUserEmail(email).stream()
+        return calendarEventRepository.findAllForUser(user.id(), user.classId()).stream()
                 .filter(e -> e.getCourse() != null && enrolledIds.contains(e.getCourse().getId()))
                 .filter(e -> e.getEventDate() != null && !e.getEventDate().isBefore(today))
                 .sorted(Comparator.comparing(e -> e.getEventDate()))

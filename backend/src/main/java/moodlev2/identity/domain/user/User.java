@@ -5,6 +5,7 @@ import java.util.EnumSet;
 import java.util.Set;
 import lombok.Getter;
 import lombok.Setter;
+import moodlev2.identity.api.Role;
 
 @Getter
 @Setter

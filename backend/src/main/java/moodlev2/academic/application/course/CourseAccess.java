@@ -3,8 +3,7 @@ package moodlev2.academic.application.course;
 import lombok.RequiredArgsConstructor;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
-import moodlev2.identity.domain.user.Role;
-import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
+import moodlev2.identity.api.UserSummary;
 import moodlev2.shared.exception.NotFoundException;
 import org.springframework.stereotype.Component;
 
@@ -22,13 +21,11 @@ public class CourseAccess {
 
     private final CourseRepository courseRepository;
 
-    public static boolean isStaff(UserEntity user) {
-        return user != null
-                && user.getRoles() != null
-                && (user.getRoles().contains(Role.TEACHER) || user.getRoles().contains(Role.ADMIN));
+    public static boolean isStaff(UserSummary user) {
+        return user != null && user.isStaff();
     }
 
-    public boolean isMember(CourseEntity course, UserEntity user) {
+    public boolean isMember(CourseEntity course, UserSummary user) {
         if (course == null || user == null) {
             return false;
         }
@@ -36,14 +33,13 @@ public class CourseAccess {
             return true;
         }
         return course.getId() != null
-                && user.getId() != null
-                && courseRepository.isMember(course.getId(), user.getId());
+                && courseRepository.isMember(course.getId(), user.id(), user.classId());
     }
 
     /**
      * @throws NotFoundException when a student does not belong to the course
      */
-    public void requireMember(CourseEntity course, UserEntity user) {
+    public void requireMember(CourseEntity course, UserSummary user) {
         if (!isMember(course, user)) {
             throw new NotFoundException("Course not found");
         }

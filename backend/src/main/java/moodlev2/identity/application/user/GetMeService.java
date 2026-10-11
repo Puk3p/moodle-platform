@@ -3,14 +3,15 @@ package moodlev2.identity.application.user;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
-import moodlev2.identity.domain.user.Role;
+import moodlev2.identity.api.Role;
 import moodlev2.identity.infrastructure.persistence.SpringDataUserRepository;
-import moodlev2.identity.infrastructure.persistence.entity.ClassEntity;
 import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
 import moodlev2.identity.web.user.dto.UserProfileDto;
 import moodlev2.identity.web.user.dto.UserProfileDto.EnrolledCourse;
@@ -60,8 +61,23 @@ public class GetMeService {
     }
 
     private StudentProfile studentProfile(UserEntity user) {
+        Long classId = user.getClazz() == null ? null : user.getClazz().getId();
+        List<CourseEntity> enrolled =
+                courseRepository.findAllCoursesForStudent(user.getId(), classId);
+        Map<Long, String> teacherNames =
+                springDataUserRepository
+                        .findAllById(
+                                enrolled.stream()
+                                        .map(CourseEntity::getTeacherId)
+                                        .filter(Objects::nonNull)
+                                        .collect(Collectors.toSet()))
+                        .stream()
+                        .collect(
+                                Collectors.toMap(
+                                        UserEntity::getId,
+                                        t -> t.getFirstName() + " " + t.getLastName()));
         List<EnrolledCourse> courses =
-                courseRepository.findAllCoursesForStudent(user.getId()).stream()
+                enrolled.stream()
                         .sorted(Comparator.comparing(CourseEntity::getCode))
                         .map(
                                 c ->
@@ -69,11 +85,7 @@ public class GetMeService {
                                                 c.getCode(),
                                                 c.getName(),
                                                 c.getTerm(),
-                                                c.getTeacher() == null
-                                                        ? null
-                                                        : c.getTeacher().getFirstName()
-                                                                + " "
-                                                                + c.getTeacher().getLastName()))
+                                                teacherNames.get(c.getTeacherId())))
                         .toList();
 
         return new StudentProfile(
@@ -90,10 +102,7 @@ public class GetMeService {
         List<CourseEntity> taught = courseRepository.findAllByTeacherId(user.getId());
 
         Set<Long> classIds =
-                taught.stream()
-                        .flatMap(c -> c.getAssignedClasses().stream())
-                        .map(ClassEntity::getId)
-                        .collect(Collectors.toSet());
+                taught.stream().flatMap(c -> c.getClassIds().stream()).collect(Collectors.toSet());
         List<UserEntity> classMembers =
                 classIds.isEmpty()
                         ? List.of()
@@ -120,13 +129,10 @@ public class GetMeService {
     }
 
     private static Set<Long> studentIdsOf(CourseEntity course, List<UserEntity> classMembers) {
-        Set<Long> classIds =
-                course.getAssignedClasses().stream()
-                        .map(ClassEntity::getId)
-                        .collect(Collectors.toSet());
+        Set<Long> classIds = course.getClassIds();
 
         Set<Long> ids = new HashSet<>();
-        course.getEnrollments().forEach(e -> ids.add(e.getUser().getId()));
+        course.getEnrollments().forEach(e -> ids.add(e.getUserId()));
         classMembers.stream()
                 .filter(u -> u.getClazz() != null && classIds.contains(u.getClazz().getId()))
                 .forEach(u -> ids.add(u.getId()));

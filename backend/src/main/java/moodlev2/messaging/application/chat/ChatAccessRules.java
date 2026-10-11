@@ -6,8 +6,7 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
 import moodlev2.assessment.infrastructure.persistence.entity.QuizAttemptEntity;
-import moodlev2.identity.domain.user.Role;
-import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
+import moodlev2.identity.api.UserSummary;
 
 /**
  * Who may message whom, and when messaging is locked. Pure functions over entities so the rules can
@@ -35,22 +34,22 @@ public final class ChatAccessRules {
 
     private ChatAccessRules() {}
 
-    public static boolean isTeacher(UserEntity user) {
-        return user.getRoles().contains(Role.TEACHER);
+    public static boolean isTeacher(UserSummary user) {
+        return user.isTeacher();
     }
 
-    public static boolean isStudent(UserEntity user) {
-        return user.getRoles().contains(Role.STUDENT) && !isTeacher(user);
+    public static boolean isStudent(UserSummary user) {
+        return user.isStudent();
     }
 
     /** Whether this account takes part in messaging at all. */
-    public static boolean canUseChat(UserEntity user) {
-        return user.isActive() && (isTeacher(user) || isStudent(user));
+    public static boolean canUseChat(UserSummary user) {
+        return user.active() && (isTeacher(user) || isStudent(user));
     }
 
     /** Exactly one side is a teacher; the other is then necessarily a student. */
-    public static boolean mayMessage(UserEntity from, UserEntity to) {
-        if (Objects.equals(from.getId(), to.getId())) {
+    public static boolean mayMessage(UserSummary from, UserSummary to) {
+        if (Objects.equals(from.id(), to.id())) {
             return false;
         }
         return canUseChat(from) && canUseChat(to) && isTeacher(from) != isTeacher(to);

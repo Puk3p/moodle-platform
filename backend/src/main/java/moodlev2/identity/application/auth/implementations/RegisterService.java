@@ -2,8 +2,8 @@ package moodlev2.identity.application.auth.implementations;
 
 import java.util.EnumSet;
 import lombok.RequiredArgsConstructor;
+import moodlev2.identity.api.Role;
 import moodlev2.identity.application.auth.interfaces.IRegisterService;
-import moodlev2.identity.domain.user.Role;
 import moodlev2.identity.domain.user.User;
 import moodlev2.identity.domain.user.ports.PasswordHasherPort;
 import moodlev2.identity.domain.user.ports.UserRepositoryPort;

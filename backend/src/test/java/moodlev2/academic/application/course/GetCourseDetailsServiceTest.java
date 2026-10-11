@@ -1,22 +1,21 @@
 package moodlev2.academic.application.course;
 
 import static moodlev2.support.Fixtures.course;
-import static moodlev2.support.Fixtures.user;
+import static moodlev2.support.Fixtures.person;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
-import java.util.List;
 import java.util.Optional;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
 import moodlev2.academic.web.course.dto.CourseDetailsResponse;
 import moodlev2.assessment.infrastructure.persistence.QuizAttemptRepository;
-import moodlev2.identity.domain.user.Role;
-import moodlev2.identity.infrastructure.persistence.SpringDataUserRepository;
-import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
+import moodlev2.identity.api.Role;
+import moodlev2.identity.api.UserSummary;
 import moodlev2.shared.exception.NotFoundException;
+import moodlev2.support.FakeDirectory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,53 +26,50 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class GetCourseDetailsServiceTest {
 
     @Mock private CourseRepository courseRepository;
-    @Mock private SpringDataUserRepository userRepository;
     @Mock private QuizAttemptRepository attemptRepository;
 
     private GetCourseDetailsService service;
 
     private final CourseEntity course = course(10, "CS101");
-    private final UserEntity student = user(1, "student@test.com", Role.STUDENT);
-    private final UserEntity teacher = user(2, "teacher@test.com", Role.TEACHER);
+    private final FakeDirectory directory = new FakeDirectory();
+    private final UserSummary student = directory.add(person(1, "student@test.com", Role.STUDENT));
+    private final UserSummary teacher = directory.add(person(2, "teacher@test.com", Role.TEACHER));
 
     @BeforeEach
     void setUp() {
         service =
                 new GetCourseDetailsService(
                         courseRepository,
-                        userRepository,
+                        directory,
                         attemptRepository,
                         new CourseAccess(courseRepository));
-        for (UserEntity u : List.of(student, teacher)) {
-            lenient().when(userRepository.findByEmail(u.getEmail())).thenReturn(Optional.of(u));
-        }
         lenient().when(courseRepository.findById(10L)).thenReturn(Optional.of(course));
         lenient().when(courseRepository.findByCode("CS101")).thenReturn(Optional.of(course));
     }
 
     @Test
     void studentOutsideTheCourseCannotReadItById() {
-        when(courseRepository.isMember(10L, 1L)).thenReturn(false);
+        when(courseRepository.isMember(10L, 1L, null)).thenReturn(false);
 
-        assertThatThrownBy(() -> service.getCourseDetails("10", student.getEmail()))
+        assertThatThrownBy(() -> service.getCourseDetails("10", student.email()))
                 .isInstanceOf(NotFoundException.class);
     }
 
     @Test
     void studentOutsideTheCourseCannotReadItByCode() {
-        when(courseRepository.isMember(10L, 1L)).thenReturn(false);
+        when(courseRepository.isMember(10L, 1L, null)).thenReturn(false);
 
-        assertThatThrownBy(() -> service.getCourseDetails("cs101", student.getEmail()))
+        assertThatThrownBy(() -> service.getCourseDetails("cs101", student.email()))
                 .isInstanceOf(NotFoundException.class);
     }
 
     @Test
     void notMineLooksExactlyLikeDoesNotExist() {
-        when(courseRepository.isMember(10L, 1L)).thenReturn(false);
+        when(courseRepository.isMember(10L, 1L, null)).thenReturn(false);
         when(courseRepository.findById(99L)).thenReturn(Optional.empty());
 
-        Throwable notMine = catchThrown(() -> service.getCourseDetails("10", student.getEmail()));
-        Throwable missing = catchThrown(() -> service.getCourseDetails("99", student.getEmail()));
+        Throwable notMine = catchThrown(() -> service.getCourseDetails("10", student.email()));
+        Throwable missing = catchThrown(() -> service.getCourseDetails("99", student.email()));
 
         assertThat(notMine).isInstanceOf(NotFoundException.class);
         assertThat(missing).isInstanceOf(NotFoundException.class);
@@ -82,16 +78,16 @@ class GetCourseDetailsServiceTest {
 
     @Test
     void memberStudentSeesTheCourse() {
-        when(courseRepository.isMember(10L, 1L)).thenReturn(true);
+        when(courseRepository.isMember(10L, 1L, null)).thenReturn(true);
 
-        CourseDetailsResponse details = service.getCourseDetails("10", student.getEmail());
+        CourseDetailsResponse details = service.getCourseDetails("10", student.email());
 
         assertThat(details.courseCode()).isEqualTo("CS101");
     }
 
     @Test
     void teacherSeesAnyCourse() {
-        CourseDetailsResponse details = service.getCourseDetails("CS101", teacher.getEmail());
+        CourseDetailsResponse details = service.getCourseDetails("CS101", teacher.email());
 
         assertThat(details.courseCode()).isEqualTo("CS101");
     }
@@ -101,9 +97,7 @@ class GetCourseDetailsServiceTest {
         when(courseRepository.findByCode("99999999999999999999999")).thenReturn(Optional.empty());
 
         assertThatThrownBy(
-                        () ->
-                                service.getCourseDetails(
-                                        "99999999999999999999999", teacher.getEmail()))
+                        () -> service.getCourseDetails("99999999999999999999999", teacher.email()))
                 .isInstanceOf(NotFoundException.class);
     }
 

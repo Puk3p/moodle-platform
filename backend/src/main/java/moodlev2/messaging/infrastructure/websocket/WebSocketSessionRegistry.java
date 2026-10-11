@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import moodlev2.identity.application.auth.SessionService.SessionsRevokedEvent;
+import moodlev2.identity.api.SessionsRevokedEvent;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.web.socket.CloseStatus;

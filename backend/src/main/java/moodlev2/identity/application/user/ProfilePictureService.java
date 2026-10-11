@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import moodlev2.identity.domain.user.Role;
+import moodlev2.identity.api.Role;
 import moodlev2.identity.infrastructure.persistence.ProfilePictureRepository;
 import moodlev2.identity.infrastructure.persistence.SpringDataUserRepository;
 import moodlev2.identity.infrastructure.persistence.entity.ProfilePictureEntity;

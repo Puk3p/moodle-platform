@@ -8,11 +8,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface QuizAttemptRepository extends JpaRepository<QuizAttemptEntity, Long> {
-    List<QuizAttemptEntity> findByUserEmail(String email);
-
-    Optional<QuizAttemptEntity> findTopByUserEmailAndQuizIdOrderByStartedAtDesc(
-            String email, Long quizId);
-
     List<QuizAttemptEntity> findByQuizIdOrderByCompletedAtDesc(Long quizId);
 
     int countByQuizIdAndUserId(Long quizId, Long studentId);
@@ -23,7 +18,7 @@ public interface QuizAttemptRepository extends JpaRepository<QuizAttemptEntity, 
     /** Unsubmitted attempts by this user on quizzes that block messaging while they run. */
     @Query(
             "SELECT a FROM QuizAttemptEntity a JOIN FETCH a.quiz q "
-                    + "WHERE a.user.email = :email AND a.status = 'IN_PROGRESS' "
+                    + "WHERE a.userId = :userId AND a.status = 'IN_PROGRESS' "
                     + "AND q.blockMessaging = true")
-    List<QuizAttemptEntity> findOpenMessagingBlockingAttempts(@Param("email") String email);
+    List<QuizAttemptEntity> findOpenMessagingBlockingAttempts(@Param("userId") Long userId);
 }

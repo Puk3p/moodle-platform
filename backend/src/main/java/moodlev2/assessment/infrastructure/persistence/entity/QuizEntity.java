@@ -4,13 +4,14 @@ import jakarta.persistence.*;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
 import moodlev2.academic.infrastructure.persistence.entity.CourseModuleEntity;
-import moodlev2.identity.infrastructure.persistence.entity.ClassEntity;
 
 @Entity
 @Table(name = "quizzes")
@@ -71,12 +72,13 @@ public class QuizEntity {
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<QuizQuestionEntity> questions = new ArrayList<>();
 
-    @ManyToMany
-    @JoinTable(
-            name = "quiz_assigned_classes",
-            joinColumns = @JoinColumn(name = "quiz_id"),
-            inverseJoinColumns = @JoinColumn(name = "class_id"))
-    private List<ClassEntity> assignedClasses = new ArrayList<>();
+    /**
+     * Classes (identity module) the quiz is restricted to; empty means every student of the course.
+     */
+    @ElementCollection
+    @CollectionTable(name = "quiz_assigned_classes", joinColumns = @JoinColumn(name = "quiz_id"))
+    @Column(name = "class_id")
+    private Set<Long> classIds = new HashSet<>();
 
     @Column(name = "created_at")
     private Instant createdAt;

@@ -10,8 +10,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import moodlev2.assessment.infrastructure.persistence.entity.QuizEntity;
-import moodlev2.identity.infrastructure.persistence.entity.ClassEntity;
-import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
 
 @Entity
 @Table(name = "courses")
@@ -34,9 +32,9 @@ public class CourseEntity {
     @Column(nullable = false)
     private String term;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "teacher_id")
-    private UserEntity teacher;
+    /** The teaching account (identity module); {@code null} when none is assigned. */
+    @Column(name = "teacher_id")
+    private Long teacherId;
 
     @Column(name = "image_url")
     private String imageUrl;
@@ -58,12 +56,11 @@ public class CourseEntity {
     @Column(name = "created_at")
     private Instant createdAt;
 
-    @ManyToMany
-    @JoinTable(
-            name = "course_classes",
-            joinColumns = @JoinColumn(name = "course_id"),
-            inverseJoinColumns = @JoinColumn(name = "class_id"))
-    private Set<ClassEntity> assignedClasses = new HashSet<>();
+    /** Classes (identity module) whose students all belong to this course. */
+    @ElementCollection
+    @CollectionTable(name = "course_classes", joinColumns = @JoinColumn(name = "course_id"))
+    @Column(name = "class_id")
+    private Set<Long> classIds = new HashSet<>();
 
     @PrePersist
     protected void onCreate() {

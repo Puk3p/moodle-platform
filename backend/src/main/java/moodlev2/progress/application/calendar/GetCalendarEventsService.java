@@ -2,6 +2,8 @@ package moodlev2.progress.application.calendar;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import moodlev2.identity.api.DirectoryApi;
+import moodlev2.identity.api.UserSummary;
 import moodlev2.progress.infrastructure.persistence.CalendarEventRepository;
 import moodlev2.progress.infrastructure.persistence.entity.CalendarEventEntity;
 import moodlev2.progress.web.calendar.dto.CalendarEventDto;
@@ -13,13 +15,16 @@ import org.springframework.stereotype.Service;
 public class GetCalendarEventsService {
 
     private final CalendarEventRepository calendarRepository;
+    private final DirectoryApi directory;
 
     public CalendarResponse getCalendarEventsForUser(String email) {
-        if (email == null) {
+        UserSummary user = email == null ? null : directory.findUserByEmail(email).orElse(null);
+        if (user == null) {
             return new CalendarResponse(List.of());
         }
 
-        List<CalendarEventEntity> userEvents = calendarRepository.findAllByUserEmail(email);
+        List<CalendarEventEntity> userEvents =
+                calendarRepository.findAllForUser(user.id(), user.classId());
 
         List<CalendarEventDto> events =
                 userEvents.stream()

@@ -3,7 +3,7 @@ package moodlev2.identity.domain.auth.ports;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Set;
-import moodlev2.identity.domain.user.Role;
+import moodlev2.identity.api.Role;
 import moodlev2.identity.domain.user.User;
 
 public interface TokenServicePort {

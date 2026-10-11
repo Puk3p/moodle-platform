@@ -8,7 +8,6 @@ import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
 
 @Entity
 @Table(name = "quiz_attempts")
@@ -20,9 +19,9 @@ public class QuizAttemptEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private UserEntity user;
+    /** The attempting account (identity module). */
+    @Column(name = "user_id")
+    private Long userId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "quiz_id")

@@ -1,8 +1,7 @@
 package moodlev2.assessment.application.quiz;
 
-import static moodlev2.support.Fixtures.clazz;
 import static moodlev2.support.Fixtures.course;
-import static moodlev2.support.Fixtures.user;
+import static moodlev2.support.Fixtures.person;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -21,9 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import moodlev2.academic.application.course.CourseAccess;
-import moodlev2.academic.infrastructure.persistence.CourseRepository;
-import moodlev2.academic.infrastructure.persistence.EnrollmentRepository;
+import moodlev2.academic.api.MembershipApi;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
 import moodlev2.assessment.infrastructure.mapper.QuizEngineMapper;
 import moodlev2.assessment.infrastructure.persistence.QuizAttemptRepository;
@@ -37,10 +34,10 @@ import moodlev2.assessment.web.quiz.dto.QuizResultDto;
 import moodlev2.assessment.web.quiz.dto.QuizSubmissionDto;
 import moodlev2.assessment.web.quiz.dto.QuizSubmissionDto.AnswerDto;
 import moodlev2.assessment.web.quiz.dto.StudentQuizViewDto;
-import moodlev2.identity.domain.user.Role;
-import moodlev2.identity.infrastructure.persistence.SpringDataUserRepository;
-import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
+import moodlev2.identity.api.Role;
+import moodlev2.identity.api.UserSummary;
 import moodlev2.shared.exception.NotFoundException;
+import moodlev2.support.FakeDirectory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -63,17 +60,17 @@ class QuizEngineServiceTest {
 
     @Mock private QuizRepository quizRepository;
     @Mock private QuizAttemptRepository attemptRepository;
-    @Mock private SpringDataUserRepository userRepository;
-    @Mock private EnrollmentRepository enrollmentRepository;
-    @Mock private CourseRepository courseRepository;
+    @Mock private MembershipApi membership;
     @Mock private ApplicationEventPublisher events;
 
     private QuizEngineService service;
 
     private final CourseEntity course = course(10, "CS101");
-    private final UserEntity student = user(1, "student@test.com", Role.STUDENT);
-    private final UserEntity classmate = user(3, "classmate@test.com", Role.STUDENT);
-    private final UserEntity teacher = user(2, "teacher@test.com", Role.TEACHER);
+    private final FakeDirectory directory = new FakeDirectory();
+    private final UserSummary student = directory.add(person(1, "student@test.com", Role.STUDENT));
+    private final UserSummary classmate =
+            directory.add(person(3, "classmate@test.com", Role.STUDENT));
+    private final UserSummary teacher = directory.add(person(2, "teacher@test.com", Role.TEACHER));
 
     @BeforeEach
     void setUp() {
@@ -81,18 +78,13 @@ class QuizEngineServiceTest {
                 new QuizEngineService(
                         quizRepository,
                         attemptRepository,
-                        userRepository,
+                        directory,
                         attemptRepository,
-                        enrollmentRepository,
+                        membership,
                         ENCODER,
                         new QuizEngineMapper(),
-                        events,
-                        new CourseAccess(courseRepository));
-
-        for (UserEntity u : List.of(student, classmate, teacher)) {
-            lenient().when(userRepository.findByEmail(u.getEmail())).thenReturn(Optional.of(u));
-        }
-        lenient().when(courseRepository.isMember(anyLong(), anyLong())).thenReturn(true);
+                        events);
+        lenient().when(membership.isMember(anyLong(), any())).thenReturn(true);
         lenient()
                 .when(
                         attemptRepository.findByQuizIdAndUserIdAndStatus(
@@ -148,11 +140,11 @@ class QuizEngineServiceTest {
         return o;
     }
 
-    private QuizAttemptEntity openAttempt(QuizEntity quiz, UserEntity owner) {
+    private QuizAttemptEntity openAttempt(QuizEntity quiz, UserSummary owner) {
         QuizAttemptEntity a = new QuizAttemptEntity();
         a.setId(500L);
         a.setQuiz(quiz);
-        a.setUser(owner);
+        a.setUserId(owner.id());
         a.setStatus("IN_PROGRESS");
         lenient().when(attemptRepository.findById(500L)).thenReturn(Optional.of(a));
         return a;
@@ -181,7 +173,7 @@ class QuizEngineServiceTest {
                     service.submitAttempt(
                             new QuizSubmissionDto(
                                     500L, List.of(choose(11L, 112L), choose(11L, 111L))),
-                            student.getEmail());
+                            student.email());
 
             assertThat(result.score()).isEqualByComparingTo("0");
             assertThat(attempt.getResponses()).hasSize(1);
@@ -197,7 +189,7 @@ class QuizEngineServiceTest {
                     service.submitAttempt(
                             new QuizSubmissionDto(
                                     500L, List.of(choose(11L, 111L), choose(11L, 112L))),
-                            student.getEmail());
+                            student.email());
 
             assertThat(result.score()).isEqualByComparingTo("1");
             assertThat(result.score()).isLessThanOrEqualTo(result.maxScore());
@@ -216,7 +208,7 @@ class QuizEngineServiceTest {
             assertThatThrownBy(
                             () ->
                                     service.submitAttempt(
-                                            new QuizSubmissionDto(500L, flood), student.getEmail()))
+                                            new QuizSubmissionDto(500L, flood), student.email()))
                     .isInstanceOf(IllegalArgumentException.class);
             assertThat(attempt.getStatus()).isEqualTo("IN_PROGRESS");
             verify(attemptRepository, never()).save(any());
@@ -229,7 +221,7 @@ class QuizEngineServiceTest {
             assertThatThrownBy(
                             () ->
                                     service.submitAttempt(
-                                            new QuizSubmissionDto(500L, null), student.getEmail()))
+                                            new QuizSubmissionDto(500L, null), student.email()))
                     .isInstanceOf(IllegalArgumentException.class);
         }
 
@@ -241,7 +233,7 @@ class QuizEngineServiceTest {
                     service.submitAttempt(
                             new QuizSubmissionDto(
                                     500L, List.of(choose(11L, 111L), choose(12L, 121L))),
-                            student.getEmail());
+                            student.email());
 
             assertThat(result.score()).isEqualByComparingTo(result.maxScore());
             assertThat(result.maxScore()).isEqualByComparingTo(BigDecimal.valueOf(2));
@@ -254,7 +246,7 @@ class QuizEngineServiceTest {
             QuizResultDto result =
                     service.submitAttempt(
                             new QuizSubmissionDto(500L, List.of(choose(11L, 121L))),
-                            student.getEmail());
+                            student.email());
 
             assertThat(result.score()).isEqualByComparingTo("0");
         }
@@ -267,7 +259,7 @@ class QuizEngineServiceTest {
 
         private QuizResultDto submit(AnswerDto... answers) {
             return service.submitAttempt(
-                    new QuizSubmissionDto(500L, List.of(answers)), student.getEmail());
+                    new QuizSubmissionDto(500L, List.of(answers)), student.email());
         }
 
         @Test
@@ -383,7 +375,7 @@ class QuizEngineServiceTest {
                             () ->
                                     service.submitAttempt(
                                             new QuizSubmissionDto(500L, List.of()),
-                                            student.getEmail()))
+                                            student.email()))
                     .isInstanceOf(ResponseStatusException.class)
                     .satisfies(t -> assertThat(statusOf(t)).isEqualTo(HttpStatus.FORBIDDEN));
         }
@@ -397,7 +389,7 @@ class QuizEngineServiceTest {
                             () ->
                                     service.submitAttempt(
                                             new QuizSubmissionDto(500L, List.of()),
-                                            student.getEmail()))
+                                            student.email()))
                     .isInstanceOf(ResponseStatusException.class)
                     .satisfies(t -> assertThat(statusOf(t)).isEqualTo(HttpStatus.CONFLICT));
         }
@@ -408,7 +400,7 @@ class QuizEngineServiceTest {
                             () ->
                                     service.submitAttempt(
                                             new QuizSubmissionDto(null, List.of()),
-                                            student.getEmail()))
+                                            student.email()))
                     .isInstanceOf(IllegalArgumentException.class);
         }
     }
@@ -422,7 +414,7 @@ class QuizEngineServiceTest {
         void studentStartsAPublishedQuizOfTheirCourse() {
             quiz();
 
-            StudentQuizViewDto view = service.startAttempt(7L, student.getEmail(), null);
+            StudentQuizViewDto view = service.startAttempt(7L, student.email(), null);
 
             assertThat(view.attemptId()).isEqualTo(500L);
             verify(attemptRepository).save(any(QuizAttemptEntity.class));
@@ -432,7 +424,7 @@ class QuizEngineServiceTest {
         void unpublishedQuizDoesNotExistForStudents() {
             quiz().setStatus("DRAFT");
 
-            assertThatThrownBy(() -> service.startAttempt(7L, student.getEmail(), null))
+            assertThatThrownBy(() -> service.startAttempt(7L, student.email(), null))
                     .isInstanceOf(NotFoundException.class);
             verify(attemptRepository, never()).save(any());
         }
@@ -440,9 +432,9 @@ class QuizEngineServiceTest {
         @Test
         void studentOutsideTheCourseGetsNotFound() {
             quiz();
-            when(courseRepository.isMember(10L, 1L)).thenReturn(false);
+            when(membership.isMember(10L, student)).thenReturn(false);
 
-            assertThatThrownBy(() -> service.startAttempt(7L, student.getEmail(), null))
+            assertThatThrownBy(() -> service.startAttempt(7L, student.email(), null))
                     .isInstanceOf(NotFoundException.class);
             verify(attemptRepository, never()).save(any());
         }
@@ -450,29 +442,29 @@ class QuizEngineServiceTest {
         @Test
         void quizAssignedToOtherClassesIsForbidden() {
             QuizEntity quiz = quiz();
-            quiz.getAssignedClasses().add(clazz(100, "12A"));
-            student.setClazz(clazz(200, "12B"));
+            quiz.getClassIds().add(100L);
+            directory.add(person(1, "student@test.com", 200L, Role.STUDENT));
 
-            assertThatThrownBy(() -> service.startAttempt(7L, student.getEmail(), null))
+            assertThatThrownBy(() -> service.startAttempt(7L, student.email(), null))
                     .isInstanceOf(ResponseStatusException.class)
                     .satisfies(t -> assertThat(statusOf(t)).isEqualTo(HttpStatus.FORBIDDEN));
         }
 
         @Test
         void studentWithoutAClassCannotStartAClassRestrictedQuiz() {
-            quiz().getAssignedClasses().add(clazz(100, "12A"));
+            quiz().getClassIds().add(100L);
 
-            assertThatThrownBy(() -> service.startAttempt(7L, student.getEmail(), null))
+            assertThatThrownBy(() -> service.startAttempt(7L, student.email(), null))
                     .isInstanceOf(ResponseStatusException.class)
                     .satisfies(t -> assertThat(statusOf(t)).isEqualTo(HttpStatus.FORBIDDEN));
         }
 
         @Test
         void studentOfAnAssignedClassMayStart() {
-            quiz().getAssignedClasses().add(clazz(100, "12A"));
-            student.setClazz(clazz(100, "12A"));
+            quiz().getClassIds().add(100L);
+            directory.add(person(1, "student@test.com", 100L, Role.STUDENT));
 
-            assertThatCode(() -> service.startAttempt(7L, student.getEmail(), null))
+            assertThatCode(() -> service.startAttempt(7L, student.email(), null))
                     .doesNotThrowAnyException();
         }
 
@@ -480,7 +472,7 @@ class QuizEngineServiceTest {
         void quizThatHasNotOpenedYetIsForbiddenWithAClearMessage() {
             quiz().setAvailableFrom(LocalDateTime.now(ZoneOffset.UTC).plusDays(1));
 
-            assertThatThrownBy(() -> service.startAttempt(7L, student.getEmail(), null))
+            assertThatThrownBy(() -> service.startAttempt(7L, student.email(), null))
                     .isInstanceOf(ResponseStatusException.class)
                     .satisfies(t -> assertThat(statusOf(t)).isEqualTo(HttpStatus.FORBIDDEN))
                     .hasMessageContaining("not open yet");
@@ -490,7 +482,7 @@ class QuizEngineServiceTest {
         void closedQuizIsForbiddenWithAClearMessage() {
             quiz().setAvailableTo(LocalDateTime.now(ZoneOffset.UTC).minusDays(1));
 
-            assertThatThrownBy(() -> service.startAttempt(7L, student.getEmail(), null))
+            assertThatThrownBy(() -> service.startAttempt(7L, student.email(), null))
                     .isInstanceOf(ResponseStatusException.class)
                     .satisfies(t -> assertThat(statusOf(t)).isEqualTo(HttpStatus.FORBIDDEN))
                     .hasMessageContaining("closed");
@@ -502,7 +494,7 @@ class QuizEngineServiceTest {
             quiz.setAvailableFrom(LocalDateTime.now(ZoneOffset.UTC).minusHours(1));
             quiz.setAvailableTo(LocalDateTime.now(ZoneOffset.UTC).plusHours(1));
 
-            assertThatCode(() -> service.startAttempt(7L, student.getEmail(), null))
+            assertThatCode(() -> service.startAttempt(7L, student.email(), null))
                     .doesNotThrowAnyException();
         }
 
@@ -514,7 +506,7 @@ class QuizEngineServiceTest {
             when(attemptRepository.findByQuizIdAndUserIdAndStatus(7L, 1L, "IN_PROGRESS"))
                     .thenReturn(Optional.of(running));
 
-            StudentQuizViewDto view = service.startAttempt(7L, student.getEmail(), null);
+            StudentQuizViewDto view = service.startAttempt(7L, student.email(), null);
 
             assertThat(view.attemptId()).isEqualTo(500L);
             verify(attemptRepository, never()).save(any());
@@ -527,9 +519,9 @@ class QuizEngineServiceTest {
             lenient()
                     .when(attemptRepository.findByQuizIdAndUserIdAndStatus(7L, 1L, "IN_PROGRESS"))
                     .thenReturn(Optional.of(running));
-            when(courseRepository.isMember(10L, 1L)).thenReturn(false);
+            when(membership.isMember(10L, student)).thenReturn(false);
 
-            assertThatThrownBy(() -> service.startAttempt(7L, student.getEmail(), null))
+            assertThatThrownBy(() -> service.startAttempt(7L, student.email(), null))
                     .isInstanceOf(NotFoundException.class);
         }
 
@@ -538,9 +530,9 @@ class QuizEngineServiceTest {
             QuizEntity quiz = quiz();
             quiz.setStatus("DRAFT");
             quiz.setAvailableTo(LocalDateTime.now(ZoneOffset.UTC).minusDays(1));
-            quiz.getAssignedClasses().add(clazz(100, "12A"));
+            quiz.getClassIds().add(100L);
 
-            assertThatCode(() -> service.startAttempt(7L, teacher.getEmail(), null))
+            assertThatCode(() -> service.startAttempt(7L, teacher.email(), null))
                     .doesNotThrowAnyException();
         }
 
@@ -549,7 +541,7 @@ class QuizEngineServiceTest {
             quiz().setMaxAttempts(1);
             when(attemptRepository.countByQuizIdAndUserId(7L, 1L)).thenReturn(1);
 
-            assertThatThrownBy(() -> service.startAttempt(7L, student.getEmail(), null))
+            assertThatThrownBy(() -> service.startAttempt(7L, student.email(), null))
                     .isInstanceOf(ResponseStatusException.class)
                     .satisfies(t -> assertThat(statusOf(t)).isEqualTo(HttpStatus.CONFLICT));
         }
@@ -566,9 +558,9 @@ class QuizEngineServiceTest {
             return quiz;
         }
 
-        private HttpStatus attempt(UserEntity who, String password) {
+        private HttpStatus attempt(UserSummary who, String password) {
             try {
-                service.startAttempt(7L, who.getEmail(), password);
+                service.startAttempt(7L, who.email(), password);
                 return HttpStatus.OK;
             } catch (ResponseStatusException e) {
                 return statusOf(e);

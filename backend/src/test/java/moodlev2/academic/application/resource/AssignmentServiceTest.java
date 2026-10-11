@@ -3,7 +3,7 @@ package moodlev2.academic.application.resource;
 import static moodlev2.support.Fixtures.assignment;
 import static moodlev2.support.Fixtures.course;
 import static moodlev2.support.Fixtures.module;
-import static moodlev2.support.Fixtures.user;
+import static moodlev2.support.Fixtures.person;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import moodlev2.academic.application.course.CourseAccess;
+import moodlev2.academic.application.course.CourseRoster;
 import moodlev2.academic.infrastructure.persistence.AssignmentSubmissionRepository;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import moodlev2.academic.infrastructure.persistence.EnrollmentRepository;
@@ -29,10 +30,10 @@ import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
 import moodlev2.academic.infrastructure.persistence.entity.CourseModuleEntity;
 import moodlev2.academic.infrastructure.persistence.entity.ModuleItemEntity;
 import moodlev2.academic.web.resource.dto.StudentAssignmentDetailsDto;
-import moodlev2.identity.domain.user.Role;
-import moodlev2.identity.infrastructure.persistence.SpringDataUserRepository;
-import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
+import moodlev2.identity.api.Role;
+import moodlev2.identity.api.UserSummary;
 import moodlev2.shared.exception.NotFoundException;
+import moodlev2.support.FakeDirectory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -54,7 +55,6 @@ class AssignmentServiceTest {
 
     @Mock private ModuleItemRepository moduleItemRepository;
     @Mock private AssignmentSubmissionRepository submissionRepository;
-    @Mock private SpringDataUserRepository userRepository;
     @Mock private FileStorageService fileStorageService;
     @Mock private EnrollmentRepository enrollmentRepository;
     @Mock private CourseRepository courseRepository;
@@ -64,8 +64,9 @@ class AssignmentServiceTest {
     private final CourseEntity course = course(10, "CS101");
     private final CourseModuleEntity module = module(20, course);
     private final ModuleItemEntity assignment = assignment(30, module);
-    private final UserEntity student = user(1, "student@test.com", Role.STUDENT);
-    private final UserEntity teacher = user(2, "teacher@test.com", Role.TEACHER);
+    private final FakeDirectory directory = new FakeDirectory();
+    private final UserSummary student = directory.add(person(1, "student@test.com", Role.STUDENT));
+    private final UserSummary teacher = directory.add(person(2, "teacher@test.com", Role.TEACHER));
 
     private final AtomicInteger storedCount = new AtomicInteger();
 
@@ -75,18 +76,15 @@ class AssignmentServiceTest {
                 new AssignmentService(
                         moduleItemRepository,
                         submissionRepository,
-                        userRepository,
+                        directory,
                         fileStorageService,
-                        enrollmentRepository,
+                        new CourseRoster(enrollmentRepository, directory),
                         new CourseAccess(courseRepository));
 
-        for (UserEntity u : List.of(student, teacher)) {
-            lenient().when(userRepository.findByEmail(u.getEmail())).thenReturn(Optional.of(u));
-        }
         lenient().when(moduleItemRepository.findById(30L)).thenReturn(Optional.of(assignment));
-        lenient().when(courseRepository.isMember(anyLong(), anyLong())).thenReturn(true);
+        lenient().when(courseRepository.isMember(anyLong(), anyLong(), any())).thenReturn(true);
         lenient()
-                .when(submissionRepository.findByAssignmentAndStudent(any(), any()))
+                .when(submissionRepository.findByAssignmentAndStudentId(any(), any()))
                 .thenReturn(Optional.empty());
         lenient()
                 .when(fileStorageService.storeFile(any(MultipartFile.class)))
@@ -113,10 +111,10 @@ class AssignmentServiceTest {
         AssignmentSubmissionEntity sub = new AssignmentSubmissionEntity();
         sub.setId(77L);
         sub.setAssignment(assignment);
-        sub.setStudent(student);
+        sub.setStudentId(student.id());
         sub.setFileUrl(fileUrl);
         sub.setGrade(grade);
-        when(submissionRepository.findByAssignmentAndStudent(assignment, student))
+        when(submissionRepository.findByAssignmentAndStudentId(assignment, student.id()))
                 .thenReturn(Optional.of(sub));
         return sub;
     }
@@ -129,17 +127,16 @@ class AssignmentServiceTest {
         @Test
         void memberStudentSeesAVisibleAssignment() {
             StudentAssignmentDetailsDto dto =
-                    service.getAssignmentDetailsForStudent(30L, student.getEmail());
+                    service.getAssignmentDetailsForStudent(30L, student.email());
 
             assertThat(dto.id()).isEqualTo(30L);
         }
 
         @Test
         void studentOutsideTheCourseGetsNotFound() {
-            when(courseRepository.isMember(10L, 1L)).thenReturn(false);
+            when(courseRepository.isMember(10L, 1L, null)).thenReturn(false);
 
-            assertThatThrownBy(
-                            () -> service.getAssignmentDetailsForStudent(30L, student.getEmail()))
+            assertThatThrownBy(() -> service.getAssignmentDetailsForStudent(30L, student.email()))
                     .isInstanceOf(NotFoundException.class);
         }
 
@@ -147,8 +144,7 @@ class AssignmentServiceTest {
         void hiddenAssignmentIsNotFoundForStudents() {
             assignment.setVisible(false);
 
-            assertThatThrownBy(
-                            () -> service.getAssignmentDetailsForStudent(30L, student.getEmail()))
+            assertThatThrownBy(() -> service.getAssignmentDetailsForStudent(30L, student.email()))
                     .isInstanceOf(NotFoundException.class);
         }
 
@@ -156,7 +152,7 @@ class AssignmentServiceTest {
         void hiddenAssignmentIsStillVisibleToStaff() {
             assignment.setVisible(false);
 
-            assertThat(service.getAssignmentDetailsForStudent(30L, teacher.getEmail()).id())
+            assertThat(service.getAssignmentDetailsForStudent(30L, teacher.email()).id())
                     .isEqualTo(30L);
         }
 
@@ -164,19 +160,18 @@ class AssignmentServiceTest {
         void plainResourceIsNotAnAssignment() {
             assignment.setIsAssignment(false);
 
-            assertThatThrownBy(
-                            () -> service.getAssignmentDetailsForStudent(30L, student.getEmail()))
+            assertThatThrownBy(() -> service.getAssignmentDetailsForStudent(30L, student.email()))
                     .isInstanceOf(NotFoundException.class);
         }
 
         @Test
         void studentCannotSubmitToACourseTheyDoNotBelongTo() {
-            when(courseRepository.isMember(10L, 1L)).thenReturn(false);
+            when(courseRepository.isMember(10L, 1L, null)).thenReturn(false);
 
             assertThatThrownBy(
                             () ->
                                     service.submitStudentAssignment(
-                                            30L, "text", pdfs(1), student.getEmail()))
+                                            30L, "text", pdfs(1), student.email()))
                     .isInstanceOf(NotFoundException.class);
             verify(fileStorageService, never()).storeFile(any());
             verify(submissionRepository, never()).save(any());
@@ -189,7 +184,7 @@ class AssignmentServiceTest {
             assertThatThrownBy(
                             () ->
                                     service.submitStudentAssignment(
-                                            30L, "text", pdfs(1), student.getEmail()))
+                                            30L, "text", pdfs(1), student.email()))
                     .isInstanceOf(NotFoundException.class);
             verify(fileStorageService, never()).storeFile(any());
         }
@@ -202,7 +197,7 @@ class AssignmentServiceTest {
 
         @Test
         void fiveFilesAreStoredAndJoined() {
-            service.submitStudentAssignment(30L, null, pdfs(5), student.getEmail());
+            service.submitStudentAssignment(30L, null, pdfs(5), student.email());
 
             ArgumentCaptor<AssignmentSubmissionEntity> saved =
                     ArgumentCaptor.forClass(AssignmentSubmissionEntity.class);
@@ -215,7 +210,7 @@ class AssignmentServiceTest {
             assertThatThrownBy(
                             () ->
                                     service.submitStudentAssignment(
-                                            30L, null, pdfs(6), student.getEmail()))
+                                            30L, null, pdfs(6), student.email()))
                     .isInstanceOf(IllegalArgumentException.class);
             verify(fileStorageService, never()).storeFile(any());
         }
@@ -225,10 +220,7 @@ class AssignmentServiceTest {
             List<MultipartFile> files = pdfs(5);
             files.add(new MockMultipartFile("file", "empty.pdf", "application/pdf", new byte[0]));
 
-            assertThatCode(
-                            () ->
-                                    service.submitStudentAssignment(
-                                            30L, null, files, student.getEmail()))
+            assertThatCode(() -> service.submitStudentAssignment(30L, null, files, student.email()))
                     .doesNotThrowAnyException();
         }
 
@@ -236,7 +228,7 @@ class AssignmentServiceTest {
         void replacingASubmissionDeletesThePreviousFiles() {
             existingSubmission("/uploads/old-a.pdf;/uploads/old-b.pdf", null);
 
-            service.submitStudentAssignment(30L, null, pdfs(1), student.getEmail());
+            service.submitStudentAssignment(30L, null, pdfs(1), student.email());
 
             verify(fileStorageService).deleteFile("/uploads/old-a.pdf");
             verify(fileStorageService).deleteFile("/uploads/old-b.pdf");
@@ -247,7 +239,7 @@ class AssignmentServiceTest {
         void textOnlyResubmissionKeepsTheFilesItStillReferences() {
             AssignmentSubmissionEntity sub = existingSubmission("/uploads/old-a.pdf", null);
 
-            service.submitStudentAssignment(30L, "new text", null, student.getEmail());
+            service.submitStudentAssignment(30L, "new text", null, student.email());
 
             verify(fileStorageService, never()).deleteFile(any());
             assertThat(sub.getFileUrl()).isEqualTo("/uploads/old-a.pdf");
@@ -263,7 +255,7 @@ class AssignmentServiceTest {
             assertThatThrownBy(
                             () ->
                                     service.submitStudentAssignment(
-                                            30L, null, pdfs(2), student.getEmail()))
+                                            30L, null, pdfs(2), student.email()))
                     .isInstanceOf(DataIntegrityViolationException.class);
 
             verify(fileStorageService).deleteFile("/uploads/stored-1.pdf");
@@ -281,7 +273,7 @@ class AssignmentServiceTest {
             assertThatThrownBy(
                             () ->
                                     service.submitStudentAssignment(
-                                            30L, null, pdfs(2), student.getEmail()))
+                                            30L, null, pdfs(2), student.email()))
                     .isInstanceOf(IllegalArgumentException.class);
 
             verify(fileStorageService).deleteFile("/uploads/stored-1.pdf");
@@ -295,7 +287,7 @@ class AssignmentServiceTest {
                     runInSynchronization(
                             () ->
                                     service.submitStudentAssignment(
-                                            30L, null, pdfs(1), student.getEmail()));
+                                            30L, null, pdfs(1), student.email()));
 
             verify(fileStorageService, never()).deleteFile(any());
             registered.forEach(s -> s.afterCompletion(TransactionSynchronization.STATUS_COMMITTED));
@@ -311,7 +303,7 @@ class AssignmentServiceTest {
                     runInSynchronization(
                             () ->
                                     service.submitStudentAssignment(
-                                            30L, null, pdfs(1), student.getEmail()));
+                                            30L, null, pdfs(1), student.email()));
 
             registered.forEach(
                     s -> s.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK));
@@ -323,13 +315,13 @@ class AssignmentServiceTest {
         @Test
         void twentyOneSubmissionsInAnHourAreRefused() {
             for (int i = 0; i < AssignmentService.MAX_SUBMISSIONS_PER_HOUR; i++) {
-                service.submitStudentAssignment(30L, "draft " + i, null, student.getEmail());
+                service.submitStudentAssignment(30L, "draft " + i, null, student.email());
             }
 
             assertThatThrownBy(
                             () ->
                                     service.submitStudentAssignment(
-                                            30L, "one more", pdfs(1), student.getEmail()))
+                                            30L, "one more", pdfs(1), student.email()))
                     .isInstanceOf(ResponseStatusException.class)
                     .satisfies(
                             t -> assertThat(statusOf(t)).isEqualTo(HttpStatus.TOO_MANY_REQUESTS));
@@ -339,15 +331,11 @@ class AssignmentServiceTest {
         @Test
         void theHourlyLimitIsPerStudent() {
             for (int i = 0; i < AssignmentService.MAX_SUBMISSIONS_PER_HOUR; i++) {
-                service.submitStudentAssignment(30L, "draft " + i, null, student.getEmail());
+                service.submitStudentAssignment(30L, "draft " + i, null, student.email());
             }
-            UserEntity other = user(3, "other@test.com", Role.STUDENT);
-            when(userRepository.findByEmail(other.getEmail())).thenReturn(Optional.of(other));
+            UserSummary other = directory.add(person(3, "other@test.com", Role.STUDENT));
 
-            assertThatCode(
-                            () ->
-                                    service.submitStudentAssignment(
-                                            30L, "mine", null, other.getEmail()))
+            assertThatCode(() -> service.submitStudentAssignment(30L, "mine", null, other.email()))
                     .doesNotThrowAnyException();
         }
     }
@@ -364,7 +352,7 @@ class AssignmentServiceTest {
             assertThatThrownBy(
                             () ->
                                     service.submitStudentAssignment(
-                                            30L, "better", pdfs(1), student.getEmail()))
+                                            30L, "better", pdfs(1), student.email()))
                     .isInstanceOf(ResponseStatusException.class)
                     .satisfies(t -> assertThat(statusOf(t)).isEqualTo(HttpStatus.CONFLICT));
             verify(fileStorageService, never()).storeFile(any());
@@ -378,7 +366,7 @@ class AssignmentServiceTest {
             assertThatThrownBy(
                             () ->
                                     service.submitStudentAssignment(
-                                            30L, "late", null, student.getEmail()))
+                                            30L, "late", null, student.email()))
                     .isInstanceOf(ResponseStatusException.class)
                     .satisfies(t -> assertThat(statusOf(t)).isEqualTo(HttpStatus.CONFLICT))
                     .hasMessageContaining("The deadline has passed.");
@@ -391,7 +379,7 @@ class AssignmentServiceTest {
             assertThatCode(
                             () ->
                                     service.submitStudentAssignment(
-                                            30L, "on time", null, student.getEmail()))
+                                            30L, "on time", null, student.email()))
                     .doesNotThrowAnyException();
         }
 
@@ -402,7 +390,7 @@ class AssignmentServiceTest {
             assertThatThrownBy(
                             () ->
                                     service.submitStudentAssignment(
-                                            30L, tooLong, null, student.getEmail()))
+                                            30L, tooLong, null, student.email()))
                     .isInstanceOf(IllegalArgumentException.class);
             verify(submissionRepository, never()).save(any());
         }
@@ -414,7 +402,7 @@ class AssignmentServiceTest {
             assertThatCode(
                             () ->
                                     service.submitStudentAssignment(
-                                            30L, atLimit, null, student.getEmail()))
+                                            30L, atLimit, null, student.email()))
                     .doesNotThrowAnyException();
         }
     }

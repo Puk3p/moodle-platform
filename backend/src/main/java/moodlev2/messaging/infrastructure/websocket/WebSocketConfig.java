@@ -6,8 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import moodlev2.identity.application.auth.SessionService;
-import moodlev2.identity.infrastructure.security.SessionCookies;
+import moodlev2.identity.api.SessionAuthentication;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
@@ -32,20 +31,17 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private static final String PRINCIPAL_ATTRIBUTE = "moodlev2.ws.email";
 
-    private final SessionService sessionService;
-    private final SessionCookies cookies;
+    private final SessionAuthentication sessionAuthentication;
     private final WebSocketSessionRegistry socketRegistry;
     private final ObjectMapper objectMapper;
     private final String[] allowedOrigins;
 
     public WebSocketConfig(
-            SessionService sessionService,
-            SessionCookies cookies,
+            SessionAuthentication sessionAuthentication,
             WebSocketSessionRegistry socketRegistry,
             ObjectMapper objectMapper,
             @Value("${app.cors.allowed-origins:http://localhost:4200}") String allowedOrigins) {
-        this.sessionService = sessionService;
-        this.cookies = cookies;
+        this.sessionAuthentication = sessionAuthentication;
         this.socketRegistry = socketRegistry;
         this.objectMapper = objectMapper;
         this.allowedOrigins =
@@ -92,20 +88,16 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 ServerHttpResponse response,
                 WebSocketHandler wsHandler,
                 Map<String, Object> attributes) {
-            Optional<SessionService.Resolved> session =
-                    cookies.readSessionFromHeader(request.getHeaders().getFirst(HttpHeaders.COOKIE))
-                            .flatMap(
-                                    token ->
-                                            sessionService.resolve(
-                                                    token,
-                                                    request.getHeaders()
-                                                            .getFirst(HttpHeaders.USER_AGENT),
-                                                    clientAddress(request)));
+            Optional<SessionAuthentication.AuthenticatedSession> session =
+                    sessionAuthentication.fromCookieHeader(
+                            request.getHeaders().getFirst(HttpHeaders.COOKIE),
+                            request.getHeaders().getFirst(HttpHeaders.USER_AGENT),
+                            clientAddress(request));
             if (session.isEmpty()) {
                 response.setStatusCode(HttpStatus.UNAUTHORIZED);
                 return false;
             }
-            attributes.put(PRINCIPAL_ATTRIBUTE, session.get().user().getEmail());
+            attributes.put(PRINCIPAL_ATTRIBUTE, session.get().email());
             attributes.put(WebSocketSessionRegistry.SESSION_HASH, session.get().tokenHash());
             return true;
         }

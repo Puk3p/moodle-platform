@@ -7,10 +7,12 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
 import moodlev2.academic.infrastructure.persistence.entity.CourseModuleEntity;
 import moodlev2.academic.infrastructure.persistence.entity.ModuleItemEntity;
-import moodlev2.identity.domain.user.Role;
+import moodlev2.identity.api.Role;
+import moodlev2.identity.api.UserSummary;
 import moodlev2.identity.infrastructure.persistence.entity.ClassEntity;
 import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
 
@@ -28,6 +30,36 @@ public final class Fixtures {
         u.setRoles(new HashSet<>(List.of(roles)));
         u.setActive(true);
         return u;
+    }
+
+    /** What other modules see of an account: First{id} Last{id}, active, in no class. */
+    public static UserSummary person(long id, String email, Role... roles) {
+        return person(id, email, null, roles);
+    }
+
+    public static UserSummary person(long id, String email, Long classId, Role... roles) {
+        return new UserSummary(
+                id,
+                email,
+                "First" + id,
+                "Last" + id,
+                Set.of(roles),
+                classId,
+                classId == null ? null : "C" + classId,
+                true);
+    }
+
+    /** The directory's view of an identity entity. */
+    public static UserSummary summary(UserEntity u) {
+        return new UserSummary(
+                u.getId(),
+                u.getEmail(),
+                u.getFirstName(),
+                u.getLastName(),
+                u.getRoles(),
+                u.getClazz() == null ? null : u.getClazz().getId(),
+                u.getClazz() == null ? null : u.getClazz().getName(),
+                u.isActive());
     }
 
     public static ClassEntity clazz(long id, String name) {

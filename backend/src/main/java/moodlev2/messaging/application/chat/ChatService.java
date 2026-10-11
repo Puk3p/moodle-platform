@@ -19,9 +19,8 @@ import lombok.RequiredArgsConstructor;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
 import moodlev2.assessment.infrastructure.persistence.QuizAttemptRepository;
-import moodlev2.identity.infrastructure.persistence.SpringDataUserRepository;
-import moodlev2.identity.infrastructure.persistence.entity.ClassEntity;
-import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
+import moodlev2.identity.api.DirectoryApi;
+import moodlev2.identity.api.UserSummary;
 import moodlev2.messaging.infrastructure.persistence.ChatMessageRepository;
 import moodlev2.messaging.infrastructure.persistence.entity.ChatMessageEntity;
 import moodlev2.messaging.web.chat.dto.ChatContactDto;
@@ -56,15 +55,15 @@ public class ChatService {
             "Messaging is only available between teachers and students.";
 
     private final ChatMessageRepository messageRepository;
-    private final SpringDataUserRepository userRepository;
+    private final DirectoryApi directory;
     private final QuizAttemptRepository attemptRepository;
     private final CourseRepository courseRepository;
     private final SimpMessagingTemplate messaging;
 
     @Transactional(readOnly = true)
     public ChatStatusDto status(String email) {
-        Optional<UserEntity> user =
-                userRepository.findByEmail(email).filter(ChatAccessRules::canUseChat);
+        Optional<UserSummary> user =
+                directory.findUserByEmail(email).filter(ChatAccessRules::canUseChat);
         if (user.isEmpty()) {
             return ChatStatusDto.notPermitted();
         }
@@ -82,43 +81,49 @@ public class ChatService {
      */
     @Transactional(readOnly = true)
     public List<ChatContactDto> contacts(String email) {
-        UserEntity me = requireChatUser(email);
+        UserSummary me = requireChatUser(email);
 
-        Map<Long, UserEntity> people = new LinkedHashMap<>();
+        Map<Long, UserSummary> people = new LinkedHashMap<>();
         Map<Long, Set<String>> sharedCourses = new HashMap<>();
 
         if (ChatAccessRules.isTeacher(me)) {
             collectStudentsOf(me, people, sharedCourses);
         } else {
-            for (CourseEntity course : courseRepository.findAllCoursesForStudent(me.getId())) {
-                if (course.getTeacher() != null) {
-                    add(people, sharedCourses, course.getTeacher(), course.getCode());
+            Map<Long, List<String>> codesByTeacher = new LinkedHashMap<>();
+            for (CourseEntity course :
+                    courseRepository.findAllCoursesForStudent(me.id(), me.classId())) {
+                if (course.getTeacherId() != null) {
+                    codesByTeacher
+                            .computeIfAbsent(course.getTeacherId(), k -> new ArrayList<>())
+                            .add(course.getCode());
                 }
+            }
+            for (UserSummary teacher : directory.findUsers(codesByTeacher.keySet())) {
+                codesByTeacher
+                        .get(teacher.id())
+                        .forEach(code -> add(people, sharedCourses, teacher, code));
             }
         }
 
-        List<String> partners = messageRepository.findConversationPartners(me.getEmail());
+        List<String> partners = messageRepository.findConversationPartners(me.email());
         if (!partners.isEmpty()) {
-            userRepository
-                    .findAllByEmailIn(partners)
-                    .forEach(u -> people.putIfAbsent(u.getId(), u));
+            directory.findUsersByEmail(partners).forEach(u -> people.putIfAbsent(u.id(), u));
         }
 
         return people.values().stream()
                 .filter(u -> ChatAccessRules.mayMessage(me, u))
                 .sorted(
-                        Comparator.comparing(UserEntity::getLastName, String.CASE_INSENSITIVE_ORDER)
+                        Comparator.comparing(UserSummary::lastName, String.CASE_INSENSITIVE_ORDER)
                                 .thenComparing(
-                                        UserEntity::getFirstName, String.CASE_INSENSITIVE_ORDER))
+                                        UserSummary::firstName, String.CASE_INSENSITIVE_ORDER))
                 .map(
                         u ->
                                 new ChatContactDto(
-                                        u.getEmail(),
-                                        u.getFirstName(),
-                                        u.getLastName(),
+                                        u.email(),
+                                        u.firstName(),
+                                        u.lastName(),
                                         ChatAccessRules.isTeacher(u) ? "TEACHER" : "STUDENT",
-                                        List.copyOf(
-                                                sharedCourses.getOrDefault(u.getId(), Set.of()))))
+                                        List.copyOf(sharedCourses.getOrDefault(u.id(), Set.of()))))
                 .toList();
     }
 
@@ -129,12 +134,12 @@ public class ChatService {
      */
     @Transactional(readOnly = true)
     public List<ChatMessageDto> history(String email) {
-        UserEntity me = requireChatUser(email);
-        List<ChatMessageEntity> rows = messageRepository.findChatHistory(me.getEmail());
+        UserSummary me = requireChatUser(email);
+        List<ChatMessageEntity> rows = messageRepository.findChatHistory(me.email());
 
         Set<String> partnerEmails =
                 rows.stream()
-                        .map(m -> otherParty(m, me.getEmail()))
+                        .map(m -> otherParty(m, me.email()))
                         .filter(Objects::nonNull)
                         .collect(Collectors.toSet());
         if (partnerEmails.isEmpty()) {
@@ -143,14 +148,14 @@ public class ChatService {
 
         // MySQL compares these case-insensitively, so the Java side must as well.
         Set<String> allowed =
-                userRepository.findAllByEmailIn(partnerEmails).stream()
+                directory.findUsersByEmail(partnerEmails).stream()
                         .filter(u -> ChatAccessRules.mayMessage(me, u))
-                        .map(u -> normalize(u.getEmail()))
+                        .map(u -> normalize(u.email()))
                         .collect(Collectors.toSet());
 
         return rows.stream()
-                .filter(m -> allowed.contains(normalize(otherParty(m, me.getEmail()))))
-                .map(m -> toDto(m, me.getEmail()))
+                .filter(m -> allowed.contains(normalize(otherParty(m, me.email()))))
+                .map(m -> toDto(m, me.email()))
                 .toList();
     }
 
@@ -160,7 +165,7 @@ public class ChatService {
      * attempt ends.
      */
     public ChatMessageDto send(String senderEmail, String recipientEmail, String content) {
-        UserEntity sender = requireChatUser(senderEmail);
+        UserSummary sender = requireChatUser(senderEmail);
 
         String body = content == null ? "" : content.strip();
         if (body.isEmpty()) {
@@ -171,10 +176,10 @@ public class ChatService {
                     "Message is too long (maximum " + MAX_CONTENT_LENGTH + " characters).");
         }
 
-        UserEntity recipient =
+        UserSummary recipient =
                 recipientEmail == null
                         ? null
-                        : userRepository.findByEmail(recipientEmail.strip()).orElse(null);
+                        : directory.findUserByEmail(recipientEmail.strip()).orElse(null);
         // One answer for "no such account" and "not allowed", so this cannot be used to probe
         // which email addresses are registered.
         if (recipient == null || !ChatAccessRules.mayMessage(sender, recipient)) {
@@ -183,15 +188,15 @@ public class ChatService {
 
         ChatMessageEntity row =
                 messageRepository.save(
-                        new ChatMessageEntity(sender.getEmail(), recipient.getEmail(), body, true));
-        ChatMessageDto dto = toDto(row, sender.getEmail());
+                        new ChatMessageEntity(sender.email(), recipient.email(), body, true));
+        ChatMessageDto dto = toDto(row, sender.email());
 
         // The sender's other tabs; the calling tab also has it from the response and de-duplicates
         // by id.
-        messaging.convertAndSendToUser(sender.getEmail(), MESSAGE_QUEUE, dto);
+        messaging.convertAndSendToUser(sender.email(), MESSAGE_QUEUE, dto);
         if (lockedUntil(recipient).isEmpty()) {
             messaging.convertAndSendToUser(
-                    recipient.getEmail(), MESSAGE_QUEUE, toDto(row, recipient.getEmail()));
+                    recipient.email(), MESSAGE_QUEUE, toDto(row, recipient.email()));
         }
         return dto;
     }
@@ -203,23 +208,22 @@ public class ChatService {
      */
     @Transactional
     public void markRead(String email, String partnerEmail, Long upToId) {
-        UserEntity me = requireChatUser(email);
+        UserSummary me = requireChatUser(email);
         if (partnerEmail == null || partnerEmail.isBlank() || upToId == null) {
             throw new IllegalArgumentException("A conversation and a message id are required.");
         }
         String partner = partnerEmail.strip();
-        int updated =
-                messageRepository.markRead(me.getEmail(), partner, upToId, LocalDateTime.now());
+        int updated = messageRepository.markRead(me.email(), partner, upToId, LocalDateTime.now());
         if (updated > 0) {
             messaging.convertAndSendToUser(
-                    me.getEmail(), READ_QUEUE, new ChatReadDto(partner, upToId));
+                    me.email(), READ_QUEUE, new ChatReadDto(partner, upToId));
         }
     }
 
-    private UserEntity requireChatUser(String email) {
-        UserEntity user =
-                userRepository
-                        .findByEmail(email)
+    private UserSummary requireChatUser(String email) {
+        UserSummary user =
+                directory
+                        .findUserByEmail(email)
                         .filter(ChatAccessRules::canUseChat)
                         .orElseThrow(
                                 () ->
@@ -232,48 +236,56 @@ public class ChatService {
         return user;
     }
 
-    private Optional<Instant> lockedUntil(UserEntity user) {
+    private Optional<Instant> lockedUntil(UserSummary user) {
         // Teachers are never locked: they start attempts only to preview their own quizzes.
         if (!ChatAccessRules.isStudent(user)) {
             return Optional.empty();
         }
         return ChatAccessRules.lockedUntil(
-                attemptRepository.findOpenMessagingBlockingAttempts(user.getEmail()),
-                Instant.now());
+                attemptRepository.findOpenMessagingBlockingAttempts(user.id()), Instant.now());
     }
 
     private void collectStudentsOf(
-            UserEntity teacher, Map<Long, UserEntity> people, Map<Long, Set<String>> courses) {
-        List<CourseEntity> taught = courseRepository.findAllByTeacherId(teacher.getId());
+            UserSummary teacher, Map<Long, UserSummary> people, Map<Long, Set<String>> courses) {
+        List<CourseEntity> taught = courseRepository.findAllByTeacherId(teacher.id());
+        Map<Long, List<String>> courseCodesByStudent = new LinkedHashMap<>();
         Map<Long, List<String>> courseCodesByClass = new HashMap<>();
 
         for (CourseEntity course : taught) {
             course.getEnrollments()
-                    .forEach(e -> add(people, courses, e.getUser(), course.getCode()));
-            for (ClassEntity clazz : course.getAssignedClasses()) {
+                    .forEach(
+                            e ->
+                                    courseCodesByStudent
+                                            .computeIfAbsent(e.getUserId(), k -> new ArrayList<>())
+                                            .add(course.getCode()));
+            for (Long classId : course.getClassIds()) {
                 courseCodesByClass
-                        .computeIfAbsent(clazz.getId(), k -> new ArrayList<>())
+                        .computeIfAbsent(classId, k -> new ArrayList<>())
                         .add(course.getCode());
             }
         }
 
+        for (UserSummary student : directory.findUsers(courseCodesByStudent.keySet())) {
+            courseCodesByStudent
+                    .get(student.id())
+                    .forEach(code -> add(people, courses, student, code));
+        }
         if (!courseCodesByClass.isEmpty()) {
-            for (UserEntity member :
-                    userRepository.findAllByClazzIdIn(courseCodesByClass.keySet())) {
+            for (UserSummary member : directory.findUsersInClasses(courseCodesByClass.keySet())) {
                 courseCodesByClass
-                        .get(member.getClazz().getId())
+                        .get(member.classId())
                         .forEach(code -> add(people, courses, member, code));
             }
         }
     }
 
     private static void add(
-            Map<Long, UserEntity> people,
+            Map<Long, UserSummary> people,
             Map<Long, Set<String>> courses,
-            UserEntity user,
+            UserSummary user,
             String courseCode) {
-        people.putIfAbsent(user.getId(), user);
-        courses.computeIfAbsent(user.getId(), k -> new TreeSet<>()).add(courseCode);
+        people.putIfAbsent(user.id(), user);
+        courses.computeIfAbsent(user.id(), k -> new TreeSet<>()).add(courseCode);
     }
 
     private static String otherParty(ChatMessageEntity m, String me) {

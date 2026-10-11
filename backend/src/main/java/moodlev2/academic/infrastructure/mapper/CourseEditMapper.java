@@ -7,17 +7,13 @@ import moodlev2.academic.infrastructure.persistence.entity.CourseModuleEntity;
 import moodlev2.academic.web.course.dto.edit.CourseEditDto;
 import moodlev2.academic.web.course.dto.edit.ModuleEditDto;
 import moodlev2.academic.web.course.dto.edit.ModuleStatsDto;
-import moodlev2.identity.infrastructure.persistence.entity.ClassEntity;
 import org.springframework.stereotype.Component;
 
 @Component
 public class CourseEditMapper {
 
     public CourseEditDto toDto(CourseEntity course) {
-        List<Long> groupIds =
-                course.getAssignedClasses().stream()
-                        .map(ClassEntity::getId)
-                        .collect(Collectors.toList());
+        List<Long> groupIds = course.getClassIds().stream().sorted().collect(Collectors.toList());
 
         return new CourseEditDto(
                 course.getId(),

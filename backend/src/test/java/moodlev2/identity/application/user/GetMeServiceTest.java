@@ -11,7 +11,7 @@ import java.util.Set;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
 import moodlev2.academic.infrastructure.persistence.entity.EnrollmentEntity;
-import moodlev2.identity.domain.user.Role;
+import moodlev2.identity.api.Role;
 import moodlev2.identity.infrastructure.persistence.SpringDataUserRepository;
 import moodlev2.identity.infrastructure.persistence.entity.ClassEntity;
 import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
@@ -52,14 +52,14 @@ class GetMeServiceTest {
         c.setName(code + " name");
         c.setTerm("Fall 2026");
         c.setStatus("PUBLISHED");
-        c.setTeacher(teacher);
+        c.setTeacherId(teacher == null ? null : teacher.getId());
         return c;
     }
 
     private static void enroll(CourseEntity course, UserEntity student) {
         EnrollmentEntity e = new EnrollmentEntity();
         e.setCourse(course);
-        e.setUser(student);
+        e.setUserId(student.getId());
         course.getEnrollments().add(e);
     }
 
@@ -89,7 +89,7 @@ class GetMeServiceTest {
         CourseEntity cs201 = course("CS201", teacher);
         enroll(cs201, alex);
         enroll(cs201, sam);
-        cs201.setAssignedClasses(Set.of(group));
+        cs201.setClassIds(new HashSet<>(Set.of(group.getId())));
         CourseEntity cs350 = course("CS350", teacher);
         enroll(cs350, alex);
 
@@ -114,8 +114,9 @@ class GetMeServiceTest {
         UserEntity alex = user(1, "student@test.com", Role.STUDENT);
         alex.setClazz(clazz(9, "1209A"));
         when(userRepository.findByEmail(alex.getEmail())).thenReturn(Optional.of(alex));
-        when(courseRepository.findAllCoursesForStudent(1L))
+        when(courseRepository.findAllCoursesForStudent(1L, 9L))
                 .thenReturn(List.of(course("CS201", teacher), course("LAB1", null)));
+        when(userRepository.findAllById(anyCollection())).thenReturn(List.of(teacher));
 
         UserProfileDto me = service.getCurrentUserProfile(alex.getEmail());
 
@@ -132,7 +133,7 @@ class GetMeServiceTest {
     void studentWithoutAClassHasNoClassNameRatherThanAPlaceholder() {
         UserEntity sam = user(4, "student4@test.com", Role.STUDENT);
         when(userRepository.findByEmail(sam.getEmail())).thenReturn(Optional.of(sam));
-        when(courseRepository.findAllCoursesForStudent(4L)).thenReturn(List.of());
+        when(courseRepository.findAllCoursesForStudent(4L, null)).thenReturn(List.of());
 
         assertThat(service.getCurrentUserProfile(sam.getEmail()).student().className()).isNull();
     }

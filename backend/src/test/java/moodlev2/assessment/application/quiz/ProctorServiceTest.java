@@ -1,6 +1,6 @@
 package moodlev2.assessment.application.quiz;
 
-import static moodlev2.support.Fixtures.user;
+import static moodlev2.support.Fixtures.person;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -18,8 +18,9 @@ import moodlev2.assessment.infrastructure.persistence.QuizAttemptRepository;
 import moodlev2.assessment.infrastructure.persistence.entity.ProctorEventEntity;
 import moodlev2.assessment.infrastructure.persistence.entity.QuizAttemptEntity;
 import moodlev2.assessment.web.quiz.dto.ProctorReportDto;
-import moodlev2.identity.domain.user.Role;
-import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
+import moodlev2.identity.api.Role;
+import moodlev2.identity.api.UserSummary;
+import moodlev2.support.FakeDirectory;
 import moodlev2.support.Fixtures.MutableClock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,20 +42,23 @@ class ProctorServiceTest {
     private final MutableClock clock = new MutableClock(NOW);
     private ProctorService proctorService;
 
-    private final UserEntity student = user(1, "student@test.com", Role.STUDENT);
+    private final FakeDirectory directory = new FakeDirectory();
+
+    private final UserSummary student = directory.add(person(1, "student@test.com", Role.STUDENT));
 
     private static final List<ProctorService.ProctorInput> EVENTS =
             List.of(new ProctorService.ProctorInput("TAB_HIDDEN", null, 1L));
 
     @BeforeEach
     void setUp() {
-        proctorService = new ProctorService(proctorEventRepository, attemptRepository, clock);
+        proctorService =
+                new ProctorService(proctorEventRepository, attemptRepository, directory, clock);
     }
 
     private QuizAttemptEntity attempt(String status) {
         QuizAttemptEntity a = new QuizAttemptEntity();
         a.setId(500L);
-        a.setUser(student);
+        a.setUserId(student.id());
         a.setStatus(status);
         a.setStartedAt(NOW.minus(Duration.ofMinutes(30)));
         when(attemptRepository.findById(500L)).thenReturn(Optional.of(a));
@@ -81,7 +85,7 @@ class ProctorServiceTest {
     void eventsOnAnOpenAttemptAreStored() {
         attempt("IN_PROGRESS");
 
-        proctorService.record(500L, student.getEmail(), EVENTS, null);
+        proctorService.record(500L, student.email(), EVENTS, null);
 
         assertThat(savedRows())
                 .extracting(ProctorEventEntity::getEventType)
@@ -92,7 +96,7 @@ class ProctorServiceTest {
     void eventsAfterSubmissionAreDroppedSoTheReportCannotChange() {
         attempt("COMPLETED");
 
-        proctorService.record(500L, student.getEmail(), EVENTS, null);
+        proctorService.record(500L, student.email(), EVENTS, null);
 
         verify(proctorEventRepository, never()).saveAll(anyList());
         verify(proctorEventRepository, never()).save(any());
@@ -121,7 +125,7 @@ class ProctorServiceTest {
                         new ProctorService.ProctorInput("TAB_HIDDEN", null, clientNow - 300_000),
                         new ProctorService.ProctorInput("TAB_VISIBLE", null, clientNow - 10_000));
 
-        proctorService.record(500L, student.getEmail(), batch, clientNow);
+        proctorService.record(500L, student.email(), batch, clientNow);
 
         assertThat(savedRows())
                 .extracting(ProctorEventEntity::getOccurredAt)
@@ -142,7 +146,7 @@ class ProctorServiceTest {
                         // no timestamp at all
                         new ProctorService.ProctorInput("TAB_HIDDEN", null, null));
 
-        proctorService.record(500L, student.getEmail(), batch, clientNow);
+        proctorService.record(500L, student.email(), batch, clientNow);
 
         assertThat(savedRows())
                 .extracting(ProctorEventEntity::getOccurredAt)
@@ -154,7 +158,7 @@ class ProctorServiceTest {
         attempt("IN_PROGRESS");
         when(proctorEventRepository.countByAttemptId(500L)).thenReturn(2_000L);
 
-        proctorService.record(500L, student.getEmail(), EVENTS, null);
+        proctorService.record(500L, student.email(), EVENTS, null);
 
         verify(proctorEventRepository, never()).saveAll(anyList());
     }

@@ -25,6 +25,7 @@ public class CoursePreviewMapper {
 
     public CoursePreviewDto toDto(
             CourseEntity course,
+            String instructorName,
             List<AnnouncementEntity> announcements,
             List<CalendarEventEntity> events) {
 
@@ -39,12 +40,6 @@ public class CoursePreviewMapper {
                             .filter(q -> "PUBLISHED".equalsIgnoreCase(q.getStatus()))
                             .map(this::mapQuizToItem)
                             .toList();
-        }
-
-        String instructorName = "Unknown Instructor";
-        if (course.getTeacher() != null) {
-            instructorName =
-                    course.getTeacher().getFirstName() + " " + course.getTeacher().getLastName();
         }
 
         return new CoursePreviewDto(

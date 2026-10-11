@@ -5,8 +5,8 @@ import moodlev2.academic.application.course.CourseAccess;
 import moodlev2.academic.infrastructure.persistence.AssignmentSubmissionRepository;
 import moodlev2.academic.infrastructure.persistence.ModuleItemRepository;
 import moodlev2.academic.infrastructure.persistence.entity.ModuleItemEntity;
-import moodlev2.identity.infrastructure.persistence.SpringDataUserRepository;
-import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
+import moodlev2.identity.api.DirectoryApi;
+import moodlev2.identity.api.UserSummary;
 import moodlev2.shared.exception.NotFoundException;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -30,7 +30,7 @@ public class FileDownloadService {
     private static final int STORED_PREFIX_LENGTH = 37;
 
     private final FileStorageService fileStorageService;
-    private final SpringDataUserRepository userRepository;
+    private final DirectoryApi directory;
     private final ModuleItemRepository moduleItemRepository;
     private final AssignmentSubmissionRepository submissionRepository;
     private final CourseAccess courseAccess;
@@ -51,9 +51,9 @@ public class FileDownloadService {
             throw new NotFoundException("File not found");
         }
 
-        UserEntity user =
-                userRepository
-                        .findByEmail(userEmail)
+        UserSummary user =
+                directory
+                        .findUserByEmail(userEmail)
                         .orElseThrow(() -> new NotFoundException("File not found"));
 
         String url = UPLOADS_PREFIX + fileName;
@@ -70,14 +70,14 @@ public class FileDownloadService {
         return new Download(resource, downloadName(fileName));
     }
 
-    private boolean studentMayDownload(String url, UserEntity student) {
+    private boolean studentMayDownload(String url, UserSummary student) {
         for (ModuleItemEntity item : moduleItemRepository.findVisibleByUrl(url)) {
             if (item.getModule() != null
                     && courseAccess.isMember(item.getModule().getCourse(), student)) {
                 return true;
             }
         }
-        return submissionRepository.findFileUrlsOfStudentContaining(student.getId(), url).stream()
+        return submissionRepository.findFileUrlsOfStudentContaining(student.id(), url).stream()
                 .anyMatch(joined -> AssignmentService.splitFileUrls(joined).contains(url));
     }
 

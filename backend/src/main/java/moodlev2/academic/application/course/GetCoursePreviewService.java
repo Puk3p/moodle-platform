@@ -19,6 +19,7 @@ public class GetCoursePreviewService {
     private final AnnouncementRepository announcementRepository;
     private final CalendarEventRepository calendarRepository;
     private final CoursePreviewMapper mapper;
+    private final TeacherNames teacherNames;
 
     @Transactional(readOnly = true)
     public CoursePreviewDto getPreviewData(String courseCode) {
@@ -32,6 +33,7 @@ public class GetCoursePreviewService {
 
         var deadlines = calendarRepository.findTop3ByCourseCodeOrderByEventDateAsc(courseCode);
 
-        return mapper.toDto(course, announcements, deadlines);
+        return mapper.toDto(
+                course, teacherNames.of(course, "Unknown Instructor"), announcements, deadlines);
     }
 }

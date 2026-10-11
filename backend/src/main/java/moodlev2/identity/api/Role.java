@@ -1,4 +1,4 @@
-package moodlev2.identity.domain.user;
+package moodlev2.identity.api;
 
 public enum Role {
     STUDENT,

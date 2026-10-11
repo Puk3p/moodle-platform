@@ -5,8 +5,8 @@ import lombok.RequiredArgsConstructor;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
 import moodlev2.academic.web.course.dto.CreateCourseDto;
-import moodlev2.identity.infrastructure.persistence.SpringDataUserRepository;
-import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
+import moodlev2.identity.api.DirectoryApi;
+import moodlev2.identity.api.UserSummary;
 import moodlev2.shared.exception.NotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class GetCourseCreateService {
 
     private final CourseRepository courseRepository;
-    private final SpringDataUserRepository userRepository;
+    private final DirectoryApi directory;
 
     @Transactional
     public void createCourse(CreateCourseDto dto) {
@@ -25,9 +25,9 @@ public class GetCourseCreateService {
             throw new IllegalArgumentException("Teacher ID is required");
         }
 
-        UserEntity teacher =
-                userRepository
-                        .findById(dto.teacherId())
+        UserSummary teacher =
+                directory
+                        .findUser(dto.teacherId())
                         .orElseThrow(
                                 () ->
                                         new NotFoundException(
@@ -39,7 +39,7 @@ public class GetCourseCreateService {
         course.setTerm(dto.term() != null ? dto.term() : "Fall 2024");
         course.setDescription(dto.description());
 
-        course.setTeacher(teacher);
+        course.setTeacherId(teacher.id());
 
         course.setStatus("DRAFT");
 

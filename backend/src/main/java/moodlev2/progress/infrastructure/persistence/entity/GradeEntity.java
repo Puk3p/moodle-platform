@@ -7,7 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
-import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
 
 @Entity
 @Table(name = "grades")
@@ -19,9 +18,9 @@ public class GradeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private UserEntity user;
+    /** The graded account (identity module). */
+    @Column(name = "user_id")
+    private Long userId;
 
     @ManyToOne
     @JoinColumn(name = "course_id")

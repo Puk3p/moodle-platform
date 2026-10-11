@@ -19,8 +19,8 @@ import moodlev2.assessment.infrastructure.persistence.entity.QuizEntity;
 import moodlev2.assessment.infrastructure.persistence.entity.QuizOptionEntity;
 import moodlev2.assessment.infrastructure.persistence.entity.QuizQuestionEntity;
 import moodlev2.assessment.web.quiz.dto.CreateQuizDto;
-import moodlev2.identity.infrastructure.persistence.ClassRepository;
-import moodlev2.identity.infrastructure.persistence.entity.ClassEntity;
+import moodlev2.identity.api.ClassSummary;
+import moodlev2.identity.api.DirectoryApi;
 import moodlev2.shared.exception.NotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -37,7 +37,7 @@ public class QuizManagementService {
     private final CourseRepository courseRepository;
     private final CourseModuleRepository moduleRepository;
     private final QuestionRepository questionRepository;
-    private final ClassRepository classRepository;
+    private final DirectoryApi directory;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
@@ -74,8 +74,11 @@ public class QuizManagementService {
         quiz.setStatus("PUBLISHED");
 
         if (dto.assignedClassIds() != null && !dto.assignedClassIds().isEmpty()) {
-            List<ClassEntity> classes = classRepository.findAllById(dto.assignedClassIds());
-            quiz.setAssignedClasses(classes);
+            // Only classes that exist; unknown ids are dropped, as findAllById did before.
+            quiz.setClassIds(
+                    directory.findClasses(dto.assignedClassIds()).stream()
+                            .map(ClassSummary::id)
+                            .collect(Collectors.toCollection(java.util.HashSet::new)));
         }
 
         List<QuizQuestionEntity> questionsToAdd = new ArrayList<>();

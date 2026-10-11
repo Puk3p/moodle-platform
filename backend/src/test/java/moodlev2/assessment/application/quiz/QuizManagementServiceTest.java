@@ -21,7 +21,7 @@ import moodlev2.assessment.infrastructure.persistence.entity.QuestionOptionEntit
 import moodlev2.assessment.infrastructure.persistence.entity.QuizEntity;
 import moodlev2.assessment.infrastructure.persistence.entity.QuizOptionEntity;
 import moodlev2.assessment.web.quiz.dto.CreateQuizDto;
-import moodlev2.identity.infrastructure.persistence.ClassRepository;
+import moodlev2.identity.api.DirectoryApi;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -40,7 +40,7 @@ class QuizManagementServiceTest {
     @Mock private CourseRepository courseRepository;
     @Mock private CourseModuleRepository moduleRepository;
     @Mock private QuestionRepository questionRepository;
-    @Mock private ClassRepository classRepository;
+    @Mock private DirectoryApi directory;
     @Mock private PasswordEncoder passwordEncoder;
 
     @InjectMocks private QuizManagementService service;

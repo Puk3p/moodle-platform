@@ -1,7 +1,7 @@
 package moodlev2.identity.web.auth.dto;
 
 import java.util.Set;
-import moodlev2.identity.domain.user.Role;
+import moodlev2.identity.api.Role;
 import moodlev2.identity.domain.user.User;
 
 /**

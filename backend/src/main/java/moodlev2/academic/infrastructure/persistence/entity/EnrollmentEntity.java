@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
 
 @Entity
 @Table(name = "enrollments")
@@ -16,9 +15,9 @@ public class EnrollmentEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private UserEntity user;
+    /** The enrolled account (identity module). */
+    @Column(name = "user_id")
+    private Long userId;
 
     @ManyToOne
     @JoinColumn(name = "course_id")

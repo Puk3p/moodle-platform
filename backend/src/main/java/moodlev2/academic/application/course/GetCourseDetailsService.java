@@ -19,8 +19,8 @@ import moodlev2.academic.web.course.dto.CourseModuleItemDto;
 import moodlev2.academic.web.course.dto.CourseStatsDto;
 import moodlev2.assessment.infrastructure.persistence.QuizAttemptRepository;
 import moodlev2.assessment.infrastructure.persistence.entity.QuizEntity;
-import moodlev2.identity.infrastructure.persistence.SpringDataUserRepository;
-import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
+import moodlev2.identity.api.DirectoryApi;
+import moodlev2.identity.api.UserSummary;
 import moodlev2.shared.exception.NotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class GetCourseDetailsService {
 
     private final CourseRepository courseRepository;
-    private final SpringDataUserRepository userRepository;
+    private final DirectoryApi directory;
     private final QuizAttemptRepository quizAttemptRepository;
     private final CourseAccess courseAccess;
 
@@ -54,18 +54,20 @@ public class GetCourseDetailsService {
                             .orElseThrow(() -> new NotFoundException("Course not found"));
         }
 
-        UserEntity currentUser =
-                userRepository
-                        .findByEmail(userEmail)
+        UserSummary currentUser =
+                directory
+                        .findUserByEmail(userEmail)
                         .orElseThrow(() -> new NotFoundException("User not found"));
 
         courseAccess.requireMember(course, currentUser);
 
-        String instructorName = "Unknown Instructor";
-        if (course.getTeacher() != null) {
-            instructorName =
-                    course.getTeacher().getFirstName() + " " + course.getTeacher().getLastName();
-        }
+        String instructorName =
+                course.getTeacherId() == null
+                        ? "Unknown Instructor"
+                        : directory
+                                .findUser(course.getTeacherId())
+                                .map(UserSummary::fullName)
+                                .orElse("Unknown Instructor");
 
         List<CourseModuleDto> modules =
                 course.getModules().stream()
@@ -120,7 +122,7 @@ public class GetCourseDetailsService {
                 allQuizzes);
     }
 
-    private CourseModuleDto mapModuleWithStatus(CourseModuleEntity module, UserEntity user) {
+    private CourseModuleDto mapModuleWithStatus(CourseModuleEntity module, UserSummary user) {
         LocalDate now = LocalDate.now();
         String status = "unlocked";
 
@@ -160,13 +162,13 @@ public class GetCourseDetailsService {
                 module.getTitle(), module.getDescription(), combinedItems, status);
     }
 
-    private CourseModuleItemDto mapQuizToItem(QuizEntity quiz, UserEntity user) {
+    private CourseModuleItemDto mapQuizToItem(QuizEntity quiz, UserSummary user) {
 
         boolean canAttempt = true;
 
         if (quiz.getMaxAttempts() != null && quiz.getMaxAttempts() > 0) {
             int attemptsUsed =
-                    quizAttemptRepository.countByQuizIdAndUserId(quiz.getId(), user.getId());
+                    quizAttemptRepository.countByQuizIdAndUserId(quiz.getId(), user.id());
             if (attemptsUsed >= quiz.getMaxAttempts()) {
                 canAttempt = false;
             }

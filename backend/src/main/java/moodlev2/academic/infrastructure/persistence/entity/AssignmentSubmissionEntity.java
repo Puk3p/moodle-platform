@@ -3,7 +3,6 @@ package moodlev2.academic.infrastructure.persistence.entity;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.Data;
-import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
 
 @Entity
 @Table(name = "assignment_submissions")
@@ -18,9 +17,9 @@ public class AssignmentSubmissionEntity {
     @JoinColumn(name = "assignment_id", nullable = false)
     private ModuleItemEntity assignment;
 
-    @ManyToOne
-    @JoinColumn(name = "student_id", nullable = false)
-    private UserEntity student;
+    /** The submitting account (identity module). */
+    @Column(name = "student_id", nullable = false)
+    private Long studentId;
 
     @Column(columnDefinition = "TEXT")
     private String textResponse;

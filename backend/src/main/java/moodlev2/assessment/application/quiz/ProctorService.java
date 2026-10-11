@@ -10,6 +10,8 @@ import moodlev2.assessment.infrastructure.persistence.ProctorEventRepository;
 import moodlev2.assessment.infrastructure.persistence.QuizAttemptRepository;
 import moodlev2.assessment.infrastructure.persistence.entity.ProctorEventEntity;
 import moodlev2.assessment.infrastructure.persistence.entity.QuizAttemptEntity;
+import moodlev2.identity.api.DirectoryApi;
+import moodlev2.identity.api.UserSummary;
 import moodlev2.shared.exception.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -54,21 +56,25 @@ public class ProctorService {
 
     private final ProctorEventRepository proctorEventRepository;
     private final QuizAttemptRepository attemptRepository;
+    private final DirectoryApi directory;
     private final Clock clock;
 
     @Autowired
     public ProctorService(
             ProctorEventRepository proctorEventRepository,
-            QuizAttemptRepository attemptRepository) {
-        this(proctorEventRepository, attemptRepository, Clock.systemUTC());
+            QuizAttemptRepository attemptRepository,
+            DirectoryApi directory) {
+        this(proctorEventRepository, attemptRepository, directory, Clock.systemUTC());
     }
 
     ProctorService(
             ProctorEventRepository proctorEventRepository,
             QuizAttemptRepository attemptRepository,
+            DirectoryApi directory,
             Clock clock) {
         this.proctorEventRepository = proctorEventRepository;
         this.attemptRepository = attemptRepository;
+        this.directory = directory;
         this.clock = clock;
     }
 
@@ -86,7 +92,13 @@ public class ProctorService {
                         .findById(attemptId)
                         .orElseThrow(() -> new NotFoundException("Attempt not found"));
 
-        if (attempt.getUser() == null || !attempt.getUser().getEmail().equals(userEmail)) {
+        boolean mine =
+                attempt.getUserId() != null
+                        && directory
+                                .findUserByEmail(userEmail)
+                                .map(u -> attempt.getUserId().equals(u.id()))
+                                .orElse(false);
+        if (!mine) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Not your attempt");
         }
 
@@ -219,11 +231,12 @@ public class ProctorService {
             }
         }
 
-        String name =
-                attempt.getUser() == null
-                        ? "Unknown"
-                        : attempt.getUser().getFirstName() + " " + attempt.getUser().getLastName();
-        String email = attempt.getUser() == null ? "" : attempt.getUser().getEmail();
+        UserSummary user =
+                attempt.getUserId() == null
+                        ? null
+                        : directory.findUser(attempt.getUserId()).orElse(null);
+        String name = user == null ? "Unknown" : user.fullName();
+        String email = user == null ? "" : user.email();
 
         return new moodlev2.assessment.web.quiz.dto.ProctorReportDto(
                 attemptId, name, email, leaveCount, awaySeconds, pasteCount, timeline);

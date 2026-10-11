@@ -4,15 +4,14 @@ import java.util.List;
 import java.util.Optional;
 import moodlev2.academic.infrastructure.persistence.entity.AssignmentSubmissionEntity;
 import moodlev2.academic.infrastructure.persistence.entity.ModuleItemEntity;
-import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface AssignmentSubmissionRepository
         extends JpaRepository<AssignmentSubmissionEntity, Long> {
-    Optional<AssignmentSubmissionEntity> findByAssignmentAndStudent(
-            ModuleItemEntity assignment, UserEntity student);
+    Optional<AssignmentSubmissionEntity> findByAssignmentAndStudentId(
+            ModuleItemEntity assignment, Long studentId);
 
     List<AssignmentSubmissionEntity> findByAssignmentId(Long assignmentId);
 
@@ -24,7 +23,7 @@ public interface AssignmentSubmissionRepository
      */
     @Query(
             "SELECT s.fileUrl FROM AssignmentSubmissionEntity s "
-                    + "WHERE s.student.id = :studentId AND LOCATE(:url, s.fileUrl) > 0")
+                    + "WHERE s.studentId = :studentId AND LOCATE(:url, s.fileUrl) > 0")
     List<String> findFileUrlsOfStudentContaining(
             @Param("studentId") Long studentId, @Param("url") String url);
 }

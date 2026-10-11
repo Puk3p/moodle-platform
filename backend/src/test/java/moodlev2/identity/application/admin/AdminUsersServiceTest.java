@@ -13,8 +13,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
+import moodlev2.identity.api.Role;
 import moodlev2.identity.application.auth.SessionService;
-import moodlev2.identity.domain.user.Role;
 import moodlev2.identity.infrastructure.persistence.ClassRepository;
 import moodlev2.identity.infrastructure.persistence.SpringDataUserRepository;
 import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
