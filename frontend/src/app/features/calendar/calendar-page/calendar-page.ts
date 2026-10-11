@@ -45,6 +45,9 @@ export class CalendarPageComponent implements OnInit {
   events: CalendarEvent[] = [];
   days: DayCell[] = [];
 
+  /** The tapped day; its deadlines are listed under the grid on narrow screens. */
+  selectedIso = this.toIsoDate(new Date());
+
   constructor() {
     this.generateGrid();
   }
@@ -67,10 +70,16 @@ export class CalendarPageComponent implements OnInit {
       const end = new Date(start);
       end.setDate(end.getDate() + 6);
       
+      // "Oct 11 – 17, 2026" when the week sits in one month: short enough for a phone.
+      const sameMonth = start.getMonth() === end.getMonth();
       const startFormat = this.datePipe.transform(start, 'MMM d');
-      const endFormat = this.datePipe.transform(end, 'MMM d, yyyy');
-      return `${startFormat} - ${endFormat}`;
+      const endFormat = this.datePipe.transform(end, sameMonth ? 'd, yyyy' : 'MMM d, yyyy');
+      return `${startFormat} – ${endFormat}`;
     }
+  }
+
+  get selectedDay(): DayCell | undefined {
+    return this.days.find(d => d.isoDate === this.selectedIso);
   }
 
   get deadlines(): CalendarEvent[] {
@@ -80,12 +89,32 @@ export class CalendarPageComponent implements OnInit {
 
   setView(mode: 'month' | 'week') {
     this.viewMode = mode;
+    // The week shown is the one holding the selected day, not wherever currentDate drifted.
+    if (mode === 'week' && this.selectedDay) {
+      this.currentDate = this.selectedDay.dateObj;
+    }
     this.generateGrid();
   }
 
   goToday() {
     this.currentDate = new Date();
+    this.selectedIso = this.toIsoDate(this.currentDate);
     this.generateGrid();
+  }
+
+  selectDay(day: DayCell) {
+    this.selectedIso = day.isoDate;
+    // Tapping a greyed day from a neighbouring month moves the view there.
+    if (!day.inCurrentRange) {
+      this.currentDate = day.dateObj;
+      this.generateGrid();
+    }
+  }
+
+  dayLabel(day: DayCell): string {
+    const count = this.getEventsForDay(day).length;
+    const date = this.datePipe.transform(day.dateObj, 'EEEE, MMMM d') ?? '';
+    return count ? `${date}, ${count} due` : date;
   }
 
   prev() {
@@ -113,6 +142,17 @@ export class CalendarPageComponent implements OnInit {
     } else {
       this.generateWeekGrid();
     }
+    this.keepSelectionInView();
+  }
+
+  /** After prev/next, select today if it is on screen, otherwise the first day shown. */
+  private keepSelectionInView() {
+    const inView = this.days.filter(d => d.inCurrentRange);
+    if (inView.some(d => d.isoDate === this.selectedIso)) {
+      return;
+    }
+    const today = inView.find(d => d.isToday);
+    this.selectedIso = (today ?? inView[0]).isoDate;
   }
 
   private generateMonthGrid() {

@@ -6,8 +6,20 @@ $text-dark: #1f2937; // Un negru mai soft (Gray-800)
 $text-gray: #6b7280; // Gray-500
 $border-color: #e5e7eb; // Gray-200
 $font-family: 'Inter', system-ui, -apple-system, sans-serif;
-$radius-card: 24px;
-$radius-sm: 12px;
+
+/* ---------------------------------------------------------------------------
+   Responsive model
+
+   The page reacts to the space it actually has, not the window: two size
+   containers drive it.
+     cal-page  the whole page   → whether Upcoming Deadlines sits beside the
+                                  calendar or below it
+     cal       the calendar column → compact (phone) month grid under 640px
+   Between those switches every size is fluid (clamp + cqi), so dragging the
+   window resizes the calendar continuously instead of in jumps.
+   ------------------------------------------------------------------------- */
+$side-by-side-at: 1000px; // leaves the calendar ≥ 620px beside the 340px column
+$compact-below: 640px;    // below ~90px per column, titled pills are mostly ellipsis
 
 :host {
   display: block;
@@ -17,6 +29,7 @@ $radius-sm: 12px;
 }
 
 .calendar-page {
+  container: cal-page / inline-size;
   min-height: 100%;
   display: flex;
   flex-direction: column;
@@ -26,22 +39,25 @@ $radius-sm: 12px;
   flex: 1;
   box-sizing: border-box;
   display: grid;
-  grid-template-columns: 1fr 340px; // Fixăm lățimea sidebar-ului
-  gap: 40px;
+  // minmax(0, …): a bare 1fr can't shrink below its content and pushed the grid off-screen.
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(24px, 3cqi, 32px);
   width: 100%;
 
-  @media (max-width: 1200px) {
-    grid-template-columns: 1fr;
-    gap: 32px;
+  @container cal-page (min-width: #{$side-by-side-at}) {
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 40px;
   }
 }
 
 // --- MAIN AREA ---
 
 .calendar-main {
+  container: cal / inline-size;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: clamp(16px, 2.4cqi, 24px);
 }
 
 .calendar-header {
@@ -72,14 +88,14 @@ $radius-sm: 12px;
 
 .toggle-btn {
   border-radius: 99px;
-  padding: 8px 20px;
+  padding: 8px clamp(14px, 2.4cqi, 20px);
   font-size: 0.85rem;
   font-weight: 600;
   border: none;
   background: transparent;
   cursor: pointer;
   color: $text-gray;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 
   &:hover {
     color: $text-dark;
@@ -90,47 +106,59 @@ $radius-sm: 12px;
     color: #fff;
     box-shadow: 0 2px 5px rgba(255, 82, 0, 0.3);
   }
+
+  &:focus-visible {
+    outline: 2px solid $primary-orange;
+    outline-offset: 2px;
+  }
 }
 
 // --- CALENDAR CARD ---
 
 .calendar-card {
   background: var(--app-surface);
-  border-radius: $radius-card;
+  border-radius: clamp(16px, 3cqi, 24px);
   border: 1px solid $border-color;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05),
               0 2px 4px -1px rgba(0, 0, 0, 0.03); // Umbră mai fină
-  padding: 32px;
+  padding: clamp(12px, 3.5cqi, 32px);
   display: flex;
   flex-direction: column;
-  height: 100%; // Umple spațiul
-  min-height: 600px;
+  flex: 1 1 auto; // Umple spațiul
+
+  @container cal (min-width: #{$compact-below}) {
+    min-height: 600px;
+  }
 }
 
 .calendar-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: clamp(16px, 3cqi, 24px);
 }
 
 .month-nav {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: clamp(8px, 2cqi, 16px);
 
   h2 {
-    font-size: 1.5rem;
+    font-size: clamp(1.1rem, 0.8rem + 1.6cqi, 1.5rem);
     font-weight: 700;
     margin: 0;
-    min-width: 180px; // Previne saltul la schimbarea numelui lunii
+    min-width: 7.5em; // Previne saltul la schimbarea numelui lunii (scales with the font)
     text-align: center;
+    white-space: nowrap;
   }
 }
 
 .nav-btn {
   width: 36px;
   height: 36px;
+  flex-shrink: 0;
   border-radius: 50%;
   border: 1px solid $border-color;
   background: var(--app-surface);
@@ -139,7 +167,7 @@ $radius-sm: 12px;
   justify-content: center;
   cursor: pointer;
   color: $text-gray;
-  transition: all 0.2s;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
 
   &:hover {
     background: var(--app-surface-muted);
@@ -147,7 +175,12 @@ $radius-sm: 12px;
     color: $text-dark;
     transform: translateY(-1px);
   }
-  
+
+  &:focus-visible {
+    outline: 2px solid $primary-orange;
+    outline-offset: 2px;
+  }
+
   fa-icon {
     font-size: 0.9rem;
   }
@@ -162,10 +195,15 @@ $radius-sm: 12px;
   font-weight: 600;
   color: $text-dark;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background-color 0.2s ease;
 
   &:hover {
     background: #f3f4f6;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $primary-orange;
+    outline-offset: 2px;
   }
 }
 
@@ -173,9 +211,9 @@ $radius-sm: 12px;
 
 .weekdays {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  margin-bottom: 12px;
-  
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  margin-bottom: clamp(8px, 1.5cqi, 12px);
+
   .weekday {
     text-align: right;
     padding-right: 12px;
@@ -189,7 +227,8 @@ $radius-sm: 12px;
 
 .days-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  // minmax(0, 1fr): columns share the width equally and never overflow the card.
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   // Grid lines folosind gap și background
   gap: 1px;
   background: #e5e7eb; // Culoarea liniilor
@@ -200,16 +239,35 @@ $radius-sm: 12px;
 }
 
 .day-cell {
+  // A button (so a day can be tapped); reset to look like a plain cell.
+  appearance: none;
+  border: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  width: 100%;
+  min-width: 0;
+
   background: var(--app-surface);
-  min-height: 100px; // Celule mai înalte
-  padding: 8px;
+  min-height: clamp(52px, 12cqi, 100px); // Celule mai înalte, fluid până la telefon
+  padding: clamp(4px, 1cqi, 8px);
   position: relative;
   display: flex;
   flex-direction: column;
-  transition: background 0.2s;
+  transition: background-color 0.2s ease;
 
-  &:hover {
-    background: var(--app-surface-muted);
+  // Only real pointers: on touch, :hover sticks after a tap.
+  @media (hover: hover) {
+    &:hover {
+      background: var(--app-surface-muted);
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid $primary-orange;
+    outline-offset: -2px;
+    z-index: 1;
   }
 
   &.muted {
@@ -228,10 +286,12 @@ $radius-sm: 12px;
   align-self: flex-end; // Numărul în dreapta sus
   width: 28px;
   height: 28px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 // Highlight Today
@@ -241,7 +301,7 @@ $radius-sm: 12px;
         color: white;
         box-shadow: 0 2px 4px rgba(255, 82, 0, 0.4);
     }
-    
+
     .today-dot {
         display: none; // Ascundem punctul vechi, coloram numarul
     }
@@ -254,9 +314,10 @@ $radius-sm: 12px;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
   overflow-y: auto;
   max-height: 100px;
-  
+
   /* Scrollbar fin */
   &::-webkit-scrollbar {
     width: 4px;
@@ -276,18 +337,10 @@ $radius-sm: 12px;
   background: #eff6ff; // Albastru foarte deschis default
   color: #1d4ed8; // Albastru text
   border-left: 3px solid #3b82f6; // Accent stanga
-  text-decoration: none;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: transform 0.1s;
 
-  &:hover {
-    transform: scale(1.02);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    z-index: 1;
-  }
-  
   // Variatii bazate pe tip (ar trebui adaugate clase dinamice in HTML daca vrei culori diferite per tip)
   // Momentan lasam un stil generic clean, sau putem folosi nth-child pt variatie
   &:nth-child(odd) {
@@ -297,11 +350,159 @@ $radius-sm: 12px;
   }
 }
 
+// Phone stand-in for the pills: same colours, one dot per event (max 3).
+.event-dots {
+  display: none;
+  justify-content: center;
+  gap: 3px;
+}
+
+.event-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #3b82f6;
+
+  &:nth-child(odd) {
+    background: $primary-orange;
+  }
+}
+
+// --- DAY AGENDA (compact only) ---
+
+.day-agenda {
+  display: none;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #f3f4f6;
+
+  h3 {
+    margin: 0 0 12px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #111827;
+  }
+}
+
+.agenda-empty {
+  margin: 0;
+  font-size: 0.875rem;
+  color: $text-gray;
+}
+
+.agenda-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.agenda-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.agenda-icon {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: $primary-orange-light;
+  color: $primary-orange;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.agenda-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+
+  .title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #111827;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .meta {
+    font-size: 0.8rem;
+    color: $text-gray;
+  }
+}
+
+// --- COMPACT (phone) ---
+
+@container cal (max-width: #{$compact-below - 1px}) {
+  .nav-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .today-btn {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+  }
+
+  .weekdays .weekday {
+    text-align: center;
+    padding-right: 0;
+    font-size: 0.7rem;
+    letter-spacing: 0.02em;
+  }
+
+  .days-grid {
+    border-radius: 10px;
+  }
+
+  .day-cell {
+    align-items: center;
+    gap: 4px;
+  }
+
+  .day-number {
+    align-self: center;
+    margin-bottom: 0;
+    font-size: 0.85rem;
+  }
+
+  // Selected day: dark disc, like a phone calendar. Today keeps its orange and gains a ring.
+  .day-cell.selected:not(:has(.today-dot)) .day-number {
+    background: #111827;
+    color: #fff;
+  }
+
+  .day-cell.selected:has(.today-dot) .day-number {
+    box-shadow: 0 0 0 2px var(--app-surface), 0 0 0 4px $primary-orange;
+  }
+
+  .events {
+    display: none;
+  }
+
+  .event-dots,
+  .day-agenda {
+    display: flex;
+  }
+
+  .day-agenda {
+    flex-direction: column;
+  }
+}
+
 // --- SIDEBAR ---
 
 .calendar-right {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .widget h2 {
@@ -313,25 +514,31 @@ $radius-sm: 12px;
 
 .widget-card {
   background: var(--app-surface);
-  border-radius: $radius-card;
+  border-radius: clamp(16px, 2cqi, 24px);
   border: 1px solid $border-color;
-  padding: 24px;
+  padding: clamp(16px, 2.4cqi, 24px);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.widget-empty {
+  margin: 0;
+  font-size: 0.9rem;
+  color: $text-gray;
 }
 
 .deadline-item {
   display: flex;
-  gap: 16px;
+  gap: clamp(12px, 1.6cqi, 16px);
   padding: 16px 0;
   border-bottom: 1px solid #f3f4f6;
 
-  &:first-child { padding-top: 0; }
+  &:first-of-type { padding-top: 0; }
   &:last-child { padding-bottom: 0; border-bottom: none; }
 }
 
 .icon-box {
-  width: 48px;
-  height: 48px;
+  width: clamp(40px, 4cqi, 48px);
+  height: clamp(40px, 4cqi, 48px);
   border-radius: 12px;
   background: $primary-orange-light;
   color: $primary-orange;
@@ -343,6 +550,8 @@ $radius-sm: 12px;
 }
 
 .deadline-info {
+  min-width: 0;
+
   .title {
     font-size: 0.95rem;
     font-weight: 600;
