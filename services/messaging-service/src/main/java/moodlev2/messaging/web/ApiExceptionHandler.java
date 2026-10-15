@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.core.OAuth2AuthorizationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.client.RestClientException;
@@ -30,8 +31,15 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(ex.getStatusCode()).body(Map.of("error", reason));
     }
 
-    /** A service it needs is unreachable or its circuit breaker is open: fail fast, retry later. */
-    @ExceptionHandler({CallNotPermittedException.class, RestClientException.class})
+    /**
+     * A service it needs is unreachable, its circuit breaker is open, or no token could be had from
+     * identity-service: fail fast, retry later.
+     */
+    @ExceptionHandler({
+        CallNotPermittedException.class,
+        RestClientException.class,
+        OAuth2AuthorizationException.class
+    })
     ResponseEntity<Map<String, String>> dependencyUnavailable(Exception ex) {
         log.warn("Dependency unavailable: {}", ex.toString());
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)

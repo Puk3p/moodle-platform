@@ -7,6 +7,7 @@ import moodlev2.assessment.shared.NotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.oauth2.core.OAuth2AuthorizationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -64,8 +65,15 @@ public class ApiExceptionHandler {
                 .body(Map.of("error", ex.getReason(), "status", ex.getStatusCode().value()));
     }
 
-    /** A service it needs is unreachable or its circuit breaker is open: fail fast, retry later. */
-    @ExceptionHandler({CallNotPermittedException.class, RestClientException.class})
+    /**
+     * A service it needs is unreachable, its circuit breaker is open, or no token could be had from
+     * identity-service: fail fast, retry later.
+     */
+    @ExceptionHandler({
+        CallNotPermittedException.class,
+        RestClientException.class,
+        OAuth2AuthorizationException.class
+    })
     public ResponseEntity<Map<String, String>> dependencyUnavailable(Exception ex) {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .header("Retry-After", "5")
