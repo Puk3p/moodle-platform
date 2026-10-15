@@ -15,7 +15,7 @@ Thank you for contributing! Please follow these guidelines to keep the codebase 
 
 2. Set up the [environment variables](README.md#environment-variables).
 
-3. Start the backend and frontend as described in the [README](README.md#getting-started).
+3. Start the platform (Docker Compose) and the frontend as described in the [README](README.md#getting-started).
 
 ---
 
@@ -111,14 +111,14 @@ After running `bash scripts/setup-hooks.sh`, three hooks are active:
 ### `pre-commit`
 - Validates branch name against naming convention
 - Scans staged files for forbidden patterns (`System.out.print`, `console.log`, etc.)
-- Runs **Spotless check** if Java files are staged
+- Runs **Spotless check** on each service whose Java files are staged
 - Runs **Angular build** if TypeScript/HTML files are staged
 
 ### `commit-msg`
 - Enforces **Conventional Commits** format on every commit message
 
 ### `pre-push`
-- Runs **Spotless** + **SpotBugs** + **backend tests** if Java files changed
+- Runs **Spotless**, **unit tests** and **SpotBugs** for each service whose Java files changed (`MOODLE_BUILD_ROOT` builds outside `./target`)
 - Runs **frontend build** + **frontend tests** if frontend files changed
 
 ---
@@ -131,9 +131,8 @@ After running `bash scripts/setup-hooks.sh`, three hooks are active:
 4. Open a Pull Request against `develop` (or `main` for hotfixes).
 5. CI will automatically run:
    - Branch name validation
-   - Spotless formatting check
-   - SpotBugs static analysis
-   - Backend build & tests
+   - Per service: Spotless, unit and integration tests, SpotBugs
+   - The whole platform end to end (Docker Compose)
    - Frontend lint, build & tests
 6. Get a code review and merge.
 
@@ -142,14 +141,13 @@ After running `bash scripts/setup-hooks.sh`, three hooks are active:
 ## CI/CD Pipeline
 
 ### CI (on every push & PR to `main` / `develop`)
-- **Backend Spotless** — formatting check
-- **Backend SpotBugs** — static analysis
-- **Backend Build & Test** — compile + unit tests
+- **Services** — per service and the gateway: Spotless, unit tests, integration tests (Testcontainers), SpotBugs
+- **Platform End-to-end** — the stack in Docker Compose, tested through the gateway
 - **Frontend Lint & Typecheck** — production build
 - **Frontend Tests** — Karma/Jasmine headless
 - **Branch Name Gate** — convention check on PRs
 
 ### CD (on version tags `v*`)
-- Builds backend JAR artifact
+- Builds every service's JAR
 - Builds frontend production dist
 - Creates a GitHub Release with artifacts

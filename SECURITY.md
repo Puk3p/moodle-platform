@@ -27,11 +27,13 @@ deploying MoodleV2 for a real school (target scale: ~300 users).
    credential must be **rotated on the database server** — deleting the file does not
    invalidate an exposed password. It also remains in git history; consider history rewriting
    (e.g. `git filter-repo`) if the repository is or was public.
-2. **Do not load the seed migration (`V2__Seed_Initial_Users.sql`) in production.** It creates
-   `admin@test.com` / `teacher@test.com` / `student@test.com` with a shared, known bcrypt hash.
-   Use a clean production database and create the first admin account through a controlled path.
-3. **Set strong secrets** for `JWT_SECRET`, DB, OAuth and mail via environment variables
-   (see `backend/.env.example`). Never commit `.env`.
+2. **Do not keep the seeded accounts in production.** identity-service's
+   `V2__Seed_Initial_Users.sql` creates `admin@test.com` / `teacher@test.com` /
+   `student@test.com` with a shared, known bcrypt hash. Remove them (or change their passwords)
+   and create the first admin account through a controlled path.
+3. **Set strong secrets** for `JWT_SECRET`, the databases, the internal clients
+   (`INTERNAL_CLIENT_*_SECRET`), OAuth and mail via environment variables (see
+   `deploy/.env.example`). Never commit `.env`.
 4. **Terminate TLS** (HTTPS) at a reverse proxy (nginx/Caddy/Traefik) and point
    `APP_FRONTEND_URL`, `APP_CORS_ALLOWED_ORIGINS`, and `OAUTH_BASE_URL` at the real HTTPS
    domains. Update the front-end WebSocket URL to `wss://`.
@@ -39,9 +41,13 @@ deploying MoodleV2 for a real school (target scale: ~300 users).
 
 ## Scaling to ~300 users
 
-A single backend instance with the tuned Hikari pool (20 connections) and Tomcat threads
-(200) comfortably serves a few hundred concurrent users — a dedicated load balancer is **not
-required** for this scale. Put the app behind one reverse proxy for TLS and static-asset
-caching. If you ever scale to multiple instances, note two stateful pieces that must move to a
-shared store first: the in-memory rate limiter (→ Redis/Bucket4j) and the STOMP simple broker
-(→ an external broker such as RabbitMQ).
+One instance of each service comfortably serves a few hundred concurrent users — a dedicated
+load balancer is **not required** for this scale. Put the gateway behind one reverse proxy for
+TLS and static-asset caching; it is the only service that needs to be reachable. If you ever run
+several instances of a service, these pieces must move first:
+
+- identity-service: the in-memory sign-in rate limiter and 2FA challenges (→ Redis), and a
+  configured `INTERNAL_JWT_PRIVATE_KEY` / `INTERNAL_JWT_PUBLIC_KEY` so every instance signs with
+  the same key;
+- messaging-service: the STOMP simple broker (→ an external broker such as RabbitMQ);
+- the gateway already keeps a token cache per instance, evicted through Kafka.
