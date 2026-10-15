@@ -4,7 +4,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import moodlev2.identity.infrastructure.persistence.ClassRepository;
 import moodlev2.identity.infrastructure.persistence.entity.ClassEntity;
-import moodlev2.identity.shared.web.SimpleDto;
+import moodlev2.identity.shared.SimpleDto;
 import moodlev2.identity.web.admin.dto.CreateClassRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

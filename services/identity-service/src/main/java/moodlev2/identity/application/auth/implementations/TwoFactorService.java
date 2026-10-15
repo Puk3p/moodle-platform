@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import moodlev2.identity.application.auth.interfaces.ITwoFactorService;
 import moodlev2.identity.infrastructure.persistence.SpringDataUserRepository;
 import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
-import moodlev2.identity.shared.exception.NotFoundException;
+import moodlev2.identity.shared.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;

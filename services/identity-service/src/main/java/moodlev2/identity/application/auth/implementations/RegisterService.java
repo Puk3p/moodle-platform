@@ -35,7 +35,7 @@ public class RegisterService implements IRegisterService {
             throw new IllegalArgumentException("Email exists already in use.");
         }
 
-        moodlev2.identity.shared.util.PasswordPolicy.validate(request.password);
+        moodlev2.identity.shared.PasswordPolicy.validate(request.password);
 
         User user = new User();
         user.setEmail(normalizedEmail);

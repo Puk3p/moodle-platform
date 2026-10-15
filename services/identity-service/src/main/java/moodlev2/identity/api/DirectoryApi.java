@@ -34,13 +34,11 @@ public interface DirectoryApi {
      * The account behind a signed-in principal name (the email), for code that only has the
      * security context.
      *
-     * @throws moodlev2.identity.shared.exception.NotFoundException when no such account exists
+     * @throws moodlev2.identity.shared.NotFoundException when no such account exists
      */
     default UserSummary requireUserByEmail(String email) {
         return findUserByEmail(email)
                 .orElseThrow(
-                        () ->
-                                new moodlev2.identity.shared.exception.NotFoundException(
-                                        "User not found"));
+                        () -> new moodlev2.identity.shared.NotFoundException("User not found"));
     }
 }

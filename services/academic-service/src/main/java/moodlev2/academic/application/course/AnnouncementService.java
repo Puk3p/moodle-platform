@@ -6,7 +6,7 @@ import moodlev2.academic.infrastructure.persistence.AnnouncementRepository;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import moodlev2.academic.infrastructure.persistence.entity.AnnouncementEntity;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
-import moodlev2.academic.shared.exception.NotFoundException;
+import moodlev2.academic.shared.NotFoundException;
 import moodlev2.academic.web.course.dto.CreateAnnouncementRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

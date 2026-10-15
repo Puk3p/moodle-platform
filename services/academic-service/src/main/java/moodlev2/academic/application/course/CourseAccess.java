@@ -1,10 +1,10 @@
 package moodlev2.academic.application.course;
 
 import lombok.RequiredArgsConstructor;
-import moodlev2.academic.directory.UserSummary;
+import moodlev2.academic.clients.UserSummary;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
-import moodlev2.academic.shared.exception.NotFoundException;
+import moodlev2.academic.shared.NotFoundException;
 import org.springframework.stereotype.Component;
 
 /**

@@ -2,13 +2,13 @@ package moodlev2.academic.application.resource;
 
 import lombok.RequiredArgsConstructor;
 import moodlev2.academic.application.course.CourseAccess;
-import moodlev2.academic.directory.DirectoryApi;
-import moodlev2.academic.directory.UserSummary;
+import moodlev2.academic.clients.DirectoryApi;
+import moodlev2.academic.clients.UserSummary;
 import moodlev2.academic.infrastructure.persistence.AssignmentSubmissionRepository;
 import moodlev2.academic.infrastructure.persistence.ModuleItemRepository;
 import moodlev2.academic.infrastructure.persistence.entity.ModuleItemEntity;
-import moodlev2.academic.shared.exception.NotFoundException;
-import moodlev2.academic.shared.storage.FileStorageService;
+import moodlev2.academic.shared.FileStorageService;
+import moodlev2.academic.shared.NotFoundException;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

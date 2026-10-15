@@ -131,7 +131,7 @@ public class AuthController {
                 .ifPresent(
                         old ->
                                 sessionService.revokeByHash(
-                                        moodlev2.identity.shared.util.TokenHashUtil.sha256(old)));
+                                        moodlev2.identity.shared.TokenHashUtil.sha256(old)));
         SessionService.Issued issued =
                 sessionService.create(
                         user.getId(),

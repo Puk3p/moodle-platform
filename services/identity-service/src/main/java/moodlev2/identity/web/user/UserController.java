@@ -8,7 +8,7 @@ import moodlev2.identity.application.user.ChangePasswordService;
 import moodlev2.identity.application.user.GetTeachersService;
 import moodlev2.identity.application.user.ManageSessionsService;
 import moodlev2.identity.infrastructure.security.SessionAuthenticationFilter;
-import moodlev2.identity.shared.web.SimpleDto;
+import moodlev2.identity.shared.SimpleDto;
 import moodlev2.identity.web.user.dto.ChangePasswordRequest;
 import moodlev2.identity.web.user.dto.SessionDto;
 import org.springframework.http.HttpStatus;

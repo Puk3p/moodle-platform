@@ -6,7 +6,7 @@ import moodlev2.identity.api.AccountSummary;
 import moodlev2.identity.api.ClassSummary;
 import moodlev2.identity.api.DirectoryApi;
 import moodlev2.identity.api.UserSummary;
-import moodlev2.identity.shared.exception.NotFoundException;
+import moodlev2.identity.shared.NotFoundException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;

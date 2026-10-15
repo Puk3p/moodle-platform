@@ -5,7 +5,7 @@ import moodlev2.identity.application.auth.interfaces.ITwoFactorService;
 import moodlev2.identity.domain.user.User;
 import moodlev2.identity.domain.user.ports.PasswordHasherPort;
 import moodlev2.identity.domain.user.ports.UserRepositoryPort;
-import moodlev2.identity.shared.exception.NotFoundException;
+import moodlev2.identity.shared.NotFoundException;
 import moodlev2.identity.web.user.dto.ChangePasswordRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -60,7 +60,7 @@ public class ChangePasswordService {
             }
         }
 
-        moodlev2.identity.shared.util.PasswordPolicy.validate(request.newPassword());
+        moodlev2.identity.shared.PasswordPolicy.validate(request.newPassword());
 
         String newHash = passwordHasher.hash(request.newPassword());
         user.setPasswordHash(newHash);

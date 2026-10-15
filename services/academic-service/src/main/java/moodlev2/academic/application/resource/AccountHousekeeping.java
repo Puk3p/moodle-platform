@@ -2,7 +2,7 @@ package moodlev2.academic.application.resource;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import moodlev2.academic.shared.storage.FileStorageService;
+import moodlev2.academic.shared.FileStorageService;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

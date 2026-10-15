@@ -6,7 +6,7 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import moodlev2.academic.api.CourseSummary;
 import moodlev2.academic.api.MembershipApi;
-import moodlev2.academic.directory.UserSummary;
+import moodlev2.academic.clients.UserSummary;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

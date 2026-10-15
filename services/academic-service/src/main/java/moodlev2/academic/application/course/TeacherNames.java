@@ -5,8 +5,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import moodlev2.academic.directory.DirectoryApi;
-import moodlev2.academic.directory.UserSummary;
+import moodlev2.academic.clients.DirectoryApi;
+import moodlev2.academic.clients.UserSummary;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
 import org.springframework.stereotype.Component;
 

@@ -20,7 +20,7 @@ import moodlev2.identity.infrastructure.persistence.SpringDataUserRepository;
 import moodlev2.identity.infrastructure.persistence.UserSessionRepository;
 import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
 import moodlev2.identity.infrastructure.persistence.entity.UserSessionEntity;
-import moodlev2.identity.shared.util.TokenHashUtil;
+import moodlev2.identity.shared.TokenHashUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

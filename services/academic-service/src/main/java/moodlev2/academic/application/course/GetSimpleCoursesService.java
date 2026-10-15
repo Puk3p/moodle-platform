@@ -3,7 +3,7 @@ package moodlev2.academic.application.course;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
-import moodlev2.academic.shared.web.SimpleDto;
+import moodlev2.academic.shared.SimpleDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

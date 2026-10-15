@@ -13,7 +13,7 @@ import moodlev2.academic.application.course.GetEnrolledStudentsService;
 import moodlev2.academic.application.course.GetSimpleCoursesService;
 import moodlev2.academic.application.course.MyCoursesService;
 import moodlev2.academic.application.course.UpdateCourseService;
-import moodlev2.academic.shared.web.SimpleDto;
+import moodlev2.academic.shared.SimpleDto;
 import moodlev2.academic.web.course.dto.CourseDetailsResponse;
 import moodlev2.academic.web.course.dto.CoursesPageResponse;
 import moodlev2.academic.web.course.dto.CreateCourseDto;

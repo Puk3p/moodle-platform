@@ -8,11 +8,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import moodlev2.academic.directory.AccountSummary;
-import moodlev2.academic.directory.ClassSummary;
-import moodlev2.academic.directory.DirectoryApi;
-import moodlev2.academic.directory.Role;
-import moodlev2.academic.directory.UserSummary;
+import moodlev2.academic.clients.AccountSummary;
+import moodlev2.academic.clients.ClassSummary;
+import moodlev2.academic.clients.DirectoryApi;
+import moodlev2.academic.clients.Role;
+import moodlev2.academic.clients.UserSummary;
 
 /** An in-memory {@link DirectoryApi} for service tests. */
 public final class FakeDirectory implements DirectoryApi {

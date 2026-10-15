@@ -8,11 +8,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import moodlev2.academic.directory.Role;
-import moodlev2.academic.directory.UserSummary;
+import moodlev2.academic.clients.Role;
+import moodlev2.academic.clients.UserSummary;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
-import moodlev2.academic.shared.exception.NotFoundException;
+import moodlev2.academic.shared.NotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

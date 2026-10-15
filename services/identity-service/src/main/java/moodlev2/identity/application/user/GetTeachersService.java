@@ -4,7 +4,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import moodlev2.identity.api.Role;
 import moodlev2.identity.infrastructure.persistence.SpringDataUserRepository;
-import moodlev2.identity.shared.web.SimpleDto;
+import moodlev2.identity.shared.SimpleDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

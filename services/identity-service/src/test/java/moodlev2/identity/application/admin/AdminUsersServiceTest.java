@@ -19,7 +19,7 @@ import moodlev2.identity.application.auth.SessionService;
 import moodlev2.identity.infrastructure.persistence.ClassRepository;
 import moodlev2.identity.infrastructure.persistence.SpringDataUserRepository;
 import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
-import moodlev2.identity.shared.exception.NotFoundException;
+import moodlev2.identity.shared.NotFoundException;
 import moodlev2.identity.web.admin.dto.UpdateStudentRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

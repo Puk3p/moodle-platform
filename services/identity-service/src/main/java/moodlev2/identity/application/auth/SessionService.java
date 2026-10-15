@@ -13,7 +13,7 @@ import moodlev2.identity.infrastructure.persistence.SpringDataUserRepository;
 import moodlev2.identity.infrastructure.persistence.UserSessionRepository;
 import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
 import moodlev2.identity.infrastructure.persistence.entity.UserSessionEntity;
-import moodlev2.identity.shared.util.TokenHashUtil;
+import moodlev2.identity.shared.TokenHashUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

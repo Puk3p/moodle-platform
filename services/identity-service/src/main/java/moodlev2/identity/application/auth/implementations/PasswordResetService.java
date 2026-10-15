@@ -13,7 +13,7 @@ import moodlev2.identity.infrastructure.persistence.PasswordResetTokenRepository
 import moodlev2.identity.infrastructure.persistence.SpringDataUserRepository;
 import moodlev2.identity.infrastructure.persistence.entity.PasswordResetTokenEntity;
 import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
-import moodlev2.identity.shared.util.TokenHashUtil;
+import moodlev2.identity.shared.TokenHashUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -94,7 +94,7 @@ public class PasswordResetService implements IPasswordResetService {
             throw new IllegalArgumentException(INVALID);
         }
 
-        moodlev2.identity.shared.util.PasswordPolicy.validate(newPassword);
+        moodlev2.identity.shared.PasswordPolicy.validate(newPassword);
 
         UserEntity user = resetToken.getUser();
         user.setPasswordHash(passwordHasher.hash(newPassword));

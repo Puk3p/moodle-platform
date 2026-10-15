@@ -1,11 +1,13 @@
 package moodlev2.academic.application.course;
 
 import lombok.RequiredArgsConstructor;
+import moodlev2.academic.clients.CourseCalendar;
+import moodlev2.academic.clients.CourseQuizzes;
 import moodlev2.academic.infrastructure.mapper.CoursePreviewMapper;
 import moodlev2.academic.infrastructure.persistence.AnnouncementRepository;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
-import moodlev2.academic.shared.exception.NotFoundException;
+import moodlev2.academic.shared.NotFoundException;
 import moodlev2.academic.web.course.dto.preview.CoursePreviewDto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

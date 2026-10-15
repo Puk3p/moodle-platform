@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 /**
  * Courses, their modules and resources, assignments and submissions, announcements, and who belongs
  * to which course. Accounts come from identity-service ({@link
- * moodlev2.academic.directory.DirectoryApi}); course changes are published to Kafka through a
+ * moodlev2.academic.clients.DirectoryApi}); course changes are published to Kafka through a
  * transactional outbox.
  */
 @SpringBootApplication

@@ -18,7 +18,7 @@ import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import moodlev2.academic.infrastructure.persistence.ModuleItemRepository;
 import moodlev2.academic.infrastructure.persistence.entity.CourseModuleEntity;
 import moodlev2.academic.infrastructure.persistence.entity.ModuleItemEntity;
-import moodlev2.academic.shared.storage.FileStorageService;
+import moodlev2.academic.shared.FileStorageService;
 import moodlev2.academic.web.resource.dto.CreateResourceDto;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
