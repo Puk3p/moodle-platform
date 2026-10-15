@@ -1,0 +1,25 @@
+name: assessment-service
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "services/assessment-service/**"
+      - ".github/workflows/assessment-service.yml"
+      - ".github/workflows/service.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "services/assessment-service/**"
+      - ".github/workflows/assessment-service.yml"
+      - ".github/workflows/service.yml"
+
+concurrency:
+  group: assessment-service-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  assessment-service:
+    uses: ./.github/workflows/service.yml
+    with:
+      path: services/assessment-service

@@ -53,16 +53,15 @@ The backend is a set of **microservices**: five Spring Boot applications, each w
 moodle-platform/
 ├── pom.xml                       # Aggregator: ./mvnw verify builds and tests every service
 ├── services/
-│   ├── identity-service/         # Accounts, classes, sign-in, sessions; issues internal tokens
-│   ├── academic-service/         # Courses, modules, resources, assignments, membership
-│   ├── assessment-service/       # Quizzes, attempts, proctoring, question bank
-│   ├── progress-service/         # Grades and course calendars
-│   └── messaging-service/        # Chat (REST + WebSocket)
-├── edge/gateway/                 # The only public entry point: routing, session → token, CSRF, CORS
+│   ├── identity-service/         # :8083 Accounts, classes, sign-in, sessions; issues internal tokens
+│   ├── academic-service/         # :8081 Courses, modules, resources, assignments, membership
+│   ├── assessment-service/       # :8084 Quizzes, attempts, proctoring, question bank
+│   ├── progress-service/         # :8085 Grades and course calendars
+│   └── messaging-service/        # :8082 Chat (REST + WebSocket)
+├── edge/gateway/                 # :8080 The only public entry point: routing, session → token, CSRF, CORS
 ├── e2e/                          # End-to-end tests against the running stack (-Pe2e)
 ├── deploy/
 │   ├── compose.yml               # The whole platform: MySQL, Kafka, the services, the gateway
-│   ├── Dockerfile                # One image per service (--build-arg MODULE=...)
 │   ├── .env.example              # Production settings
 │   ├── mysql/init/               # One database and account per service
 │   └── data-moves/               # One-time SQL to move an existing monolith's data
@@ -70,7 +69,22 @@ moodle-platform/
 └── moodle-mobile/                # Cordova wrapper for iOS
 ```
 
-Every service has the same layout: `web/` (controllers, DTOs), `application/` (use cases), `infrastructure/` (persistence, Kafka, security, clients for other services), `src/main/resources/db/migration/` (its own Flyway history).
+Every service folder is self-contained, as if it were a repository of its own: its `pom.xml`, Maven wrapper, `Dockerfile`, `README.md` (what it owns, its API, events and configuration) and a CI workflow that runs when the folder changes. Inside, every service has the same layout:
+
+```
+services/<name>/
+├── pom.xml, mvnw, Dockerfile, README.md
+└── src/
+    ├── main/java/moodlev2/<name>/
+    │   ├── web/              # controllers, DTOs, internal/ (service-to-service API), error handler
+    │   ├── application/      # use cases
+    │   ├── api/              # events it publishes, types of its internal API (if any)
+    │   ├── clients/          # what it needs from other services, and the HTTP clients for it
+    │   ├── infrastructure/   # persistence/, kafka/, security/
+    │   └── shared/           # small utilities
+    ├── main/resources/       # application.properties, db/migration/ (its own Flyway history)
+    └── test/java/...         # unit tests, it/ (Testcontainers), support/
+```
 
 ---
 
@@ -179,6 +193,7 @@ Every service has the same layout: `web/` (controllers, DTOs), `application/` (u
    ```bash
    ./mvnw verify
    ```
+   or one service, from its folder: `cd services/identity-service && ./mvnw verify`.
 
 Moving an existing single-database installation over: start the stack, then run the scripts in `deploy/data-moves/` (each one explains itself) before letting traffic in.
 
@@ -307,12 +322,18 @@ All endpoints are under `/api` on the gateway; the frontend never sees which ser
 
 GitHub Actions workflows are defined in `.github/workflows/`.
 
-### CI (`ci.yml`) — runs on every push & PR to `main` / `develop`
+### CI — runs on pushes & PRs to `main` / `develop`
 
-| Job | What it does |
+| Workflow | When | What it does |
+|----------|------|--------------|
+| **`<service>.yml`** (one per service and the gateway) | That folder changes | From the folder: Spotless, unit tests, integration tests (Testcontainers), SpotBugs, and the Docker image builds |
+| **`platform.yml`** | Any service, `deploy/` or `e2e/` changes | Starts the whole stack with Docker Compose and runs the end-to-end suite through the gateway |
+| **`ci.yml`** | Every push & PR | Frontend lint, typecheck and unit tests; branch name convention |
+
+The per-service workflows share one reusable workflow, `service.yml`.
+
+| `ci.yml` job | What it does |
 |-----|--------------|
-| **Services · &lt;module&gt;** | Per service and the gateway: Spotless, unit tests, integration tests (Testcontainers), SpotBugs |
-| **Platform · End-to-end** | Starts the whole stack with Docker Compose and runs the end-to-end suite through the gateway |
 | **Frontend · Lint & Typecheck** | Production Angular build |
 | **Frontend · Unit Tests** | Karma/Jasmine headless tests |
 | **Branch Name Convention** | Rejects PRs from incorrectly named branches |

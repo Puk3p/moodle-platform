@@ -83,11 +83,7 @@ services:
 
   identity-service:
     <<: *java
-    build:
-      context: ..
-      dockerfile: deploy/Dockerfile
-      args:
-        MODULE: services/identity-service
+    build: ../services/identity-service
     image: moodle/identity-service:dev
     environment:
       <<: *java-env
@@ -135,11 +131,7 @@ services:
 
   academic-service:
     <<: *java
-    build:
-      context: ..
-      dockerfile: deploy/Dockerfile
-      args:
-        MODULE: services/academic-service
+    build: ../services/academic-service
     image: moodle/academic-service:dev
     environment:
       <<: *java-env
@@ -164,11 +156,7 @@ services:
 
   messaging-service:
     <<: *java
-    build:
-      context: ..
-      dockerfile: deploy/Dockerfile
-      args:
-        MODULE: services/messaging-service
+    build: ../services/messaging-service
     image: moodle/messaging-service:dev
     environment:
       <<: *java-env
@@ -194,11 +182,7 @@ services:
 
   assessment-service:
     <<: *java
-    build:
-      context: ..
-      dockerfile: deploy/Dockerfile
-      args:
-        MODULE: services/assessment-service
+    build: ../services/assessment-service
     image: moodle/assessment-service:dev
     environment:
       <<: *java-env
@@ -223,11 +207,7 @@ services:
 
   progress-service:
     <<: *java
-    build:
-      context: ..
-      dockerfile: deploy/Dockerfile
-      args:
-        MODULE: services/progress-service
+    build: ../services/progress-service
     image: moodle/progress-service:dev
     environment:
       <<: *java-env
@@ -249,11 +229,7 @@ services:
 
   gateway:
     <<: *java
-    build:
-      context: ..
-      dockerfile: deploy/Dockerfile
-      args:
-        MODULE: edge/gateway
+    build: ../edge/gateway
     image: moodle/gateway:dev
     environment:
       <<: *java-env

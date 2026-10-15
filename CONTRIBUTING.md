@@ -141,8 +141,8 @@ After running `bash scripts/setup-hooks.sh`, three hooks are active:
 ## CI/CD Pipeline
 
 ### CI (on every push & PR to `main` / `develop`)
-- **Services** — per service and the gateway: Spotless, unit tests, integration tests (Testcontainers), SpotBugs
-- **Platform End-to-end** — the stack in Docker Compose, tested through the gateway
+- **One workflow per service** (`.github/workflows/<service>.yml`), run when its folder changes: Spotless, unit tests, integration tests (Testcontainers), SpotBugs, image build
+- **Platform** (`platform.yml`) — the stack in Docker Compose, tested end to end through the gateway
 - **Frontend Lint & Typecheck** — production build
 - **Frontend Tests** — Karma/Jasmine headless
 - **Branch Name Gate** — convention check on PRs

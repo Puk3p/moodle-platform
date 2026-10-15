@@ -11,52 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ─── Services ───────────────────────────────────────────
-  # Each service is its own Spring Boot application. verify runs the module's formatting check
-  # (Spotless), unit tests, integration tests (Testcontainers: MySQL and Kafka) and SpotBugs.
-  services:
-    name: "Services · ${{ matrix.module }}"
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        module:
-          - services/academic-service
-          - services/identity-service
-          - services/assessment-service
-          - services/progress-service
-          - services/messaging-service
-          - edge/gateway
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          java-version: "21"
-          distribution: temurin
-          cache: maven
-      - run: ./mvnw -B -ntp -f ${{ matrix.module }}/pom.xml verify
-
-  # The whole platform in Docker Compose, driven through the gateway like the SPA.
-  end-to-end:
-    name: "Platform · End-to-end"
-    runs-on: ubuntu-latest
-    needs: services
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          java-version: "21"
-          distribution: temurin
-          cache: maven
-      - name: Start the stack
-        run: docker compose -f deploy/compose.yml up -d --build --wait --wait-timeout 600
-      - run: ./mvnw -B -ntp -f e2e/pom.xml verify -Pe2e
-      - name: Service logs
-        if: failure()
-        run: docker compose -f deploy/compose.yml logs --tail=300
-      - name: Stop the stack
-        if: always()
-        run: docker compose -f deploy/compose.yml down -v
+  # Services and the platform have workflows of their own (<service>.yml, platform.yml).
 
   # ─── Frontend ───────────────────────────────────────────
   frontend-lint:
