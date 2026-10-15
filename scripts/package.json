@@ -1,0 +1,8 @@
+{
+  "name": "moodle-platform-scripts",
+  "private": true,
+  "description": "Developer helpers. Install with: npm install --prefix scripts",
+  "dependencies": {
+    "bcryptjs": "^3.0.3"
+  }
+}

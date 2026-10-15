@@ -15,7 +15,6 @@ The backend is a set of **microservices**: five Spring Boot applications, each w
 - [Getting Started](#getting-started)
   - [The platform (Docker Compose)](#the-platform-docker-compose)
   - [Frontend](#frontend-setup)
-  - [Mobile App](#mobile-app-setup)
 - [Environment Variables](#environment-variables)
 - [Database](#database)
 - [API Overview](#api-overview)
@@ -36,7 +35,6 @@ The backend is a set of **microservices**: five Spring Boot applications, each w
 | **Messaging** | Apache Kafka (KRaft), Spring Kafka, Spring Modulith event publication registry (transactional outbox) |
 | **Resilience** | Resilience4j (circuit breakers, retries), short client timeouts |
 | **Frontend** | Angular 20, Angular Material, TypeScript, SCSS, STOMP.js / SockJS |
-| **Mobile** | Apache Cordova (iOS build wrapping the Angular app) |
 | **Database** | MySQL 8, one database per service |
 | **Migrations** | Flyway |
 | **Auth** | HttpOnly session cookie, RS256 internal tokens (OAuth2 client credentials, JWKS), OAuth2 login (Google, Facebook), TOTP-based 2FA |
@@ -66,7 +64,7 @@ moodle-platform/
 │   ├── mysql/init/               # One database and account per service
 │   └── data-moves/               # One-time SQL to move an existing monolith's data
 ├── frontend/                     # Angular SPA (+ Chrome Extension manifest)
-└── moodle-mobile/                # Cordova wrapper for iOS
+└── scripts/                      # Git hook setup, developer helpers (hash-password.js)
 ```
 
 Every service folder is self-contained, as if it were a repository of its own: its `pom.xml`, Maven wrapper, `Dockerfile`, `README.md` (what it owns, its API, events and configuration) and a CI workflow that runs when the folder changes. Inside, every service has the same layout:
@@ -159,10 +157,6 @@ services/<name>/
 - Manifest V3 browser extension bundled with the frontend
 - Enhances the Moodle experience with additional tools
 
-### Mobile App
-- **Apache Cordova** wrapper targeting iOS
-- Serves the built Angular app as a native mobile application
-
 ---
 
 ## Prerequisites
@@ -170,7 +164,6 @@ services/<name>/
 - **Docker** with Docker Compose v2 (runs MySQL, Kafka and every service)
 - **Java 21** (JDK), to build and test outside Docker; the Maven wrapper `./mvnw` is included
 - **Node.js 20+** and **npm**, for the frontend
-- *(Optional)* Apache Cordova CLI for mobile builds
 
 ---
 
@@ -210,22 +203,6 @@ Moving an existing single-database installation over: start the stack, then run 
    npm start
    ```
    The app will be served at `http://localhost:4200` and talks to the gateway on `http://localhost:8080`.
-
-### Mobile App Setup
-
-1. **Install Cordova globally**:
-   ```bash
-   npm install -g cordova
-   ```
-
-2. **Build the Angular app** and copy the output to `moodle-mobile/www/`.
-
-3. **Run on iOS**:
-   ```bash
-   cd moodle-mobile
-   cordova platform add ios
-   cordova run ios
-   ```
 
 ---
 
