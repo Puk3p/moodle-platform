@@ -61,6 +61,17 @@ spring:
                 - SessionToken
                 - SecureHeaders
 
+            # ── assessment-service: quizzes, proctoring, question bank ──────
+            - id: assessment-api
+              uri: ${ASSESSMENT_URL:http://localhost:8084}
+              order: -10
+              predicates:
+                - Path=/api/quizzes/**,/api/teacher/quizzes/**,/api/question-bank/**
+              filters:
+                - DoubleSubmitCsrf
+                - SessionToken
+                - SecureHeaders
+
             # ── core: everything else, untouched (it authenticates itself) ──
             - id: core
               uri: ${CORE_URL:http://localhost:8081}

@@ -6,6 +6,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import moodlev2.academic.application.course.CourseCalendar.Entry;
+import moodlev2.academic.application.course.CourseQuizzes.Quiz;
 import moodlev2.academic.infrastructure.persistence.entity.AnnouncementEntity;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
 import moodlev2.academic.infrastructure.persistence.entity.CourseModuleEntity;
@@ -15,7 +16,6 @@ import moodlev2.academic.web.course.dto.preview.CoursePreviewDto;
 import moodlev2.academic.web.course.dto.preview.DeadlinePreviewDto;
 import moodlev2.academic.web.course.dto.preview.ModuleItemPreviewDto;
 import moodlev2.academic.web.course.dto.preview.ModulePreviewDto;
-import moodlev2.assessment.api.QuizCatalogApi.CourseQuiz;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -28,7 +28,7 @@ public class CoursePreviewMapper {
             String instructorName,
             List<AnnouncementEntity> announcements,
             List<Entry> events,
-            List<CourseQuiz> quizzes) {
+            List<Quiz> quizzes) {
 
         List<ModulePreviewDto> moduleDtos =
                 course.getModules().stream().map(this::mapModuleWithoutQuizzes).toList();
@@ -118,7 +118,7 @@ public class CoursePreviewMapper {
                 false);
     }
 
-    private ModuleItemPreviewDto mapQuizToItem(CourseQuiz quiz) {
+    private ModuleItemPreviewDto mapQuizToItem(Quiz quiz) {
         StringBuilder metaBuilder = new StringBuilder();
         metaBuilder.append(quiz.questionsCount()).append(" Questions");
 

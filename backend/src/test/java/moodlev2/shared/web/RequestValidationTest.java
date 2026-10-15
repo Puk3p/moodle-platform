@@ -10,15 +10,11 @@ import jakarta.validation.ValidatorFactory;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import moodlev2.academic.web.course.CourseController;
 import moodlev2.academic.web.course.dto.CreateCourseDto;
 import moodlev2.academic.web.resource.ResourceController;
-import moodlev2.assessment.web.quiz.QuizController;
-import moodlev2.assessment.web.quiz.dto.CreateQuizDto;
-import moodlev2.assessment.web.quiz.dto.QuizSubmissionDto;
 import moodlev2.identity.web.admin.AdminUsersController;
 import moodlev2.identity.web.admin.dto.UpdateStudentRequest;
 import org.junit.jupiter.api.AfterAll;
@@ -72,41 +68,6 @@ class RequestValidationTest {
     }
 
     @Test
-    void quizSubmissionNeedsAnAttemptAndABoundedAnswerList() {
-        List<QuizSubmissionDto.AnswerDto> tooMany =
-                Collections.nCopies(501, new QuizSubmissionDto.AnswerDto(1L, 1L, null, null));
-
-        assertThat(invalidFields(new QuizSubmissionDto(1L, List.of()))).isEmpty();
-        assertThat(invalidFields(new QuizSubmissionDto(1L, tooMany))).containsExactly("answers");
-        assertThat(invalidFields(new QuizSubmissionDto(null, null)))
-                .containsExactlyInAnyOrder("attemptId", "answers");
-    }
-
-    @Test
-    void quizNeedsATitle() {
-        CreateQuizDto blank =
-                new CreateQuizDto(
-                        " ",
-                        null,
-                        1L,
-                        null,
-                        30,
-                        50,
-                        1,
-                        false,
-                        null,
-                        null,
-                        null,
-                        null,
-                        "MANUAL",
-                        List.of(1L),
-                        null,
-                        null);
-
-        assertThat(invalidFields(blank)).containsExactly("title");
-    }
-
-    @Test
     void courseNeedsCodeTitleAndTeacher() {
         assertThat(invalidFields(new CreateCourseDto("", "", null, null, null)))
                 .containsExactlyInAnyOrder("code", "title", "teacherId");
@@ -133,9 +94,6 @@ class RequestValidationTest {
     @Test
     void endpointsWithConstrainedBodiesValidateThem() {
         assertThat(bodyIsValidated(CourseController.class, "createCourse")).isTrue();
-        assertThat(bodyIsValidated(QuizController.class, "createQuiz")).isTrue();
-        assertThat(bodyIsValidated(QuizController.class, "updateQuiz")).isTrue();
-        assertThat(bodyIsValidated(QuizController.class, "submitQuiz")).isTrue();
         assertThat(bodyIsValidated(AdminUsersController.class, "updateStudent")).isTrue();
     }
 

@@ -4,7 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Set;
 import moodlev2.academic.api.AssignmentPublishedEvent;
-import moodlev2.assessment.api.QuizAttemptChangedEvent;
+import moodlev2.academic.api.ModuleRemovedEvent;
 import moodlev2.identity.api.SessionsRevokedEvent;
 import moodlev2.identity.api.UserDeletedEvent;
 import moodlev2.identity.api.UserEmailChangedEvent;
@@ -34,7 +34,7 @@ public class EventExternalizationConfig {
 
     public static final String IDENTITY_USER = "identity.user";
     public static final String IDENTITY_SESSION = "identity.session";
-    public static final String ASSESSMENT_ATTEMPT = "assessment.attempt";
+    public static final String ACADEMIC_COURSE = "academic.course";
     public static final String ACADEMIC_COURSEWORK = "academic.coursework";
 
     private static final Set<Class<?>> EXTERNALIZED =
@@ -42,8 +42,8 @@ public class EventExternalizationConfig {
                     UserEmailChangedEvent.class,
                     UserDeletedEvent.class,
                     SessionsRevokedEvent.class,
-                    QuizAttemptChangedEvent.class,
-                    AssignmentPublishedEvent.class);
+                    AssignmentPublishedEvent.class,
+                    ModuleRemovedEvent.class);
 
     @Bean
     EventExternalizationConfiguration eventExternalizationConfiguration() {
@@ -65,10 +65,10 @@ public class EventExternalizationConfig {
                                 RoutingTarget.forTarget(IDENTITY_SESSION)
                                         .andKey(String.valueOf(e.userId())))
                 .route(
-                        QuizAttemptChangedEvent.class,
+                        ModuleRemovedEvent.class,
                         e ->
-                                RoutingTarget.forTarget(ASSESSMENT_ATTEMPT)
-                                        .andKey(String.valueOf(e.userId())))
+                                RoutingTarget.forTarget(ACADEMIC_COURSE)
+                                        .andKey(String.valueOf(e.courseId())))
                 .route(
                         AssignmentPublishedEvent.class,
                         e ->
@@ -85,7 +85,7 @@ public class EventExternalizationConfig {
                     case UserEmailChangedEvent e -> "identity.UserEmailChanged";
                     case UserDeletedEvent e -> "identity.UserDeleted";
                     case SessionsRevokedEvent e -> "identity.SessionsRevoked";
-                    case QuizAttemptChangedEvent e -> "assessment.QuizAttemptChanged";
+                    case ModuleRemovedEvent e -> "academic.ModuleRemoved";
                     case AssignmentPublishedEvent e -> "academic.AssignmentPublished";
                     default -> event.getClass().getSimpleName();
                 };
@@ -103,8 +103,8 @@ public class EventExternalizationConfig {
     }
 
     @Bean
-    NewTopic assessmentAttemptTopic(@Value("${app.kafka.partitions:3}") int partitions) {
-        return TopicBuilder.name(ASSESSMENT_ATTEMPT).partitions(partitions).build();
+    NewTopic academicCourseTopic(@Value("${app.kafka.partitions:3}") int partitions) {
+        return TopicBuilder.name(ACADEMIC_COURSE).partitions(partitions).build();
     }
 
     @Bean

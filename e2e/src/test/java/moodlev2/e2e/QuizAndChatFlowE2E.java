@@ -190,12 +190,19 @@ class QuizAndChatFlowE2E extends E2EBase {
                                 "selectedGroupIds", List.of(classId)))
                 .ok();
 
-        JsonNode kept =
-                findBy(
-                        teacher.api().get("/api/teacher/quizzes").expect(200).json(),
-                        "title",
-                        title);
-        assertThat(kept.get("context").asText()).isEmpty();
+        // assessment-service hears about it from core's event and unfiles the quiz.
+        eventually(
+                () ->
+                        findBy(
+                                        teacher.api()
+                                                .get("/api/teacher/quizzes")
+                                                .expect(200)
+                                                .json(),
+                                        "title",
+                                        title)
+                                .get("context")
+                                .asText()
+                                .isEmpty());
     }
 
     @Test

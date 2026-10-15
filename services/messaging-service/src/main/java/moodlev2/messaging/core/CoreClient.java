@@ -12,10 +12,11 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
 /**
- * Core's internal API over HTTP. Every call carries a client-credentials token (see {@code
- * CoreClientConfig}), times out quickly, is retried once on failure (all calls only read) and goes
- * through the {@code core} circuit breaker, so an unhealthy core is not hammered and callers fail
- * fast with 503 instead of piling up threads.
+ * The internal APIs of core (users, membership) and assessment-service (quiz locks) over HTTP.
+ * Every call carries a client-credentials token (see {@code CoreClientConfig}), times out quickly,
+ * is retried once on failure (all calls only read) and goes through the {@code core} circuit
+ * breaker, so an unhealthy core is not hammered and callers fail fast with 503 instead of piling up
+ * threads.
  */
 @Component
 @CircuitBreaker(name = "core")
@@ -30,9 +31,11 @@ public class CoreClient implements CoreDirectory, CoreMembership, CoreExamLocks 
             new ParameterizedTypeReference<>() {};
 
     private final RestClient core;
+    private final RestClient assessment;
 
-    public CoreClient(RestClient coreRestClient) {
+    public CoreClient(RestClient coreRestClient, RestClient assessmentRestClient) {
         this.core = coreRestClient;
+        this.assessment = assessmentRestClient;
     }
 
     @Override
@@ -89,7 +92,14 @@ public class CoreClient implements CoreDirectory, CoreMembership, CoreExamLocks 
 
     @Override
     public List<OpenExam> openMessagingBlockingAttempts(long userId) {
-        return getList("/internal/exam-locks/users/{id}", userId, EXAMS);
+        // Quizzes live in assessment-service; same token, same resilience.
+        List<OpenExam> body =
+                assessment
+                        .get()
+                        .uri("/internal/exam-locks/users/{id}", userId)
+                        .retrieve()
+                        .body(EXAMS);
+        return body == null ? List.of() : body;
     }
 
     private <T> List<T> getList(String path, long id, ParameterizedTypeReference<List<T>> type) {

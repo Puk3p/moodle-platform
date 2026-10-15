@@ -77,6 +77,34 @@ class EventsToKafkaIT extends IntegrationTestBase {
         assertThat(payload.get("dueDate").asText()).isNotBlank();
     }
 
+    @Test
+    void removingAModuleIsPublishedSoItsQuizzesBecomeUnfiled() throws Exception {
+        TestUser admin = admin();
+        TestUser teacher = teacher();
+        long classId = createClass(admin);
+        Course course = createCourse(teacher, classId);
+
+        // Save the course with no modules: its one module is removed.
+        teacher.api()
+                .put(
+                        "/api/courses/" + course.code(),
+                        Map.of(
+                                "id", course.id(),
+                                "code", course.code(),
+                                "title", "Course " + course.code(),
+                                "term", "Fall 2026",
+                                "status", "PUBLISHED",
+                                "modules", List.of(),
+                                "selectedGroupIds", List.of(classId)))
+                .ok();
+
+        ConsumerRecord<String, String> record =
+                awaitRecord(
+                        "academic.course", "academic.ModuleRemoved", String.valueOf(course.id()));
+        assertThat(ApiClient.JSON.readTree(record.value()).get("moduleId").asLong())
+                .isEqualTo(course.moduleId());
+    }
+
     private ConsumerRecord<String, String> awaitRecord(String topic, String type, String key) {
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA.getBootstrapServers());

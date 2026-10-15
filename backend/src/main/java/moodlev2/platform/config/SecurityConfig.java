@@ -153,24 +153,9 @@ public class SecurityConfig {
                                         .hasRole("ADMIN")
                                         .requestMatchers("/api/teacher/**")
                                         .hasAnyRole("TEACHER", "ADMIN")
-                                        .requestMatchers("/api/question-bank/**")
-                                        .hasAnyRole("TEACHER", "ADMIN")
                                         .requestMatchers("/api/users/teachers")
                                         .hasAnyRole("TEACHER", "ADMIN")
                                         .requestMatchers("/api/courses/create")
-                                        .hasAnyRole("TEACHER", "ADMIN")
-                                        // Quiz authoring is staff-only. Scoped by HTTP method so
-                                        // the student flows on the same prefix
-                                        // (POST /{id}/start, POST /submit) stay reachable. This
-                                        // duplicates the @PreAuthorize on QuizController on
-                                        // purpose: without it these fall through to the catch-all
-                                        // `authenticated()` and any logged-in student can delete
-                                        // or rewrite any quiz.
-                                        .requestMatchers(HttpMethod.POST, "/api/quizzes/create")
-                                        .hasAnyRole("TEACHER", "ADMIN")
-                                        .requestMatchers(HttpMethod.PUT, "/api/quizzes/*")
-                                        .hasAnyRole("TEACHER", "ADMIN")
-                                        .requestMatchers(HttpMethod.DELETE, "/api/quizzes/*")
                                         .hasAnyRole("TEACHER", "ADMIN")
                                         .anyRequest()
                                         .authenticated())

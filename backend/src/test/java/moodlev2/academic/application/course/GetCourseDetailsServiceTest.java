@@ -11,7 +11,6 @@ import java.util.Optional;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
 import moodlev2.academic.web.course.dto.CourseDetailsResponse;
-import moodlev2.assessment.api.QuizCatalogApi;
 import moodlev2.identity.api.Role;
 import moodlev2.identity.api.UserSummary;
 import moodlev2.shared.exception.NotFoundException;
@@ -26,7 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class GetCourseDetailsServiceTest {
 
     @Mock private CourseRepository courseRepository;
-    @Mock private QuizCatalogApi quizCatalog;
+    @Mock private CourseQuizzes quizCatalog;
 
     private GetCourseDetailsService service;
 

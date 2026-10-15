@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import moodlev2.academic.api.ModuleRemovedEvent;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
 import moodlev2.academic.infrastructure.persistence.entity.CourseModuleEntity;
@@ -16,6 +17,7 @@ import moodlev2.academic.web.course.dto.edit.ModuleEditDto;
 import moodlev2.identity.api.ClassSummary;
 import moodlev2.identity.api.DirectoryApi;
 import moodlev2.shared.exception.NotFoundException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,7 @@ public class UpdateCourseService {
 
     private final CourseRepository courseRepository;
     private final DirectoryApi directory;
+    private final ApplicationEventPublisher events;
 
     @Transactional
     public void updateCourse(String currentCode, CourseEditDto dto) {
@@ -108,5 +111,10 @@ public class UpdateCourseService {
 
         course.getModules().clear();
         course.getModules().addAll(updatedList);
+
+        // Whatever was left out of the edit is removed; quizzes filed under it stay, unfiled.
+        for (Long removedId : existingMap.keySet()) {
+            events.publishEvent(new ModuleRemovedEvent(course.getId(), removedId));
+        }
     }
 }

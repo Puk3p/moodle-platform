@@ -58,6 +58,7 @@ class MessagingServiceIT {
         registry.add("spring.datasource.password", MYSQL::getPassword);
         registry.add("spring.kafka.bootstrap-servers", KAFKA::getBootstrapServers);
         registry.add("app.core.url", CORE::url);
+        registry.add("app.assessment.url", CORE::url);
         registry.add(
                 "spring.security.oauth2.client.registration.core.client-secret",
                 () -> FakeCore.CLIENT_SECRET);

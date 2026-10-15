@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
+import moodlev2.academic.application.course.CourseQuizzes.Quiz;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
 import moodlev2.academic.infrastructure.persistence.entity.CourseModuleEntity;
@@ -19,8 +20,6 @@ import moodlev2.academic.web.course.dto.CourseDetailsResponse;
 import moodlev2.academic.web.course.dto.CourseModuleDto;
 import moodlev2.academic.web.course.dto.CourseModuleItemDto;
 import moodlev2.academic.web.course.dto.CourseStatsDto;
-import moodlev2.assessment.api.QuizCatalogApi;
-import moodlev2.assessment.api.QuizCatalogApi.CourseQuiz;
 import moodlev2.identity.api.DirectoryApi;
 import moodlev2.identity.api.UserSummary;
 import moodlev2.shared.exception.NotFoundException;
@@ -33,7 +32,7 @@ public class GetCourseDetailsService {
 
     private final CourseRepository courseRepository;
     private final DirectoryApi directory;
-    private final QuizCatalogApi quizCatalog;
+    private final CourseQuizzes quizCatalog;
     private final CourseAccess courseAccess;
 
     @Transactional(readOnly = true)
@@ -71,11 +70,11 @@ public class GetCourseDetailsService {
                                 .map(UserSummary::fullName)
                                 .orElse("Unknown Instructor");
 
-        List<CourseQuiz> quizzes = quizCatalog.publishedQuizzes(course.getId(), currentUser.id());
-        Map<Long, List<CourseQuiz>> quizzesByModule =
+        List<Quiz> quizzes = quizCatalog.publishedQuizzes(course.getId(), currentUser.id());
+        Map<Long, List<Quiz>> quizzesByModule =
                 quizzes.stream()
                         .filter(q -> q.moduleId() != null)
-                        .collect(Collectors.groupingBy(CourseQuiz::moduleId));
+                        .collect(Collectors.groupingBy(Quiz::moduleId));
 
         List<CourseModuleDto> modules =
                 course.getModules().stream()
@@ -133,7 +132,7 @@ public class GetCourseDetailsService {
     }
 
     private CourseModuleDto mapModuleWithStatus(
-            CourseModuleEntity module, List<CourseQuiz> moduleQuizzes) {
+            CourseModuleEntity module, List<Quiz> moduleQuizzes) {
         LocalDate now = LocalDate.now();
         String status = "unlocked";
 
@@ -171,7 +170,7 @@ public class GetCourseDetailsService {
                 module.getTitle(), module.getDescription(), combinedItems, status);
     }
 
-    private static CourseModuleItemDto mapQuizToItem(CourseQuiz quiz) {
+    private static CourseModuleItemDto mapQuizToItem(Quiz quiz) {
         return new CourseModuleItemDto(
                 quiz.id(), "quiz", quiz.title(), null, false, quiz.canAttempt());
     }

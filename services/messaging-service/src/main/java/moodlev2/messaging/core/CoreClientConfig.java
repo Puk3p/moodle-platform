@@ -52,4 +52,24 @@ public class CoreClientConfig {
                 .requestInterceptor(interceptor)
                 .build();
     }
+
+    /** assessment-service's internal API (quiz locks), with the same client-credentials token. */
+    @Bean
+    RestClient assessmentRestClient(
+            RestClient.Builder builder,
+            OAuth2AuthorizedClientManager coreAuthorizedClientManager,
+            @Value("${app.assessment.url}") String assessmentUrl,
+            @Value("${app.core.timeout:2s}") Duration timeout) {
+        var interceptor = new OAuth2ClientHttpRequestInterceptor(coreAuthorizedClientManager);
+        interceptor.setClientRegistrationIdResolver(request -> REGISTRATION);
+        return builder.baseUrl(assessmentUrl)
+                .requestFactory(
+                        ClientHttpRequestFactoryBuilder.detect()
+                                .build(
+                                        ClientHttpRequestFactorySettings.defaults()
+                                                .withConnectTimeout(timeout)
+                                                .withReadTimeout(timeout)))
+                .requestInterceptor(interceptor)
+                .build();
+    }
 }
