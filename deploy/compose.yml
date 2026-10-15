@@ -19,6 +19,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root-dev}
       CORE_DB_PASSWORD: ${CORE_DB_PASSWORD:-core-dev}
+      IDENTITY_DB_PASSWORD: ${IDENTITY_DB_PASSWORD:-identity-dev}
       MESSAGING_DB_PASSWORD: ${MESSAGING_DB_PASSWORD:-messaging-dev}
       PROGRESS_DB_PASSWORD: ${PROGRESS_DB_PASSWORD:-progress-dev}
       ASSESSMENT_DB_PASSWORD: ${ASSESSMENT_DB_PASSWORD:-assessment-dev}
@@ -42,6 +43,7 @@ services:
       MYSQL_HOST: mysql
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root-dev}
       CORE_DB_PASSWORD: ${CORE_DB_PASSWORD:-core-dev}
+      IDENTITY_DB_PASSWORD: ${IDENTITY_DB_PASSWORD:-identity-dev}
       MESSAGING_DB_PASSWORD: ${MESSAGING_DB_PASSWORD:-messaging-dev}
       PROGRESS_DB_PASSWORD: ${PROGRESS_DB_PASSWORD:-progress-dev}
       ASSESSMENT_DB_PASSWORD: ${ASSESSMENT_DB_PASSWORD:-assessment-dev}
@@ -79,6 +81,58 @@ services:
       timeout: 10s
       retries: 30
 
+  identity-service:
+    <<: *java
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args:
+        MODULE: services/identity-service
+    image: moodle/identity-service:dev
+    environment:
+      <<: *java-env
+      DB_URL: jdbc:mysql://mysql:3306/identity
+      DB_USERNAME: identity
+      DB_PASSWORD: ${IDENTITY_DB_PASSWORD:-identity-dev}
+      JWT_SECRET: ${JWT_SECRET:-local-dev-only-secret-0123456789abcdef0123456789}
+      INTERNAL_CLIENT_GATEWAY_SECRET: ${INTERNAL_CLIENT_GATEWAY_SECRET:-gateway-dev-secret}
+      INTERNAL_CLIENT_ACADEMIC_SECRET: ${INTERNAL_CLIENT_ACADEMIC_SECRET:-academic-dev-secret}
+      INTERNAL_CLIENT_ASSESSMENT_SECRET: ${INTERNAL_CLIENT_ASSESSMENT_SECRET:-assessment-dev-secret}
+      INTERNAL_CLIENT_MESSAGING_SECRET: ${INTERNAL_CLIENT_MESSAGING_SECRET:-messaging-dev-secret}
+      INTERNAL_CLIENT_PROGRESS_SECRET: ${INTERNAL_CLIENT_PROGRESS_SECRET:-progress-dev-secret}
+      INTERNAL_JWT_PRIVATE_KEY: ${INTERNAL_JWT_PRIVATE_KEY:-}
+      INTERNAL_JWT_PUBLIC_KEY: ${INTERNAL_JWT_PUBLIC_KEY:-}
+      # Plain HTTP locally: no Secure/__Host- cookies. true behind HTTPS.
+      APP_SESSION_COOKIE_SECURE: ${APP_SESSION_COOKIE_SECURE:-false}
+      # Addresses Tomcat accepts as proxies when reading X-Forwarded-For (sign-in rate limits and
+      # session records go by client address). Only the gateway reaches this service, and it
+      # already sanitises the chain. Local default: trust it entirely, so tests can simulate many
+      # clients from one machine. In production leave this unset: the default (private networks
+      # only) then trusts just the gateway.
+      SERVER_TOMCAT_REMOTEIP_INTERNALPROXIES: ${IDENTITY_TRUSTED_PROXIES:-.*}
+      APP_FRONTEND_URL: ${APP_FRONTEND_URL:-http://localhost:4200}
+      OAUTH_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8080}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-unset}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-unset}
+      FACEBOOK_CLIENT_ID: ${FACEBOOK_CLIENT_ID:-unset}
+      FACEBOOK_CLIENT_SECRET: ${FACEBOOK_CLIENT_SECRET:-unset}
+      MAIL_USERNAME: ${MAIL_USERNAME:-unset@example.com}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-unset}
+      PROFILE_PICTURES_DIR: /app/profile-pictures
+    volumes:
+      - identity-profile-pictures:/app/profile-pictures
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8083/actuator/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 20s
+
   core:
     <<: *java
     build:
@@ -92,38 +146,14 @@ services:
       DB_URL: jdbc:mysql://mysql:3306/moodle
       DB_USERNAME: core
       DB_PASSWORD: ${CORE_DB_PASSWORD:-core-dev}
-      JWT_SECRET: ${JWT_SECRET:-local-dev-only-secret-0123456789abcdef0123456789}
-      INTERNAL_CLIENT_GATEWAY_SECRET: ${INTERNAL_CLIENT_GATEWAY_SECRET:-gateway-dev-secret}
-      INTERNAL_CLIENT_MESSAGING_SECRET: ${INTERNAL_CLIENT_MESSAGING_SECRET:-messaging-dev-secret}
-      INTERNAL_CLIENT_PROGRESS_SECRET: ${INTERNAL_CLIENT_PROGRESS_SECRET:-progress-dev-secret}
-      INTERNAL_CLIENT_ASSESSMENT_SECRET: ${INTERNAL_CLIENT_ASSESSMENT_SECRET:-assessment-dev-secret}
+      IDENTITY_URL: http://identity-service:8083
+      INTERNAL_CLIENT_SECRET: ${INTERNAL_CLIENT_ACADEMIC_SECRET:-academic-dev-secret}
       PROGRESS_URL: http://progress-service:8085
       ASSESSMENT_URL: http://assessment-service:8084
-      INTERNAL_JWT_PRIVATE_KEY: ${INTERNAL_JWT_PRIVATE_KEY:-}
-      INTERNAL_JWT_PUBLIC_KEY: ${INTERNAL_JWT_PUBLIC_KEY:-}
-      # Plain HTTP locally: no Secure/__Host- cookies. true behind HTTPS.
-      APP_SESSION_COOKIE_SECURE: ${APP_SESSION_COOKIE_SECURE:-false}
-      # Addresses Tomcat accepts as proxies when reading X-Forwarded-For. Core is only reachable
-      # through the gateway, which already sanitises the chain. Local default: trust it entirely,
-      # so tests can simulate many clients from one machine. In production leave this unset: the
-      # default (private networks only) then trusts just the gateway.
-      SERVER_TOMCAT_REMOTEIP_INTERNALPROXIES: ${CORE_TRUSTED_PROXIES:-.*}
-      APP_FRONTEND_URL: ${APP_FRONTEND_URL:-http://localhost:4200}
-      APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://localhost:4200}
-      OAUTH_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:8080}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-unset}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-unset}
-      FACEBOOK_CLIENT_ID: ${FACEBOOK_CLIENT_ID:-unset}
-      FACEBOOK_CLIENT_SECRET: ${FACEBOOK_CLIENT_SECRET:-unset}
-      MAIL_USERNAME: ${MAIL_USERNAME:-unset@example.com}
-      MAIL_PASSWORD: ${MAIL_PASSWORD:-unset}
     volumes:
       - core-uploads:/app/uploads
-      - core-profile-pictures:/app/profile-pictures
     depends_on:
-      db-init:
-        condition: service_completed_successfully
-      kafka:
+      identity-service:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
@@ -145,6 +175,7 @@ services:
       DB_URL: jdbc:mysql://mysql:3306/messaging
       DB_USERNAME: messaging
       DB_PASSWORD: ${MESSAGING_DB_PASSWORD:-messaging-dev}
+      IDENTITY_URL: http://identity-service:8083
       CORE_URL: http://core:8080
       ASSESSMENT_URL: http://assessment-service:8084
       INTERNAL_CLIENT_SECRET: ${INTERNAL_CLIENT_MESSAGING_SECRET:-messaging-dev-secret}
@@ -174,6 +205,7 @@ services:
       DB_URL: jdbc:mysql://mysql:3306/assessment
       DB_USERNAME: assessment
       DB_PASSWORD: ${ASSESSMENT_DB_PASSWORD:-assessment-dev}
+      IDENTITY_URL: http://identity-service:8083
       CORE_URL: http://core:8080
       INTERNAL_CLIENT_SECRET: ${INTERNAL_CLIENT_ASSESSMENT_SECRET:-assessment-dev-secret}
       UPLOADS_DIR: /app/uploads
@@ -202,6 +234,7 @@ services:
       DB_URL: jdbc:mysql://mysql:3306/progress
       DB_USERNAME: progress
       DB_PASSWORD: ${PROGRESS_DB_PASSWORD:-progress-dev}
+      IDENTITY_URL: http://identity-service:8083
       CORE_URL: http://core:8080
       INTERNAL_CLIENT_SECRET: ${INTERNAL_CLIENT_PROGRESS_SECRET:-progress-dev-secret}
     depends_on:
@@ -224,6 +257,7 @@ services:
     image: moodle/gateway:dev
     environment:
       <<: *java-env
+      IDENTITY_URL: http://identity-service:8083
       CORE_URL: http://core:8080
       MESSAGING_URL: http://messaging-service:8082
       PROGRESS_URL: http://progress-service:8085
@@ -238,6 +272,8 @@ services:
     ports:
       - "${GATEWAY_HOST_PORT:-8080}:8080"
     depends_on:
+      identity-service:
+        condition: service_healthy
       core:
         condition: service_healthy
       messaging-service:
@@ -255,7 +291,7 @@ services:
 
 volumes:
   assessment-uploads:
+  identity-profile-pictures:
   mysql-data:
   kafka-data:
   core-uploads:
-  core-profile-pictures:

@@ -28,9 +28,9 @@
         <java.version>21</java.version>
         <spotless.version>2.43.0</spotless.version>
         <e2e.baseUrl>http://localhost:8080</e2e.baseUrl>
-        <e2e.dbUrl>jdbc:mysql://localhost:3307/moodle</e2e.dbUrl>
-        <e2e.dbUser>core</e2e.dbUser>
-        <e2e.dbPassword>core-dev</e2e.dbPassword>
+        <e2e.dbUrl>jdbc:mysql://localhost:3307/identity</e2e.dbUrl>
+        <e2e.dbUser>identity</e2e.dbUser>
+        <e2e.dbPassword>identity-dev</e2e.dbPassword>
     </properties>
 
     <dependencies>

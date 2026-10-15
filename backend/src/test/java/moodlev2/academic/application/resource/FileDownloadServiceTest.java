@@ -16,14 +16,14 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import moodlev2.academic.application.course.CourseAccess;
+import moodlev2.academic.directory.Role;
+import moodlev2.academic.directory.UserSummary;
 import moodlev2.academic.infrastructure.persistence.AssignmentSubmissionRepository;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import moodlev2.academic.infrastructure.persistence.ModuleItemRepository;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
 import moodlev2.academic.infrastructure.persistence.entity.CourseModuleEntity;
 import moodlev2.academic.infrastructure.persistence.entity.ModuleItemEntity;
-import moodlev2.identity.api.Role;
-import moodlev2.identity.api.UserSummary;
 import moodlev2.shared.exception.NotFoundException;
 import moodlev2.shared.storage.FileStorageService;
 import moodlev2.support.FakeDirectory;

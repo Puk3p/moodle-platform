@@ -19,7 +19,7 @@ import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 
 /**
  * Only the gateway (user tokens) and other services (service tokens) call this service; both
- * present RS256 tokens signed by core. No sessions, no CSRF (the gateway enforces it).
+ * present RS256 tokens signed by identity-service. No sessions, no CSRF (the gateway enforces it).
  *
  * <p>Authorities: {@code SCOPE_user} / {@code SCOPE_internal} from the token's scope, plus {@code
  * ROLE_*} from its {@code roles} claim, so {@code hasRole('ADMIN')} works as it did in core. The

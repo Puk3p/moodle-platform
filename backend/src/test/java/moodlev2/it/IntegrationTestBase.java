@@ -6,11 +6,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.SecureRandom;
-import java.util.Base64;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicLong;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -21,12 +24,13 @@ import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.kafka.KafkaContainer;
 
 /**
- * Boots the whole application on a random port against a throwaway MySQL (Flyway migrates and seeds
- * it), and drives it over real HTTP through the full security chain.
+ * Boots the application on a random port against a throwaway MySQL (Flyway migrates and seeds it)
+ * and Kafka, with identity-service played by {@link FakeIdentity}, and drives it over real HTTP
+ * through the full security chain with the tokens the gateway would forward.
  *
- * <p>The container is started once per JVM and shared by every IT class, so Spring's cached context
- * and the database stay consistent between classes. Tests never rely on a clean database: each one
- * creates its own users, classes and courses with unique names.
+ * <p>The containers are started once per JVM and shared by every IT class, so Spring's cached
+ * context and the database stay consistent between classes. Tests never rely on a clean database:
+ * each one creates its own users, classes and courses with unique ids and names.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public abstract class IntegrationTestBase {
@@ -39,39 +43,39 @@ public abstract class IntegrationTestBase {
 
     static final KafkaContainer KAFKA = new KafkaContainer("apache/kafka:3.9.1");
 
+    static final FakeIdentity IDENTITY = new FakeIdentity();
+
+    static final Path UPLOADS;
+
+    /** Far above the seeded accounts (1-4), whose ids the seeded courses use. */
+    private static final AtomicLong NEXT_ID = new AtomicLong(100_000);
+
     static {
         MYSQL.start();
         KAFKA.start();
+        try {
+            IDENTITY.start();
+            UPLOADS = Files.createTempDirectory("moodle-it-uploads");
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     @DynamicPropertySource
-    static void properties(DynamicPropertyRegistry registry) throws IOException {
+    static void properties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", MYSQL::getJdbcUrl);
         registry.add("spring.datasource.username", MYSQL::getUsername);
         registry.add("spring.datasource.password", MYSQL::getPassword);
         registry.add("spring.kafka.bootstrap-servers", KAFKA::getBootstrapServers);
-
-        byte[] secret = new byte[48];
-        new SecureRandom().nextBytes(secret);
-        String jwtSecret = Base64.getEncoder().encodeToString(secret);
-        registry.add("security.jwt.secret", () -> jwtSecret);
-
-        registry.add("app.session.cookie-secure", () -> "false");
-        registry.add("app.internal.clients.it-service", () -> "it-service-secret");
-        Path uploads = Files.createTempDirectory("moodle-it-uploads");
-        Path pictures = Files.createTempDirectory("moodle-it-pictures");
-        registry.add("app.uploads.dir", uploads::toString);
-        registry.add("app.profile-pictures.dir", pictures::toString);
-
-        for (String provider : new String[] {"google", "facebook"}) {
-            String prefix = "spring.security.oauth2.client.registration." + provider;
-            registry.add(prefix + ".client-id", () -> "it-" + provider);
-            registry.add(prefix + ".client-secret", () -> "it-secret");
-        }
-        registry.add("spring.mail.username", () -> "it@example.test");
-        registry.add("spring.mail.password", () -> "unused");
-        registry.add("spring.mail.host", () -> "127.0.0.1");
-        registry.add("spring.mail.port", () -> "1");
+        registry.add("app.services.identity.url", IDENTITY::url);
+        registry.add(
+                "spring.security.oauth2.client.registration.identity.client-secret",
+                () -> FakeIdentity.CLIENT_SECRET);
+        // Nothing listens there: calendars and quiz lists come back empty, as when those
+        // services are down.
+        registry.add("app.services.progress.url", () -> "http://127.0.0.1:9");
+        registry.add("app.services.assessment.url", () -> "http://127.0.0.1:9");
+        registry.add("app.uploads.dir", UPLOADS::toString);
     }
 
     @LocalServerPort int port;
@@ -79,88 +83,55 @@ public abstract class IntegrationTestBase {
     @Autowired JdbcTemplate jdbc;
 
     protected ApiClient anonymous() {
-        return new ApiClient("http://127.0.0.1:" + port);
+        return new ApiClient(baseUrl(), null);
+    }
+
+    /** A caller presenting this token on every request. */
+    protected ApiClient withToken(String token) {
+        return new ApiClient(baseUrl(), () -> token);
     }
 
     protected TestUser student() {
-        return register("STUDENT");
+        return user("STUDENT");
     }
 
     protected TestUser teacher() {
-        return register("TEACHER");
+        return user("TEACHER");
     }
 
     protected TestUser admin() {
-        return register("ADMIN");
+        return user("ADMIN");
     }
 
     /**
-     * Registers through the public API (every account starts as a student), then sets the role
-     * directly. Roles are re-read from the database on every request, so it applies at once.
+     * An account in identity-service. Its client asks for a fresh user token on every request, so
+     * changes to the account (its class) apply at once, as they do behind the gateway.
      */
-    protected TestUser register(String role) {
-        String tag = UUID.randomUUID().toString().substring(0, 8);
-        String email = role.toLowerCase() + "-" + tag + "@it.test";
-        String password = "Pa55word-" + tag;
-        ApiClient client = anonymous();
-        JsonNode body =
-                client.post(
-                                "/api/auth/register",
-                                Map.of(
-                                        "email",
-                                        email,
-                                        "password",
-                                        password,
-                                        "firstName",
-                                        "First" + tag,
-                                        "lastName",
-                                        "Last" + tag))
-                        .expect(200)
-                        .json();
-        long id = body.get("userId").asLong();
-        if (!"STUDENT".equals(role)) {
-            jdbc.update("DELETE FROM user_roles WHERE user_id = ?", id);
-            jdbc.update("INSERT INTO user_roles (user_id, role) VALUES (?, ?)", id, role);
-        }
-        return new TestUser(id, email, password, client);
+    protected TestUser user(String role) {
+        long id = NEXT_ID.incrementAndGet();
+        String email =
+                role.toLowerCase()
+                        + "-"
+                        + UUID.randomUUID().toString().substring(0, 8)
+                        + "@it.test";
+        IDENTITY.addUser(id, email, role);
+        return new TestUser(id, email, new ApiClient(baseUrl(), () -> IDENTITY.userToken(id)));
     }
 
-    /** Signs in again with a fresh client (a new browser). */
-    protected ApiClient login(String email, String password) {
-        ApiClient client = anonymous();
-        client.post("/api/auth/login", Map.of("email", email, "password", password)).expect(200);
-        return client;
+    /** A class in identity-service; returns its id. */
+    protected long createClass() {
+        long id = NEXT_ID.incrementAndGet();
+        IDENTITY.addClass(id, "C" + id);
+        return id;
     }
 
-    /** Creates a class through the admin API and returns its id. */
-    protected long createClass(TestUser admin) {
-        String name = "C" + ThreadLocalRandom.current().nextInt(100_000, 999_999);
-        admin.api().post("/api/admin/classes", Map.of("name", name)).ok();
-        for (JsonNode c : admin.api().get("/api/classes/list").expect(200).json()) {
-            if (name.equals(c.get("name").asText())) {
-                return c.get("id").asLong();
-            }
-        }
-        throw new AssertionError("class " + name + " was not listed");
-    }
-
-    /** Places a student in a class through the admin API. */
-    protected void placeInClass(TestUser admin, TestUser student, long classId) {
-        JsonNode me = student.api().get("/api/users/me").expect(200).json();
-        admin.api()
-                .put(
-                        "/api/admin/students/" + student.id(),
-                        Map.of(
-                                "firstName", me.get("firstName").asText(),
-                                "lastName", me.get("lastName").asText(),
-                                "email", student.email(),
-                                "classId", classId))
-                .ok();
+    protected void placeInClass(TestUser student, long classId) {
+        IDENTITY.placeInClass(student.id(), classId);
     }
 
     /**
      * Creates a course taught by {@code teacher}, gives it one module that is current today and
-     * assigns it to {@code classId}. Returns the course code.
+     * assigns it to {@code classId}.
      */
     protected Course createCourse(TestUser teacher, long classId) {
         String code = "IT" + ThreadLocalRandom.current().nextInt(100_000, 999_999);
@@ -182,8 +153,6 @@ public abstract class IntegrationTestBase {
 
         JsonNode edit = teacher.api().get("/api/courses/" + code + "/edit").expect(200).json();
         long courseId = edit.get("id").asLong();
-        String today = java.time.LocalDate.now().toString();
-        String nextMonth = java.time.LocalDate.now().plusMonths(1).toString();
         Map<String, Object> module =
                 Map.of(
                         "title",
@@ -193,9 +162,9 @@ public abstract class IntegrationTestBase {
                         "sortOrder",
                         1,
                         "startDate",
-                        today,
+                        LocalDate.now().toString(),
                         "endDate",
-                        nextMonth,
+                        LocalDate.now().plusMonths(1).toString(),
                         "status",
                         "current");
         teacher.api()
@@ -215,9 +184,9 @@ public abstract class IntegrationTestBase {
                                 "description",
                                 "Integration test course",
                                 "modules",
-                                java.util.List.of(module),
+                                List.of(module),
                                 "selectedGroupIds",
-                                java.util.List.of(classId)))
+                                List.of(classId)))
                 .ok();
 
         long moduleId = -1;
@@ -231,7 +200,32 @@ public abstract class IntegrationTestBase {
         return new Course(courseId, code, moduleId);
     }
 
-    public record TestUser(long id, String email, String password, ApiClient api) {}
+    /** Waits for something that happens after an event is consumed. */
+    protected static void eventually(Runnable assertion) {
+        Instant deadline = Instant.now().plus(Duration.ofSeconds(20));
+        while (true) {
+            try {
+                assertion.run();
+                return;
+            } catch (AssertionError e) {
+                if (Instant.now().isAfter(deadline)) {
+                    throw e;
+                }
+            }
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException(e);
+            }
+        }
+    }
+
+    private String baseUrl() {
+        return "http://127.0.0.1:" + port;
+    }
+
+    public record TestUser(long id, String email, ApiClient api) {}
 
     public record Course(long id, String code, long moduleId) {}
 }

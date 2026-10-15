@@ -5,9 +5,6 @@ import java.util.Map;
 import java.util.Set;
 import moodlev2.academic.api.AssignmentPublishedEvent;
 import moodlev2.academic.api.ModuleRemovedEvent;
-import moodlev2.identity.api.SessionsRevokedEvent;
-import moodlev2.identity.api.UserDeletedEvent;
-import moodlev2.identity.api.UserEmailChangedEvent;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -24,46 +21,24 @@ import org.springframework.modulith.events.RoutingTarget;
  * cannot lose it: unfinished publications are sent again on restart.
  *
  * <p>Records are JSON. Consumers dispatch on the {@value #EVENT_TYPE_HEADER} header, a logical name
- * such as {@code identity.UserDeleted}, never on a Java class name, so services do not share
- * classes. The key is the id events must stay ordered by (the user, or the course).
+ * such as {@code academic.ModuleRemoved}, never on a Java class name, so services do not share
+ * classes. The key is the course id, so one course's events stay in order.
  */
 @Configuration
 public class EventExternalizationConfig {
 
     public static final String EVENT_TYPE_HEADER = "event-type";
 
-    public static final String IDENTITY_USER = "identity.user";
-    public static final String IDENTITY_SESSION = "identity.session";
     public static final String ACADEMIC_COURSE = "academic.course";
     public static final String ACADEMIC_COURSEWORK = "academic.coursework";
 
     private static final Set<Class<?>> EXTERNALIZED =
-            Set.of(
-                    UserEmailChangedEvent.class,
-                    UserDeletedEvent.class,
-                    SessionsRevokedEvent.class,
-                    AssignmentPublishedEvent.class,
-                    ModuleRemovedEvent.class);
+            Set.of(AssignmentPublishedEvent.class, ModuleRemovedEvent.class);
 
     @Bean
     EventExternalizationConfiguration eventExternalizationConfiguration() {
         return EventExternalizationConfiguration.externalizing()
                 .selectByType(EXTERNALIZED::contains)
-                .route(
-                        UserEmailChangedEvent.class,
-                        e ->
-                                RoutingTarget.forTarget(IDENTITY_USER)
-                                        .andKey(String.valueOf(e.userId())))
-                .route(
-                        UserDeletedEvent.class,
-                        e ->
-                                RoutingTarget.forTarget(IDENTITY_USER)
-                                        .andKey(String.valueOf(e.userId())))
-                .route(
-                        SessionsRevokedEvent.class,
-                        e ->
-                                RoutingTarget.forTarget(IDENTITY_SESSION)
-                                        .andKey(String.valueOf(e.userId())))
                 .route(
                         ModuleRemovedEvent.class,
                         e ->
@@ -82,24 +57,11 @@ public class EventExternalizationConfig {
     static byte[] typeOf(Object event) {
         String type =
                 switch (event) {
-                    case UserEmailChangedEvent e -> "identity.UserEmailChanged";
-                    case UserDeletedEvent e -> "identity.UserDeleted";
-                    case SessionsRevokedEvent e -> "identity.SessionsRevoked";
                     case ModuleRemovedEvent e -> "academic.ModuleRemoved";
                     case AssignmentPublishedEvent e -> "academic.AssignmentPublished";
                     default -> event.getClass().getSimpleName();
                 };
         return type.getBytes(StandardCharsets.UTF_8);
-    }
-
-    @Bean
-    NewTopic identityUserTopic(@Value("${app.kafka.partitions:3}") int partitions) {
-        return TopicBuilder.name(IDENTITY_USER).partitions(partitions).build();
-    }
-
-    @Bean
-    NewTopic identitySessionTopic(@Value("${app.kafka.partitions:3}") int partitions) {
-        return TopicBuilder.name(IDENTITY_SESSION).partitions(partitions).build();
     }
 
     @Bean

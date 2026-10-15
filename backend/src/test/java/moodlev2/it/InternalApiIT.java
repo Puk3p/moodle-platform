@@ -3,154 +3,82 @@ package moodlev2.it;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.nimbusds.jose.crypto.RSASSAVerifier;
-import com.nimbusds.jose.jwk.JWKSet;
-import com.nimbusds.jose.jwk.RSAKey;
-import com.nimbusds.jwt.SignedJWT;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 /**
- * The internal API the gateway and services use: client-credentials tokens, the session-to-token
- * exchange, and scope checks. Browser credentials (cookies) never work here.
+ * Who may call what. Browser-facing paths need a user token, the internal API a service token, and
+ * both only when identity-service signed them; roles in the token decide the rest.
  */
 class InternalApiIT extends IntegrationTestBase {
 
-    private final HttpClient http = HttpClient.newHttpClient();
-
     @Test
-    void servicesGetTokensOnlyWithTheirSecret() throws Exception {
-        assertThat(token("it-service", "wrong").statusCode()).isEqualTo(401);
-        assertThat(token("unknown", "it-service-secret").statusCode()).isEqualTo(401);
-
-        HttpResponse<String> ok = token("it-service", "it-service-secret");
-        assertThat(ok.statusCode()).isEqualTo(200);
-        JsonNode body = ApiClient.JSON.readTree(ok.body());
-        assertThat(body.get("token_type").asText()).isEqualTo("Bearer");
-
-        SignedJWT jwt = SignedJWT.parse(body.get("access_token").asText());
-        assertThat(jwt.verify(new RSASSAVerifier(jwks().getKeys().get(0).toRSAKey()))).isTrue();
-        assertThat(jwt.getJWTClaimsSet().getSubject()).isEqualTo("service:it-service");
-        assertThat(jwt.getJWTClaimsSet().getStringClaim("scope")).isEqualTo("internal");
-    }
-
-    @Test
-    void internalDataNeedsAServiceToken() throws Exception {
+    void theInternalApiAnswersServiceTokensOnly() {
+        TestUser teacher = teacher();
         TestUser student = student();
+        long classId = createClass();
+        placeInClass(student, classId);
+        Course course = createCourse(teacher, classId);
+        String members = "/internal/membership/courses/" + course.id() + "/members/";
 
-        assertThat(get("/internal/directory/users/" + student.id(), null).statusCode())
-                .isEqualTo(401);
-        // A signed-in browser's cookie is no credential here.
-        HttpResponse<String> withCookie =
-                http.send(
-                        HttpRequest.newBuilder(url("/internal/directory/users/" + student.id()))
-                                .header(
-                                        "Cookie",
-                                        "mdl_session=" + student.api().cookie("mdl_session"))
-                                .build(),
-                        HttpResponse.BodyHandlers.ofString());
-        assertThat(withCookie.statusCode()).isEqualTo(401);
-
-        HttpResponse<String> user =
-                get("/internal/directory/users/" + student.id(), serviceToken());
-        assertThat(user.statusCode()).isEqualTo(200);
-        assertThat(ApiClient.JSON.readTree(user.body()).get("email").asText())
-                .isEqualTo(student.email());
-    }
-
-    @Test
-    void theGatewayExchangesASessionCookieForAShortUserToken() throws Exception {
-        TestUser student = student();
-        String session = student.api().cookie("mdl_session");
-
-        HttpResponse<String> resolved =
-                post(
-                        "/internal/sessions/resolve",
-                        Map.of("token", session, "userAgent", "moodle-it/1.0"),
-                        serviceToken());
-        assertThat(resolved.statusCode()).isEqualTo(200);
-        JsonNode body = ApiClient.JSON.readTree(resolved.body());
-        assertThat(body.get("userId").asLong()).isEqualTo(student.id());
-        assertThat(body.get("roles").toString()).contains("STUDENT");
-
-        SignedJWT jwt = SignedJWT.parse(body.get("accessToken").asText());
-        assertThat(jwt.verify(new RSASSAVerifier(jwks().getKeys().get(0).toRSAKey()))).isTrue();
-        assertThat(jwt.getJWTClaimsSet().getSubject()).isEqualTo(String.valueOf(student.id()));
-        assertThat(jwt.getJWTClaimsSet().getStringClaim("email")).isEqualTo(student.email());
-        assertThat(jwt.getJWTClaimsSet().getStringClaim("sid"))
-                .isEqualTo(body.get("sessionHash").asText());
-
+        anonymous().get(members + student.id()).expect(401);
+        withToken(IDENTITY.forgedServiceToken()).get(members + student.id()).expect(401);
         // A user token is not a service token: it opens nothing internal.
-        assertThat(get("/internal/directory/users/" + student.id(), jwt.serialize()).statusCode())
-                .isEqualTo(403);
+        student.api().get(members + student.id()).expect(403);
 
-        // Same browser checks as everywhere: another User-Agent is refused (and revokes it).
-        HttpResponse<String> stolen =
-                post(
-                        "/internal/sessions/resolve",
-                        Map.of("token", session, "userAgent", "evil/1.0"),
-                        serviceToken());
-        assertThat(stolen.statusCode()).isEqualTo(401);
-        student.api().get("/api/auth/session").expect(401);
+        ApiClient service = withToken(IDENTITY.serviceToken());
+        assertThat(service.get(members + student.id()).expect(200).body()).isEqualTo("true");
+        assertThat(service.get(members + student().id()).expect(200).body()).isEqualTo("false");
+
+        JsonNode catalog =
+                service.get("/internal/catalog/courses/" + course.id()).expect(200).json();
+        assertThat(catalog.get("code").asText()).isEqualTo(course.code());
+        assertThat(catalog.get("teacherId").asLong()).isEqualTo(teacher.id());
     }
 
-    private JWKSet jwks() throws Exception {
-        HttpResponse<String> response = get("/internal/.well-known/jwks.json", null);
-        assertThat(response.statusCode()).isEqualTo(200);
-        JWKSet set = JWKSet.parse(response.body());
-        assertThat(set.getKeys()).hasSize(1);
-        assertThat(set.getKeys().get(0)).isInstanceOf(RSAKey.class);
-        assertThat(set.getKeys().get(0).isPrivate()).isFalse();
-        return set;
+    @Test
+    void theApiAnswersUserTokensWithTheRightRole() {
+        TestUser teacher = teacher();
+        TestUser student = student();
+
+        anonymous().get("/api/courses/my-dashboard").expect(401);
+        // Services act on nobody's behalf: they do not get user pages.
+        withToken(IDENTITY.serviceToken()).get("/api/courses/my-dashboard").expect(403);
+
+        student.api().get("/api/courses/my-dashboard").expect(200);
+        student.api().get("/api/teacher/dashboard").expect(403);
+        student.api().get("/api/courses/list").expect(403);
+        teacher.api().get("/api/teacher/dashboard").expect(200);
     }
 
-    private String serviceToken() throws Exception {
-        return ApiClient.JSON
-                .readTree(token("it-service", "it-service-secret").body())
-                .get("access_token")
-                .asText();
+    @Test
+    void theProfileCombinesTheAccountWithCourses() {
+        TestUser teacher = teacher();
+        TestUser student = student();
+        long classId = createClass();
+        placeInClass(student, classId);
+        Course course = createCourse(teacher, classId);
+        IDENTITY.enableTwoFactor(student.id());
+
+        JsonNode me = student.api().get("/api/users/me").expect(200).json();
+        assertThat(me.get("email").asText()).isEqualTo(student.email());
+        assertThat(me.get("role").asText()).isEqualTo("STUDENT");
+        assertThat(me.get("twoFaEnabled").asBoolean()).isTrue();
+        assertThat(me.get("student").get("className").asText()).isEqualTo("C" + classId);
+        assertThat(me.get("student").get("courses").toString()).contains(course.code());
+
+        JsonNode taught = teacher.api().get("/api/users/me").expect(200).json();
+        assertThat(taught.get("teacher").get("studentCount").asInt()).isEqualTo(1);
     }
 
-    private HttpResponse<String> token(String client, String secret) throws Exception {
-        String basic =
-                Base64.getEncoder()
-                        .encodeToString((client + ":" + secret).getBytes(StandardCharsets.UTF_8));
-        return http.send(
-                HttpRequest.newBuilder(url("/internal/oauth2/token"))
-                        .header("Authorization", "Basic " + basic)
-                        .header("Content-Type", "application/x-www-form-urlencoded")
-                        .POST(HttpRequest.BodyPublishers.ofString("grant_type=client_credentials"))
-                        .build(),
-                HttpResponse.BodyHandlers.ofString());
-    }
-
-    private HttpResponse<String> get(String path, String bearer) throws Exception {
-        HttpRequest.Builder request = HttpRequest.newBuilder(url(path));
-        if (bearer != null) {
-            request.header("Authorization", "Bearer " + bearer);
+    @Test
+    void withoutTheDirectoryPagesFailFastInsteadOfGuessing() {
+        TestUser student = student();
+        IDENTITY.down.set(true);
+        try {
+            student.api().get("/api/courses/my-dashboard").expect(503);
+        } finally {
+            IDENTITY.down.set(false);
         }
-        return http.send(request.build(), HttpResponse.BodyHandlers.ofString());
-    }
-
-    private HttpResponse<String> post(String path, Object body, String bearer) throws Exception {
-        return http.send(
-                HttpRequest.newBuilder(url(path))
-                        .header("Authorization", "Bearer " + bearer)
-                        .header("Content-Type", "application/json")
-                        .POST(
-                                HttpRequest.BodyPublishers.ofByteArray(
-                                        ApiClient.JSON.writeValueAsBytes(body)))
-                        .build(),
-                HttpResponse.BodyHandlers.ofString());
-    }
-
-    private URI url(String path) {
-        return URI.create("http://127.0.0.1:" + port + path);
+        student.api().get("/api/courses/my-dashboard").expect(200);
     }
 }

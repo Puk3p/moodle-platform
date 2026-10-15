@@ -16,7 +16,8 @@ import java.util.function.Supplier;
 
 /**
  * Base for end-to-end tests: everything goes through the gateway of a running stack, as the SPA
- * would. The database is touched only to give test accounts a role (there is no API for that).
+ * would. identity-service's database is touched only to give test accounts a role (there is no API
+ * for that).
  *
  * <p>Tests never rely on a clean database: each creates its own users, classes and courses.
  */
@@ -24,9 +25,9 @@ public abstract class E2EBase {
 
     static final String BASE_URL = System.getProperty("e2e.baseUrl", "http://localhost:8080");
     static final String DB_URL =
-            System.getProperty("e2e.dbUrl", "jdbc:mysql://localhost:3307/moodle");
-    static final String DB_USER = System.getProperty("e2e.dbUser", "core");
-    static final String DB_PASSWORD = System.getProperty("e2e.dbPassword", "core-dev");
+            System.getProperty("e2e.dbUrl", "jdbc:mysql://localhost:3307/identity");
+    static final String DB_USER = System.getProperty("e2e.dbUser", "identity");
+    static final String DB_PASSWORD = System.getProperty("e2e.dbPassword", "identity-dev");
 
     static void sql(String statement, Object... args) {
         try (Connection c = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);

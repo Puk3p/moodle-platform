@@ -1,21 +1,25 @@
 package moodlev2.support;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import moodlev2.identity.api.ClassSummary;
-import moodlev2.identity.api.DirectoryApi;
-import moodlev2.identity.api.Role;
-import moodlev2.identity.api.UserSummary;
+import java.util.Set;
+import moodlev2.academic.directory.AccountSummary;
+import moodlev2.academic.directory.ClassSummary;
+import moodlev2.academic.directory.DirectoryApi;
+import moodlev2.academic.directory.Role;
+import moodlev2.academic.directory.UserSummary;
 
 /** An in-memory {@link DirectoryApi} for service tests. */
 public final class FakeDirectory implements DirectoryApi {
 
     private final Map<Long, UserSummary> users = new LinkedHashMap<>();
     private final Map<Long, ClassSummary> classes = new LinkedHashMap<>();
+    private final Set<Long> twoFactor = new HashSet<>();
 
     public UserSummary add(UserSummary user) {
         users.put(user.id(), user);
@@ -35,7 +39,7 @@ public final class FakeDirectory implements DirectoryApi {
                         email,
                         "First" + id,
                         "Last" + id,
-                        java.util.Set.of(roles),
+                        Set.of(roles),
                         classId,
                         className,
                         true));
@@ -55,6 +59,16 @@ public final class FakeDirectory implements DirectoryApi {
     @Override
     public Optional<UserSummary> findUserByEmail(String email) {
         return users.values().stream().filter(u -> u.email().equalsIgnoreCase(email)).findFirst();
+    }
+
+    @Override
+    public Optional<AccountSummary> findAccount(long id) {
+        return findUser(id).map(u -> new AccountSummary(u, twoFactor.contains(id)));
+    }
+
+    /** Marks an account as having two-factor sign-in on. */
+    public void enableTwoFactor(long id) {
+        twoFactor.add(id);
     }
 
     @Override

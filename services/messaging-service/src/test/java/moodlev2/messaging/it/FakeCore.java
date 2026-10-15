@@ -129,7 +129,7 @@ final class FakeCore {
     String sign(JWTClaimsSet.Builder claims) {
         try {
             JWTClaimsSet set =
-                    claims.issuer("moodle-core")
+                    claims.issuer("moodle-identity")
                             .audience("moodle-internal")
                             .issueTime(new Date())
                             .expirationTime(new Date(System.currentTimeMillis() + 60_000))

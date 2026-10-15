@@ -3,9 +3,10 @@ package moodlev2.gateway.session;
 import java.util.List;
 
 /**
- * What core says about a browser session (its {@code /internal/sessions/resolve} answer).
+ * What identity-service says about a browser session (its {@code /internal/sessions/resolve}
+ * answer).
  *
- * @param sessionHash SHA-256 of the session token, as core's revocation events name it
+ * @param sessionHash SHA-256 of the session token, as identity-service's revocation events name it
  * @param accessToken the user token forwarded to services
  */
 public record ResolvedSession(

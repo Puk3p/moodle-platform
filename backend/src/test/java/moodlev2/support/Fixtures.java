@@ -5,32 +5,17 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
+import moodlev2.academic.directory.Role;
+import moodlev2.academic.directory.UserSummary;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
 import moodlev2.academic.infrastructure.persistence.entity.CourseModuleEntity;
 import moodlev2.academic.infrastructure.persistence.entity.ModuleItemEntity;
-import moodlev2.identity.api.Role;
-import moodlev2.identity.api.UserSummary;
-import moodlev2.identity.infrastructure.persistence.entity.ClassEntity;
-import moodlev2.identity.infrastructure.persistence.entity.UserEntity;
 
 /** Plain entity builders for service tests (no Spring context, no database). */
 public final class Fixtures {
 
     private Fixtures() {}
-
-    public static UserEntity user(long id, String email, Role... roles) {
-        UserEntity u = new UserEntity();
-        u.setId(id);
-        u.setEmail(email);
-        u.setFirstName("First" + id);
-        u.setLastName("Last" + id);
-        u.setRoles(new HashSet<>(List.of(roles)));
-        u.setActive(true);
-        return u;
-    }
 
     /** What other modules see of an account: First{id} Last{id}, active, in no class. */
     public static UserSummary person(long id, String email, Role... roles) {
@@ -47,26 +32,6 @@ public final class Fixtures {
                 classId,
                 classId == null ? null : "C" + classId,
                 true);
-    }
-
-    /** The directory's view of an identity entity. */
-    public static UserSummary summary(UserEntity u) {
-        return new UserSummary(
-                u.getId(),
-                u.getEmail(),
-                u.getFirstName(),
-                u.getLastName(),
-                u.getRoles(),
-                u.getClazz() == null ? null : u.getClazz().getId(),
-                u.getClazz() == null ? null : u.getClazz().getName(),
-                u.isActive());
-    }
-
-    public static ClassEntity clazz(long id, String name) {
-        ClassEntity c = new ClassEntity();
-        c.setId(id);
-        c.setName(name);
-        return c;
     }
 
     public static CourseEntity course(long id, String code) {

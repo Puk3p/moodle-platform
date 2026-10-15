@@ -18,44 +18,15 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.Test;
 
 /**
- * Changes other services must hear about reach Kafka, keyed by user and labelled with a logical
- * event type, after the change commits.
+ * Course changes other services must hear about reach Kafka, keyed by course and labelled with a
+ * logical event type, after the change commits.
  */
 class EventsToKafkaIT extends IntegrationTestBase {
 
     @Test
-    void anAdminEmailChangeIsPublishedOnIdentityUser() throws Exception {
-        TestUser admin = admin();
-        TestUser student = student();
-        String newEmail = "evt-" + student.id() + "@it.test";
-        JsonNode me = student.api().get("/api/users/me").expect(200).json();
-
-        admin.api()
-                .put(
-                        "/api/admin/students/" + student.id(),
-                        Map.of(
-                                "firstName", me.get("firstName").asText(),
-                                "lastName", me.get("lastName").asText(),
-                                "email", newEmail))
-                .ok();
-
-        ConsumerRecord<String, String> record =
-                awaitRecord(
-                        "identity.user", "identity.UserEmailChanged", String.valueOf(student.id()));
-        JsonNode payload = ApiClient.JSON.readTree(record.value());
-        assertThat(payload.get("userId").asLong()).isEqualTo(student.id());
-        assertThat(payload.get("oldEmail").asText()).isEqualTo(student.email());
-        assertThat(payload.get("newEmail").asText()).isEqualTo(newEmail);
-
-        // The same change also signed the student out everywhere.
-        awaitRecord("identity.session", "identity.SessionsRevoked", String.valueOf(student.id()));
-    }
-
-    @Test
     void anAssignmentWithADeadlineIsPublishedForTheCalendar() throws Exception {
-        TestUser admin = admin();
         TestUser teacher = teacher();
-        Course course = createCourse(teacher, createClass(admin));
+        Course course = createCourse(teacher, createClass());
         Map<String, Object> parts = new java.util.LinkedHashMap<>();
         parts.put("courseCode", course.code());
         parts.put("moduleId", course.moduleId());
@@ -79,9 +50,8 @@ class EventsToKafkaIT extends IntegrationTestBase {
 
     @Test
     void removingAModuleIsPublishedSoItsQuizzesBecomeUnfiled() throws Exception {
-        TestUser admin = admin();
         TestUser teacher = teacher();
-        long classId = createClass(admin);
+        long classId = createClass();
         Course course = createCourse(teacher, classId);
 
         // Save the course with no modules: its one module is removed.

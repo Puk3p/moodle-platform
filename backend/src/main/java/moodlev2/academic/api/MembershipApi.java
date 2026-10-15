@@ -1,7 +1,7 @@
 package moodlev2.academic.api;
 
 import java.util.List;
-import moodlev2.identity.api.UserSummary;
+import moodlev2.academic.directory.UserSummary;
 
 /**
  * Who belongs to a course. The academic module owns enrollments and the classes a course is

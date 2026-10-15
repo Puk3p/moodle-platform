@@ -25,9 +25,10 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 
 /**
- * Plays core for assessment-service: publishes a JWKS, grants client-credentials tokens, and serves
- * the internal directory, membership and exam-lock API from in-memory data the tests control.
- * Tokens for test users are signed with the same key, as core's gateway exchange would.
+ * Plays identity-service and core for assessment-service: publishes a JWKS, grants
+ * client-credentials tokens, and serves the internal directory, membership and exam-lock API from
+ * in-memory data the tests control. Tokens for test users are signed with the same key, as
+ * identity-service's gateway exchange would.
  */
 final class FakeCore {
 
@@ -128,7 +129,7 @@ final class FakeCore {
     String sign(JWTClaimsSet.Builder claims) {
         try {
             JWTClaimsSet set =
-                    claims.issuer("moodle-core")
+                    claims.issuer("moodle-identity")
                             .audience("moodle-internal")
                             .issueTime(new Date())
                             .expirationTime(new Date(System.currentTimeMillis() + 60_000))

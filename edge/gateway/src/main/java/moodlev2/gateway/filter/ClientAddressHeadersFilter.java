@@ -12,8 +12,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
- * Writes {@code X-Forwarded-For} on proxied requests so services see the real client address (core
- * rate-limits sign-in per address and records it per session).
+ * Writes {@code X-Forwarded-For} on proxied requests so services see the real client address
+ * (identity-service rate-limits sign-in per address and records it per session).
  *
  * <p>The chain a client sends is kept only when the gateway's direct peer is a trusted proxy
  * (nginx, the Docker host); anyone else's header is dropped, so it cannot be spoofed. The peer's

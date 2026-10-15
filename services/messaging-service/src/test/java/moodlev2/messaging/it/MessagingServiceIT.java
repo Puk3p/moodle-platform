@@ -57,10 +57,12 @@ class MessagingServiceIT {
         registry.add("spring.datasource.username", MYSQL::getUsername);
         registry.add("spring.datasource.password", MYSQL::getPassword);
         registry.add("spring.kafka.bootstrap-servers", KAFKA::getBootstrapServers);
+        // One fake plays both identity-service and core.
+        registry.add("app.identity.url", CORE::url);
         registry.add("app.core.url", CORE::url);
         registry.add("app.assessment.url", CORE::url);
         registry.add(
-                "spring.security.oauth2.client.registration.core.client-secret",
+                "spring.security.oauth2.client.registration.identity.client-secret",
                 () -> FakeCore.CLIENT_SECRET);
     }
 
@@ -94,7 +96,7 @@ class MessagingServiceIT {
     void onlyUserTokensFromCoreAreAccepted() throws Exception {
         assertThat(get("/api/chat/status", null).statusCode()).isEqualTo(401);
         assertThat(get("/api/chat/status", "not-a-jwt").statusCode()).isEqualTo(401);
-        // Signed by core, but a service token: not a user.
+        // Signed by identity-service, but a service token: not a user.
         assertThat(get("/api/chat/status", CORE.serviceToken()).statusCode()).isEqualTo(403);
 
         HttpResponse<String> status = get("/api/chat/status", CORE.userToken(STUDENT));

@@ -1,11 +1,11 @@
 package moodlev2.academic.infrastructure.mapper;
 
 import java.util.List;
+import moodlev2.academic.directory.UserSummary;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
 import moodlev2.academic.web.course.dto.students.EnrolledStudentsResponse;
 import moodlev2.academic.web.course.dto.students.StudentDto;
 import moodlev2.academic.web.course.dto.students.StudentStatsDto;
-import moodlev2.identity.api.UserSummary;
 import org.springframework.stereotype.Component;
 
 @Component

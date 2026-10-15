@@ -6,8 +6,8 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import moodlev2.academic.api.CourseSummary;
 import moodlev2.academic.api.MembershipApi;
+import moodlev2.academic.directory.UserSummary;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
-import moodlev2.identity.api.UserSummary;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

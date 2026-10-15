@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-/** Accounts and classes, owned by core. */
+/** Accounts and classes, owned by identity-service. */
 public interface DirectoryApi {
 
     Optional<UserSummary> findUser(long id);

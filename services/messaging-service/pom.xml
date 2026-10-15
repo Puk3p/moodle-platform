@@ -58,12 +58,12 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Inbound: tokens signed by core (checked against its JWKS). -->
+        <!-- Inbound: tokens signed by identity-service (checked against its JWKS). -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
         </dependency>
-        <!-- Outbound: client-credentials tokens for core's internal API. -->
+        <!-- Outbound: client-credentials tokens (from identity-service) for the others' internal APIs. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-oauth2-client</artifactId>

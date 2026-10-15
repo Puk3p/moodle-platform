@@ -13,69 +13,24 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
 /**
- * Core's internal API over HTTP: client-credentials token (see {@link CoreClientConfig}), short
- * timeouts, one retry for these read-only calls, and the {@code core} circuit breaker.
+ * Core's course API over HTTP (membership and catalog): client-credentials token (see {@link
+ * CoreClientConfig}), short timeouts, one retry for these read-only calls, and the {@code core}
+ * circuit breaker. Accounts come from identity-service instead ({@link IdentityClient}).
  */
 @Component
 @CircuitBreaker(name = "core")
 @Retry(name = "core")
-public class CoreClient implements DirectoryApi, MembershipApi, CourseCatalogApi {
+public class CoreClient implements MembershipApi, CourseCatalogApi {
 
     private static final ParameterizedTypeReference<List<UserSummary>> USERS =
             new ParameterizedTypeReference<>() {};
     private static final ParameterizedTypeReference<List<CourseSummary>> COURSES =
-            new ParameterizedTypeReference<>() {};
-    private static final ParameterizedTypeReference<List<ClassSummary>> CLASSES =
             new ParameterizedTypeReference<>() {};
 
     private final RestClient core;
 
     public CoreClient(RestClient coreRestClient) {
         this.core = coreRestClient;
-    }
-
-    @Override
-    public Optional<UserSummary> findUser(long id) {
-        return optional(
-                () ->
-                        core.get()
-                                .uri("/internal/directory/users/{id}", id)
-                                .retrieve()
-                                .body(UserSummary.class));
-    }
-
-    @Override
-    public Optional<UserSummary> findUserByEmail(String email) {
-        if (email == null || email.isBlank()) {
-            return Optional.empty();
-        }
-        return optional(
-                () ->
-                        core.get()
-                                .uri(
-                                        b ->
-                                                b.path("/internal/directory/users/by-email")
-                                                        .queryParam("email", email)
-                                                        .build())
-                                .retrieve()
-                                .body(UserSummary.class));
-    }
-
-    @Override
-    public List<UserSummary> findUsers(Collection<Long> ids) {
-        return ids.isEmpty() ? List.of() : post("/internal/directory/users/by-ids", ids, USERS);
-    }
-
-    @Override
-    public List<UserSummary> findUsersInClasses(Collection<Long> classIds) {
-        return classIds.isEmpty()
-                ? List.of()
-                : post("/internal/directory/users/in-classes", classIds, USERS);
-    }
-
-    @Override
-    public List<ClassSummary> findClasses(Collection<Long> ids) {
-        return ids.isEmpty() ? List.of() : post("/internal/directory/classes/by-ids", ids, CLASSES);
     }
 
     @Override

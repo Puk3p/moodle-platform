@@ -21,7 +21,7 @@ import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 
 /**
  * Only the gateway (user tokens) and other services (service tokens) call this service, with RS256
- * tokens signed by core. No sessions, no CSRF (the gateway enforces it).
+ * tokens signed by identity-service. No sessions, no CSRF (the gateway enforces it).
  *
  * <p>The URL rules are core's, unchanged: authoring quizzes and the question bank is for staff;
  * students may start, submit and report proctoring on their own attempts. Authorities combine the

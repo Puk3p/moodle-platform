@@ -6,6 +6,8 @@ import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
 import org.springframework.boot.http.client.ClientHttpRequestFactorySettings;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.AuthorizedClientServiceOAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientProviderBuilder;
@@ -15,17 +17,26 @@ import org.springframework.security.oauth2.client.web.client.OAuth2ClientHttpReq
 import org.springframework.web.client.RestClient;
 
 /**
- * The HTTP client for core. Tokens come from core's token endpoint (client-credentials grant,
- * registration {@code core}) and are cached until they expire; this works outside any request too
- * (Kafka listeners), hence the service-based client manager.
+ * HTTP clients for the other services' internal APIs: identity-service (accounts) and core
+ * (courses). Every call carries a service token from identity-service's token endpoint
+ * (client-credentials grant, registration {@code identity}), cached until it expires; the
+ * service-based client manager works outside any request too (Kafka listeners).
  */
 @Configuration
 public class CoreClientConfig {
 
-    static final String REGISTRATION = "core";
+    static final String REGISTRATION = "identity";
+
+    /**
+     * Whom the cached token belongs to: this service, never the user (or service) whose request is
+     * being served. Otherwise every caller would get a token fetched and cached of their own, and a
+     * caller without an email claim (a service token) would have no name to cache it under.
+     */
+    private static final Authentication SELF =
+            UsernamePasswordAuthenticationToken.unauthenticated("progress-service", null);
 
     @Bean
-    OAuth2AuthorizedClientManager coreAuthorizedClientManager(
+    OAuth2AuthorizedClientManager internalAuthorizedClientManager(
             ClientRegistrationRepository registrations, OAuth2AuthorizedClientService clients) {
         var manager =
                 new AuthorizedClientServiceOAuth2AuthorizedClientManager(registrations, clients);
@@ -35,14 +46,33 @@ public class CoreClientConfig {
     }
 
     @Bean
+    RestClient identityRestClient(
+            RestClient.Builder builder,
+            OAuth2AuthorizedClientManager internalAuthorizedClientManager,
+            @Value("${app.identity.url}") String url,
+            @Value("${app.core.timeout:2s}") Duration timeout) {
+        return client(builder, internalAuthorizedClientManager, url, timeout);
+    }
+
+    @Bean
     RestClient coreRestClient(
             RestClient.Builder builder,
-            OAuth2AuthorizedClientManager coreAuthorizedClientManager,
-            @Value("${app.core.url}") String coreUrl,
+            OAuth2AuthorizedClientManager internalAuthorizedClientManager,
+            @Value("${app.core.url}") String url,
             @Value("${app.core.timeout:2s}") Duration timeout) {
-        var interceptor = new OAuth2ClientHttpRequestInterceptor(coreAuthorizedClientManager);
+        return client(builder, internalAuthorizedClientManager, url, timeout);
+    }
+
+    private static RestClient client(
+            RestClient.Builder builder,
+            OAuth2AuthorizedClientManager manager,
+            String url,
+            Duration timeout) {
+        var interceptor = new OAuth2ClientHttpRequestInterceptor(manager);
         interceptor.setClientRegistrationIdResolver(request -> REGISTRATION);
-        return builder.baseUrl(coreUrl)
+        interceptor.setPrincipalResolver(request -> SELF);
+        return builder.clone()
+                .baseUrl(url)
                 .requestFactory(
                         ClientHttpRequestFactoryBuilder.detect()
                                 .build(

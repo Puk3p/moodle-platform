@@ -8,11 +8,11 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.util.Optional;
+import moodlev2.academic.directory.Role;
+import moodlev2.academic.directory.UserSummary;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
 import moodlev2.academic.web.course.dto.CourseDetailsResponse;
-import moodlev2.identity.api.Role;
-import moodlev2.identity.api.UserSummary;
 import moodlev2.shared.exception.NotFoundException;
 import moodlev2.support.FakeDirectory;
 import org.junit.jupiter.api.BeforeEach;

@@ -11,10 +11,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 /**
- * {@code DoubleSubmitCsrf}: CSRF protection for split-out services, matching what core does on its
- * own routes. The SPA reads the XSRF cookie core sets and echoes it in {@code X-XSRF-TOKEN}; a
- * cross-site page can do neither, so a state-changing request without a matching header is refused
- * with 403. Safe methods pass.
+ * {@code DoubleSubmitCsrf}: CSRF protection for the token-only services, matching what
+ * identity-service does on its own routes. The SPA reads the XSRF cookie identity-service sets and
+ * echoes it in {@code X-XSRF-TOKEN}; a cross-site page can do neither, so a state-changing request
+ * without a matching header is refused with 403. Safe methods pass.
  */
 @Component
 public class DoubleSubmitCsrfGatewayFilterFactory extends AbstractGatewayFilterFactory<Object> {

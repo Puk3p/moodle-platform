@@ -2,11 +2,11 @@ package moodlev2.academic.application.course;
 
 import java.util.ArrayList;
 import lombok.RequiredArgsConstructor;
+import moodlev2.academic.directory.DirectoryApi;
+import moodlev2.academic.directory.UserSummary;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
 import moodlev2.academic.web.course.dto.CreateCourseDto;
-import moodlev2.identity.api.DirectoryApi;
-import moodlev2.identity.api.UserSummary;
 import moodlev2.shared.exception.NotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

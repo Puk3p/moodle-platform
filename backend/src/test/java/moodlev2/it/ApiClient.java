@@ -13,30 +13,18 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 /**
- * A black-box HTTP client that behaves like the SPA: it keeps the cookies the server sets, echoes
- * the readable XSRF cookie in {@code X-XSRF-TOKEN} on every state-changing call, and presents a
- * stable User-Agent (the session is bound to it).
- *
- * <p>It only talks HTTP to a base URL, so the same flows can later run against the API gateway in
- * front of the extracted services instead of the monolith.
- *
- * <p>Every client gets its own documentation-range address in {@code X-Forwarded-For}. The server
- * trusts that header from loopback (it normally sits behind nginx), so each test user has its own
- * bucket in the per-address sign-in rate limiter instead of all of them sharing 127.0.0.1.
+ * A black-box HTTP client that calls the service the way the gateway does: every request carries a
+ * freshly minted user token (the gateway swaps the browser's cookie for one), or none at all for an
+ * anonymous caller. Cookies and CSRF are the gateway's and identity-service's business now.
  */
 public final class ApiClient {
 
     static final ObjectMapper JSON = new ObjectMapper().registerModule(new JavaTimeModule());
-
-    private static final AtomicInteger NEXT_ADDRESS = new AtomicInteger(1);
-    private static final String USER_AGENT = "moodle-it/1.0";
 
     private final HttpClient http =
             HttpClient.newBuilder()
@@ -44,14 +32,14 @@ public final class ApiClient {
                     .connectTimeout(Duration.ofSeconds(10))
                     .build();
     private final String baseUrl;
-    private final String clientAddress;
-    private final Map<String, String> cookies = new LinkedHashMap<>();
+    private final Supplier<String> token;
 
-    public ApiClient(String baseUrl) {
+    /**
+     * @param token a bearer token per request, {@code null} for an anonymous caller
+     */
+    public ApiClient(String baseUrl, Supplier<String> token) {
         this.baseUrl = baseUrl;
-        int n = NEXT_ADDRESS.getAndIncrement();
-        this.clientAddress =
-                (n <= 250 ? "198.51.100." : "203.0.113.") + (n <= 250 ? n : (n - 250) % 250 + 1);
+        this.token = token;
     }
 
     public Response get(String path) {
@@ -122,14 +110,6 @@ public final class ApiClient {
                 "multipart/form-data; boundary=" + boundary);
     }
 
-    public boolean hasCookie(String name) {
-        return cookies.containsKey(name);
-    }
-
-    public String cookie(String name) {
-        return cookies.get(name);
-    }
-
     private Response sendJson(String method, String path, Object body) {
         try {
             HttpRequest.BodyPublisher publisher =
@@ -144,76 +124,26 @@ public final class ApiClient {
 
     private Response send(
             String method, String path, HttpRequest.BodyPublisher body, String contentType) {
-        boolean mutating = !"GET".equals(method);
-        if (mutating && csrfToken() == null) {
-            // The server writes the XSRF cookie on any response; fetch one like the SPA does at
-            // start-up.
-            get("/api/auth/session");
-        }
         HttpRequest.Builder request =
                 HttpRequest.newBuilder(URI.create(baseUrl + path))
                         .timeout(Duration.ofSeconds(30))
-                        .header("User-Agent", USER_AGENT)
-                        .header("X-Forwarded-For", clientAddress)
                         .header("Accept", "application/json")
                         .method(method, body);
         if (contentType != null) {
             request.header("Content-Type", contentType);
         }
-        if (mutating && csrfToken() != null) {
-            request.header("X-XSRF-TOKEN", csrfToken());
-        }
-        if (!cookies.isEmpty()) {
-            StringBuilder header = new StringBuilder();
-            cookies.forEach(
-                    (k, v) -> {
-                        if (!header.isEmpty()) {
-                            header.append("; ");
-                        }
-                        header.append(k).append('=').append(v);
-                    });
-            request.header("Cookie", header.toString());
+        if (token != null) {
+            request.header("Authorization", "Bearer " + token.get());
         }
         try {
             HttpResponse<String> response =
                     http.send(request.build(), HttpResponse.BodyHandlers.ofString());
-            storeCookies(response.headers().allValues("Set-Cookie"));
             return new Response(method + " " + path, response.statusCode(), response.body());
         } catch (IOException e) {
             throw new IllegalStateException(method + " " + path + " failed", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException(e);
-        }
-    }
-
-    private String csrfToken() {
-        String token = cookies.get("XSRF-TOKEN");
-        return token != null ? token : cookies.get("__Host-XSRF-TOKEN");
-    }
-
-    private void storeCookies(List<String> headers) {
-        for (String header : headers) {
-            String[] attributes = header.split(";");
-            String pair = attributes[0].trim();
-            int eq = pair.indexOf('=');
-            if (eq <= 0) {
-                continue;
-            }
-            String name = pair.substring(0, eq);
-            String value = pair.substring(eq + 1);
-            boolean expired = value.isEmpty();
-            for (int i = 1; i < attributes.length; i++) {
-                String a = attributes[i].trim().toLowerCase();
-                if (a.equals("max-age=0") || a.startsWith("expires=thu, 01 jan 1970")) {
-                    expired = true;
-                }
-            }
-            if (expired) {
-                cookies.remove(name);
-            } else {
-                cookies.put(name, value);
-            }
         }
     }
 

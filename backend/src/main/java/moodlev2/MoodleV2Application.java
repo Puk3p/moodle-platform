@@ -10,8 +10,7 @@ public class MoodleV2Application {
         SpringApplication.run(MoodleV2Application.class, args);
     }
 
-    // CORS is configured centrally in CorsConfig and applied through Spring Security so that a
-    // single, environment-driven allow-list governs every request. A second wildcard MVC-level
-    // CORS mapping used to live here; it was removed because it silently re-opened the API to any
-    // origin and overrode the secure configuration.
+    // CORS is answered by the gateway, from one environment-driven allow-list, for every service.
+    // A wildcard MVC-level CORS mapping used to live here; it was removed because it silently
+    // re-opened the API to any origin.
 }

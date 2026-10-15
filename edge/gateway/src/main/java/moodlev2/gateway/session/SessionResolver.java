@@ -18,35 +18,35 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import reactor.core.publisher.Mono;
 
 /**
- * Exchanges a browser's session cookie for a user token, by asking core (which applies its usual
- * session checks: expiry, idle time, same browser, active account).
+ * Exchanges a browser's session cookie for a user token, by asking identity-service (which applies
+ * its usual session checks: expiry, idle time, same browser, active account).
  *
- * <p>Answers are cached briefly to spare core a round trip per request. The cache key includes the
- * User-Agent, so a cookie replayed from another browser is never served a cached token: it goes to
- * core, which refuses it (and revokes the session). A revoked session or a changed account is
- * evicted at once from core's events ({@link SessionEventsListener}); the TTL only bounds staleness
- * of what has no event (a role change).
+ * <p>Answers are cached briefly to spare identity-service a round trip per request. The cache key
+ * includes the User-Agent, so a cookie replayed from another browser is never served a cached
+ * token: it goes to identity-service, which refuses it (and revokes the session). A revoked session
+ * or a changed account is evicted at once from identity-service's events ({@link
+ * SessionEventsListener}); the TTL only bounds staleness of what has no event (a role change).
  */
 @Component
 public class SessionResolver {
 
-    private final WebClient core;
+    private final WebClient identity;
     private final Cache<CacheKey, ResolvedSession> cache;
 
     public SessionResolver(
-            WebClient coreWebClient, @Value("${app.session.cache-ttl:20s}") Duration ttl) {
-        this.core = coreWebClient;
+            WebClient identityWebClient, @Value("${app.session.cache-ttl:20s}") Duration ttl) {
+        this.identity = identityWebClient;
         this.cache = Caffeine.newBuilder().expireAfterWrite(ttl).maximumSize(100_000).build();
     }
 
-    /** Empty when core does not accept the session. */
+    /** Empty when identity-service does not accept the session. */
     public Mono<ResolvedSession> resolve(String token, String userAgent, String remoteAddress) {
         CacheKey key = new CacheKey(sha256(token), sha256(userAgent == null ? "" : userAgent));
         ResolvedSession cached = cache.getIfPresent(key);
         if (cached != null) {
             return Mono.just(cached);
         }
-        return core.post()
+        return identity.post()
                 .uri("/internal/sessions/resolve")
                 .bodyValue(
                         Map.of(
@@ -64,7 +64,7 @@ public class SessionResolver {
                                         : Mono.error(e));
     }
 
-    /** Sessions core revoked (logout, password change, theft detection...). */
+    /** Sessions identity-service revoked (logout, password change, theft detection...). */
     public void evictSessions(Collection<String> tokenHashes) {
         Set<String> doomed = Set.copyOf(tokenHashes);
         cache.asMap().keySet().removeIf(k -> doomed.contains(k.tokenHash()));

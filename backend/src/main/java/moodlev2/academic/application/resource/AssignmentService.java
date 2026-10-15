@@ -7,6 +7,8 @@ import java.util.*;
 import lombok.RequiredArgsConstructor;
 import moodlev2.academic.application.course.CourseAccess;
 import moodlev2.academic.application.course.CourseRoster;
+import moodlev2.academic.directory.DirectoryApi;
+import moodlev2.academic.directory.UserSummary;
 import moodlev2.academic.infrastructure.persistence.AssignmentSubmissionRepository;
 import moodlev2.academic.infrastructure.persistence.ModuleItemRepository;
 import moodlev2.academic.infrastructure.persistence.entity.AssignmentSubmissionEntity;
@@ -17,8 +19,6 @@ import moodlev2.academic.web.resource.dto.StudentAssignmentDetailsDto;
 import moodlev2.academic.web.resource.dto.StudentSubmissionSummaryDto;
 import moodlev2.academic.web.resource.dto.TeacherAssignmentOverviewDto;
 import moodlev2.academic.web.resource.dto.TeacherSubmissionViewDto;
-import moodlev2.identity.api.DirectoryApi;
-import moodlev2.identity.api.UserSummary;
 import moodlev2.shared.exception.NotFoundException;
 import moodlev2.shared.storage.FileStorageService;
 import moodlev2.shared.util.SlidingWindowCounter;
@@ -241,7 +241,7 @@ public class AssignmentService {
     }
 
     /** The individual stored file URLs of a submission's file_url column. */
-    static List<String> splitFileUrls(String joined) {
+    public static List<String> splitFileUrls(String joined) {
         if (joined == null || joined.isBlank()) {
             return List.of();
         }

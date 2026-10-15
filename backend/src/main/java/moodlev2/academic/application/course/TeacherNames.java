@@ -5,9 +5,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import moodlev2.academic.directory.DirectoryApi;
+import moodlev2.academic.directory.UserSummary;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
-import moodlev2.identity.api.DirectoryApi;
-import moodlev2.identity.api.UserSummary;
 import org.springframework.stereotype.Component;
 
 /** Display names of the teachers of courses, looked up in one call per list. */

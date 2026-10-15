@@ -17,13 +17,12 @@ class CourseworkFlowIT extends IntegrationTestBase {
 
     @Test
     void assignmentLifecycleFromCreationToGrade() {
-        TestUser admin = admin();
         TestUser teacher = teacher();
         TestUser student = student();
         TestUser outsider = student();
 
-        long classId = createClass(admin);
-        placeInClass(admin, student, classId);
+        long classId = createClass();
+        placeInClass(student, classId);
         Course course = createCourse(teacher, classId);
 
         String title = "Essay " + course.code();
@@ -103,12 +102,11 @@ class CourseworkFlowIT extends IntegrationTestBase {
 
     @Test
     void resourcesUploadAndDownloadOnlyForMembers() {
-        TestUser admin = admin();
         TestUser teacher = teacher();
         TestUser student = student();
         TestUser outsider = student();
-        long classId = createClass(admin);
-        placeInClass(admin, student, classId);
+        long classId = createClass();
+        placeInClass(student, classId);
         Course course = createCourse(teacher, classId);
 
         Map<String, Object> parts = new LinkedHashMap<>();

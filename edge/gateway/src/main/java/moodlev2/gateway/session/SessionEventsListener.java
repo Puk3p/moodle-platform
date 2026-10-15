@@ -12,8 +12,8 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 /**
- * Drops cached tokens the moment core ends a session or changes an account, so logging out or being
- * signed out by an admin takes effect immediately, not after the cache TTL.
+ * Drops cached tokens the moment identity-service ends a session or changes an account, so logging
+ * out or being signed out by an admin takes effect immediately, not after the cache TTL.
  *
  * <p>Each gateway instance has its own cache, so each listens in a consumer group of its own, from
  * the latest offset (older events concern tokens it cannot have cached).

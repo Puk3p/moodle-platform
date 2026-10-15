@@ -58,9 +58,11 @@ class ProgressServiceIT {
         registry.add("spring.datasource.username", MYSQL::getUsername);
         registry.add("spring.datasource.password", MYSQL::getPassword);
         registry.add("spring.kafka.bootstrap-servers", KAFKA::getBootstrapServers);
+        // One fake plays both identity-service and core.
+        registry.add("app.identity.url", CORE::url);
         registry.add("app.core.url", CORE::url);
         registry.add(
-                "spring.security.oauth2.client.registration.core.client-secret",
+                "spring.security.oauth2.client.registration.identity.client-secret",
                 () -> FakeCore.CLIENT_SECRET);
     }
 

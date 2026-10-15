@@ -15,8 +15,6 @@ import java.util.Set;
 import moodlev2.academic.web.course.CourseController;
 import moodlev2.academic.web.course.dto.CreateCourseDto;
 import moodlev2.academic.web.resource.ResourceController;
-import moodlev2.identity.web.admin.AdminUsersController;
-import moodlev2.identity.web.admin.dto.UpdateStudentRequest;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -53,21 +51,6 @@ class RequestValidationTest {
     // ── DTO rules ────────────────────────────────────────────────────────────
 
     @Test
-    void adminUserEditRequiresAWellFormedEmailAndNames() {
-        assertThat(invalidFields(new UpdateStudentRequest("Ana", "Pop", "ana@test.com", null)))
-                .isEmpty();
-        assertThat(invalidFields(new UpdateStudentRequest("Ana", "Pop", "not-an-email", null)))
-                .containsExactly("email");
-        assertThat(invalidFields(new UpdateStudentRequest(" ", null, null, null)))
-                .containsExactlyInAnyOrder("firstName", "lastName", "email");
-        assertThat(
-                        invalidFields(
-                                new UpdateStudentRequest(
-                                        "A".repeat(101), "Pop", "ana@test.com", null)))
-                .containsExactly("firstName");
-    }
-
-    @Test
     void courseNeedsCodeTitleAndTeacher() {
         assertThat(invalidFields(new CreateCourseDto("", "", null, null, null)))
                 .containsExactlyInAnyOrder("code", "title", "teacherId");
@@ -94,7 +77,6 @@ class RequestValidationTest {
     @Test
     void endpointsWithConstrainedBodiesValidateThem() {
         assertThat(bodyIsValidated(CourseController.class, "createCourse")).isTrue();
-        assertThat(bodyIsValidated(AdminUsersController.class, "updateStudent")).isTrue();
     }
 
     @Test
@@ -116,7 +98,7 @@ class RequestValidationTest {
     @Test
     void rawEntityAdminCourseEndpointIsGone() {
         // POST /api/admin/courses bound a JPA entity straight from the body; nothing called it.
-        assertThat(classExists("moodlev2.identity.web.admin.AdminUsersController")).isTrue();
+        assertThat(classExists("moodlev2.academic.web.course.CourseController")).isTrue();
         assertThat(classExists("moodlev2.web.admin.AdminController")).isFalse();
     }
 

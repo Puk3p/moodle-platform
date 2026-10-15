@@ -9,14 +9,25 @@ spring:
       server:
         webflux:
           # Only proxies on these addresses may set X-Forwarded-* (nginx, the Docker network); the
-          # gateway then appends the client it sees, and core takes the client IP from there
-          # (rate limits, session logs). Anyone else's X-Forwarded-* is ignored.
+          # gateway then appends the client it sees, and identity-service takes the client IP from
+          # there (rate limits, session logs). Anyone else's X-Forwarded-* is ignored.
           trusted-proxies: ${TRUSTED_PROXIES:127\.0\.0\.1|0:0:0:0:0:0:0:1|::1|10\..*|192\.168\..*|172\.(1[6-9]|2[0-9]|3[01])\..*}
           # X-Forwarded-For is written by ClientAddressHeadersFilter instead (see there).
           x-forwarded:
             for-enabled: false
+          # One CORS policy for every service, answered here (the services set no CORS headers).
+          # Credentials travel in cookies, so only the CSRF header needs allowing.
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowedOrigins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:4200}
+                allowedMethods: GET,POST,PUT,PATCH,DELETE,OPTIONS
+                allowedHeaders: Content-Type,Accept,X-XSRF-TOKEN
+                exposedHeaders: Content-Disposition
+                allowCredentials: true
+                maxAge: 3600
           routes:
-            # Core's service-to-service API is never reachable from outside.
+            # The services' service-to-service APIs are never reachable from outside.
             - id: internal-api-blocked
               uri: no://op
               order: -100
@@ -35,13 +46,6 @@ spring:
                 - DoubleSubmitCsrf
                 - SessionToken
                 - SecureHeaders
-              metadata:
-                cors:
-                  allowedOrigins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:4200}
-                  allowedMethods: GET,POST,PUT,PATCH,DELETE,OPTIONS
-                  allowedHeaders: Content-Type,Accept,X-XSRF-TOKEN
-                  allowCredentials: true
-                  maxAge: 3600
             - id: messaging-websocket
               uri: ${MESSAGING_URL:http://localhost:8082}
               order: -10
@@ -72,25 +76,47 @@ spring:
                 - SessionToken
                 - SecureHeaders
 
-            # ── core: everything else, untouched (it authenticates itself) ──
+            # ── identity-service: accounts, sign-in, sessions, classes ─────
+            # Passed through as they are: identity-service issues the session and XSRF cookies,
+            # reads them itself and checks CSRF on its own routes.
+            - id: identity-api
+              uri: ${IDENTITY_URL:http://localhost:8083}
+              order: -10
+              predicates:
+                - Path=/api/auth/**,/oauth2/**,/login/oauth2/**,/api/users/**,/api/admin/students/**,/api/classes/**,/api/admin/classes/**
+
+            # ── core: courses and coursework, and the profile page ─────────
+            # The profile combines the account with course lists, so it is core's, not identity's.
+            - id: core-profile
+              uri: ${CORE_URL:http://localhost:8081}
+              order: -20
+              predicates:
+                - Path=/api/users/me
+              filters:
+                - DoubleSubmitCsrf
+                - SessionToken
+            # Everything else. Core sets its own security headers (a strict CSP for downloads).
             - id: core
               uri: ${CORE_URL:http://localhost:8081}
               order: 100
               predicates:
                 - Path=/**
+              filters:
+                - DoubleSubmitCsrf
+                - SessionToken
 
   security:
     oauth2:
       client:
         registration:
-          core:
+          identity:
             client-id: ${INTERNAL_CLIENT_ID:gateway}
             client-secret: ${INTERNAL_CLIENT_SECRET:}
             authorization-grant-type: client_credentials
             client-authentication-method: client_secret_basic
         provider:
-          core:
-            token-uri: ${app.core.url}/internal/oauth2/token
+          identity:
+            token-uri: ${app.identity.url}/internal/oauth2/token
 
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
@@ -99,11 +125,11 @@ spring:
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 
 app:
-  core:
-    url: ${CORE_URL:http://localhost:8081}
+  identity:
+    url: ${IDENTITY_URL:http://localhost:8083}
     timeout: 2s
   session:
-    # __Host-mdl_session in production (HTTPS); mdl_session when core runs with
+    # __Host-mdl_session in production (HTTPS); mdl_session when identity-service runs with
     # APP_SESSION_COOKIE_SECURE=false for plain-HTTP local development.
     cookie-name: ${SESSION_COOKIE_NAME:__Host-mdl_session}
     cache-ttl: 20s

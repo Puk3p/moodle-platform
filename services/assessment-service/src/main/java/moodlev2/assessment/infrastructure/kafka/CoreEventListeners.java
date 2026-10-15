@@ -11,8 +11,8 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 /**
- * What used to be database cascades from core's tables, now driven by core's events. One consumer
- * group for the service; both handlers are idempotent.
+ * What used to be database cascades from core's tables, now driven by identity-service's and core's
+ * events. One consumer group for the service; both handlers are idempotent.
  */
 @Component
 @RequiredArgsConstructor

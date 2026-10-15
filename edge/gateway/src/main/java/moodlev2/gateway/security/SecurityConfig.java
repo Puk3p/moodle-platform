@@ -7,8 +7,9 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 
 /**
  * Spring Security is on the classpath only for the OAuth2 client (the gateway's own token for
- * core). It must not authenticate browsers itself: core authenticates its routes, and the {@code
- * SessionToken} and {@code DoubleSubmitCsrf} route filters guard the split-out services.
+ * identity-service). It must not authenticate browsers itself: identity-service authenticates its
+ * own routes (it issues the session cookie), and the {@code SessionToken} and {@code
+ * DoubleSubmitCsrf} route filters guard every other service.
  */
 @Configuration
 public class SecurityConfig {

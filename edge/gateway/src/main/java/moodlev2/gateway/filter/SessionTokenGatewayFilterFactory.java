@@ -18,11 +18,12 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 /**
- * {@code SessionToken}: authenticates a request to a split-out service by its session cookie and
- * forwards it with the user token core issued instead. The service never sees the cookie, and a
- * client cannot smuggle its own {@code Authorization} header through: it is always replaced.
+ * {@code SessionToken}: authenticates a request to a token-only service by its session cookie and
+ * forwards it with the user token identity-service issued instead. The service never sees the
+ * cookie, and a client cannot smuggle its own {@code Authorization} header through: it is always
+ * replaced.
  *
- * <p>No or unaccepted session: 401, the same answer core gives its own routes.
+ * <p>No or unaccepted session: 401, the same answer identity-service gives its own routes.
  */
 @Component
 public class SessionTokenGatewayFilterFactory extends AbstractGatewayFilterFactory<Object> {

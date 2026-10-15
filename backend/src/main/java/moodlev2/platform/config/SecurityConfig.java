@@ -2,63 +2,41 @@ package moodlev2.platform.config;
 
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-import moodlev2.identity.infrastructure.security.OAuth2LoginSuccessHandler;
-import moodlev2.identity.infrastructure.security.SessionAuthenticationFilter;
-import moodlev2.identity.infrastructure.security.SessionCookies;
-import moodlev2.platform.security.RateLimitFilter;
-import moodlev2.platform.security.SpaCsrfTokenRequestHandler;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.security.web.header.writers.StaticHeadersWriter;
 
+/**
+ * Only the gateway (user tokens, swapped for the browser's session cookie) and other services
+ * (service tokens) call this application, with RS256 tokens signed by identity-service. No
+ * sessions, no cookies, no CSRF: the gateway checks CSRF before it forwards anything, and CORS is
+ * its job too.
+ *
+ * <p>Authorities combine the token scope ({@code SCOPE_user}/{@code SCOPE_internal}) with {@code
+ * ROLE_*} from its roles claim; the caller's name is the {@code email} claim.
+ */
 @Configuration
 @EnableMethodSecurity
-@RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final SessionAuthenticationFilter sessionAuthenticationFilter;
-    private final OAuth2LoginSuccessHandler oauthSuccessHandler;
-    private final SessionCookies cookies;
-
-    @Value("${app.frontend.url:http://localhost:4200}")
-    private String frontendUrl;
-
-    /**
-     * Everything browsers reach; {@code /internal/**} has its own chain (InternalSecurityConfig).
-     */
     @Bean
-    @Order(2)
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.cors(Customizer.withDefaults())
-                // Authentication is a cookie, so every state-changing request must also prove it
-                // came from our own page: the SPA echoes the readable XSRF cookie in a header,
-                // which
-                // a cross-site page cannot do. SameSite=Strict already stops the browser attaching
-                // the session cookie cross-site; this is the second, independent layer.
-                .csrf(
-                        csrf ->
-                                csrf.csrfTokenRepository(csrfTokenRepository())
-                                        .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
-                                        // The OAuth callback is the provider's cross-site GET
-                                        // redirect (protected by the OAuth state parameter).
-                                        .ignoringRequestMatchers("/login/oauth2/**", "/oauth2/**"))
+    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http.csrf(csrf -> csrf.disable())
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .headers(
                         headers ->
                                 headers.contentSecurityPolicy(
@@ -72,11 +50,7 @@ public class SecurityConfig {
                                                                         + " 'none'; base-uri 'none';"
                                                                         + " form-action 'none';"
                                                                         + " sandbox"))
-                                        .frameOptions(
-                                                org.springframework.security.config.annotation.web
-                                                                .configurers.HeadersConfigurer
-                                                                .FrameOptionsConfig
-                                                        ::deny)
+                                        .frameOptions(HeadersConfigurer.FrameOptionsConfig::deny)
                                         .httpStrictTransportSecurity(
                                                 hsts ->
                                                         hsts.includeSubDomains(true)
@@ -111,27 +85,15 @@ public class SecurityConfig {
                                                                 "Forbidden")))
                 .authorizeHttpRequests(
                         auth ->
-                                // Spring Security answers a denial with sendError(), which the
-                                // container re-dispatches to /error. That ERROR dispatch carries
-                                // an empty SecurityContext, so without this it is matched by
-                                // anyRequest().authenticated() and a genuine 403 is reported to
-                                // the client as a misleading 401.
+                                // A denial is answered with sendError(), which the container
+                                // re-dispatches to /error with an empty SecurityContext; without
+                                // this a genuine 403 would be reported as a misleading 401.
                                 auth.dispatcherTypeMatchers(DispatcherType.ERROR)
                                         .permitAll()
-                                        // Under /api/auth but only meaningful when signed in.
-                                        .requestMatchers(
-                                                "/api/auth/session",
-                                                "/api/auth/logout",
-                                                "/api/auth/2fa/**")
-                                        .authenticated()
-                                        .requestMatchers("/api/auth/**")
+                                        .requestMatchers("/actuator/health/**", "/actuator/info")
                                         .permitAll()
-                                        .requestMatchers("/oauth2/**")
-                                        .permitAll()
-                                        .requestMatchers("/login/oauth2/**")
-                                        .permitAll()
-                                        .requestMatchers("/actuator/health", "/actuator/info")
-                                        .permitAll()
+                                        .requestMatchers("/internal/**")
+                                        .hasAuthority("SCOPE_internal")
                                         // API docs (disabled by default, see springdoc.*) are for
                                         // administrators only, never any signed-in student.
                                         .requestMatchers(
@@ -144,7 +106,6 @@ public class SecurityConfig {
                                         .requestMatchers(
                                                 HttpMethod.GET,
                                                 "/api/courses/list",
-                                                "/api/classes/list",
                                                 "/api/resources/options",
                                                 "/api/courses/*/preview",
                                                 "/api/courses/*/resources")
@@ -153,62 +114,31 @@ public class SecurityConfig {
                                         .hasRole("ADMIN")
                                         .requestMatchers("/api/teacher/**")
                                         .hasAnyRole("TEACHER", "ADMIN")
-                                        .requestMatchers("/api/users/teachers")
-                                        .hasAnyRole("TEACHER", "ADMIN")
                                         .requestMatchers("/api/courses/create")
                                         .hasAnyRole("TEACHER", "ADMIN")
+                                        .requestMatchers("/api/**")
+                                        .hasAuthority("SCOPE_user")
                                         .anyRequest()
-                                        .authenticated())
-                .oauth2Login(
-                        oauth ->
-                                oauth.successHandler(oauthSuccessHandler)
-                                        .failureHandler(
-                                                (request, response, exception) ->
-                                                        response.sendRedirect(
-                                                                frontendUrl
-                                                                        + "/#/login?oauth=failed")))
-                .sessionManagement(
-                        session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(new RateLimitFilter(), UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(
-                        sessionAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-
+                                        .denyAll())
+                .oauth2ResourceServer(
+                        oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(converter())));
         return http.build();
     }
 
-    /**
-     * Readable by the SPA (it must echo the value), Secure, SameSite=Strict, and {@code __Host-}
-     * prefixed in production so a sibling subdomain cannot plant a known token (cookie tossing).
-     */
-    private CookieCsrfTokenRepository csrfTokenRepository() {
-        CookieCsrfTokenRepository repository = CookieCsrfTokenRepository.withHttpOnlyFalse();
-        repository.setCookieName(cookies.isSecure() ? "__Host-XSRF-TOKEN" : "XSRF-TOKEN");
-        repository.setCookieCustomizer(
-                c -> c.secure(cookies.isSecure()).sameSite("Strict").path("/"));
-        return repository;
-    }
-
-    /**
-     * The session filter is a bean (it needs injected services) and would otherwise also be
-     * registered as a plain servlet filter; it must only run inside the security chain.
-     */
-    @Bean
-    public FilterRegistrationBean<SessionAuthenticationFilter> sessionFilterRegistration(
-            SessionAuthenticationFilter filter) {
-        FilterRegistrationBean<SessionAuthenticationFilter> registration =
-                new FilterRegistrationBean<>(filter);
-        registration.setEnabled(false);
-        return registration;
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration)
-            throws Exception {
-        return configuration.getAuthenticationManager();
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+    static JwtAuthenticationConverter converter() {
+        JwtGrantedAuthoritiesConverter scopes = new JwtGrantedAuthoritiesConverter();
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setPrincipalClaimName("email");
+        converter.setJwtGrantedAuthoritiesConverter(
+                jwt -> {
+                    Collection<GrantedAuthority> authorities = new ArrayList<>(scopes.convert(jwt));
+                    List<String> roles = jwt.getClaimAsStringList("roles");
+                    if (roles != null) {
+                        roles.forEach(
+                                r -> authorities.add(new SimpleGrantedAuthority("ROLE_" + r)));
+                    }
+                    return authorities;
+                });
+        return converter;
     }
 }

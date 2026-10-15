@@ -4,21 +4,19 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
 /**
- * Core's internal API over HTTP: client-credentials token (see {@link CoreClientConfig}), short
- * timeouts, one retry for these read-only calls, and the {@code core} circuit breaker.
+ * Core's course API over HTTP: client-credentials token (see {@link CoreClientConfig}), short
+ * timeouts, one retry for these read-only calls, and the {@code core} circuit breaker. Accounts
+ * come from identity-service instead ({@link IdentityClient}).
  */
 @Component
 @CircuitBreaker(name = "core")
 @Retry(name = "core")
-public class CoreClient implements CoreDirectory, CoreCourses {
+public class CoreClient implements CoreCourses {
 
     private static final ParameterizedTypeReference<List<Person>> PEOPLE =
             new ParameterizedTypeReference<>() {};
@@ -29,34 +27,6 @@ public class CoreClient implements CoreDirectory, CoreCourses {
 
     public CoreClient(RestClient coreRestClient) {
         this.core = coreRestClient;
-    }
-
-    @Override
-    public Optional<Person> findUserByEmail(String email) {
-        if (email == null || email.isBlank()) {
-            return Optional.empty();
-        }
-        try {
-            return Optional.ofNullable(
-                    core.get()
-                            .uri(
-                                    b ->
-                                            b.path("/internal/directory/users/by-email")
-                                                    .queryParam("email", email)
-                                                    .build())
-                            .retrieve()
-                            .body(Person.class));
-        } catch (HttpClientErrorException e) {
-            if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
-                return Optional.empty();
-            }
-            throw e;
-        }
-    }
-
-    @Override
-    public List<Person> findUsers(Collection<Long> ids) {
-        return ids.isEmpty() ? List.of() : post("/internal/directory/users/by-ids", ids, PEOPLE);
     }
 
     @Override

@@ -11,8 +11,8 @@ import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 
 /**
  * Only the gateway talks to this service. It authenticates the browser (session cookie, CSRF) and
- * forwards a short-lived user token signed by core; this service checks that token and nothing
- * else, so it keeps no session and needs no CSRF protection of its own.
+ * forwards a short-lived user token signed by identity-service; this service checks that token and
+ * nothing else, so it keeps no session and needs no CSRF protection of its own.
  *
  * <p>The caller is identified by the token's {@code email} claim, which is how chat addresses
  * people.

@@ -5,14 +5,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import moodlev2.academic.directory.DirectoryApi;
+import moodlev2.academic.directory.UserSummary;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
 import moodlev2.academic.infrastructure.persistence.entity.CourseModuleEntity;
 import moodlev2.academic.web.course.dto.CompletedCourseSummaryDto;
 import moodlev2.academic.web.course.dto.CourseOverviewDto;
 import moodlev2.academic.web.course.dto.CoursesPageResponse;
-import moodlev2.identity.api.DirectoryApi;
-import moodlev2.identity.api.UserSummary;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

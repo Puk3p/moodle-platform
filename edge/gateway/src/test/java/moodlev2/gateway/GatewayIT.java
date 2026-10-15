@@ -41,31 +41,34 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.kafka.KafkaContainer;
 
 /**
- * The gateway between a browser and two stand-ins: core (token endpoint, session resolution and its
- * own routes) and messaging-service (records what reaches it).
+ * The gateway between a browser and three stand-ins: identity-service (token endpoint, session
+ * resolution and its own cookie-authenticated routes), and core and messaging-service, which only
+ * ever see user tokens (they record what reaches them).
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class GatewayIT {
 
     static final KafkaContainer KAFKA = new KafkaContainer("apache/kafka:3.9.1");
-    static final MockWebServer CORE = new MockWebServer();
+    static final MockWebServer IDENTITY = new MockWebServer();
     static final MockWebServer MESSAGING = new MockWebServer();
+    static final MockWebServer CORE = new MockWebServer();
 
-    /** Session token → user token, as core would resolve them (for the matching browser). */
+    /** Session token → user token, as identity-service resolves them (for the matching browser). */
     static final Map<String, String> SESSIONS = new ConcurrentHashMap<>();
 
     static final AtomicInteger RESOLVE_CALLS = new AtomicInteger();
-    static final BlockingQueue<RecordedRequest> CORE_REQUESTS = new LinkedBlockingQueue<>();
+    static final BlockingQueue<RecordedRequest> IDENTITY_REQUESTS = new LinkedBlockingQueue<>();
     static final BlockingQueue<RecordedRequest> MESSAGING_REQUESTS = new LinkedBlockingQueue<>();
+    static final BlockingQueue<RecordedRequest> CORE_REQUESTS = new LinkedBlockingQueue<>();
     static final String BROWSER = "Mozilla/5.0 (it)";
 
     static {
         KAFKA.start();
-        CORE.setDispatcher(
+        IDENTITY.setDispatcher(
                 new Dispatcher() {
                     @Override
                     public MockResponse dispatch(RecordedRequest request) {
-                        return core(request);
+                        return identity(request);
                     }
                 });
         MESSAGING.setDispatcher(
@@ -83,9 +86,18 @@ class GatewayIT {
                                 .setBody("{\"from\":\"messaging\"}");
                     }
                 });
+        CORE.setDispatcher(
+                new Dispatcher() {
+                    @Override
+                    public MockResponse dispatch(RecordedRequest request) {
+                        CORE_REQUESTS.add(request);
+                        return new MockResponse().setBody("from core " + request.getPath());
+                    }
+                });
         try {
-            CORE.start();
+            IDENTITY.start();
             MESSAGING.start();
+            CORE.start();
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
@@ -93,18 +105,19 @@ class GatewayIT {
 
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
-        registry.add("app.core.url", () -> base(CORE));
+        registry.add("IDENTITY_URL", () -> base(IDENTITY));
         registry.add("MESSAGING_URL", () -> base(MESSAGING));
         registry.add("CORE_URL", () -> base(CORE));
         registry.add(
-                "spring.security.oauth2.client.registration.core.client-secret", () -> "gw-secret");
+                "spring.security.oauth2.client.registration.identity.client-secret",
+                () -> "gw-secret");
         registry.add("spring.kafka.bootstrap-servers", KAFKA::getBootstrapServers);
         registry.add("app.session.cookie-name", () -> "mdl_session");
     }
 
     @AfterAll
     static void stop() {
-        for (MockWebServer server : List.of(CORE, MESSAGING)) {
+        for (MockWebServer server : List.of(IDENTITY, MESSAGING, CORE)) {
             try {
                 server.shutdown();
             } catch (IOException e) {
@@ -119,45 +132,108 @@ class GatewayIT {
 
     @BeforeEach
     void reset() {
-        CORE_REQUESTS.clear();
+        IDENTITY_REQUESTS.clear();
         MESSAGING_REQUESTS.clear();
+        CORE_REQUESTS.clear();
     }
 
     @Test
-    void coreRoutesPassThroughWithTheBrowsersCookies() throws Exception {
+    void identityRoutesPassThroughWithTheBrowsersCookies() throws Exception {
         HttpResponse<String> response =
-                send(get("/api/courses").header("Cookie", "mdl_session=abc").build());
+                send(get("/api/auth/session").header("Cookie", "mdl_session=abc").build());
         assertThat(response.statusCode()).isEqualTo(200);
-        assertThat(response.body()).contains("from core");
+        assertThat(response.body()).contains("from identity");
 
-        RecordedRequest atCore = take(CORE_REQUESTS, "/api/courses");
-        assertThat(atCore.getHeader("Cookie")).contains("mdl_session=abc");
-        assertThat(atCore.getHeader("Authorization")).isNull();
-        assertThat(atCore.getHeader("X-Forwarded-For")).isNotBlank();
+        RecordedRequest atIdentity = take(IDENTITY_REQUESTS, "/api/auth/session");
+        assertThat(atIdentity.getHeader("Cookie")).contains("mdl_session=abc");
+        assertThat(atIdentity.getHeader("Authorization")).isNull();
+        assertThat(atIdentity.getHeader("X-Forwarded-For")).isNotBlank();
     }
 
     @Test
-    void theClientAddressReachesCoreThroughATrustedProxy() throws Exception {
+    void theClientAddressReachesIdentityThroughATrustedProxy() throws Exception {
         // The test client connects from loopback, a trusted proxy (as nginx would be): the chain
         // it reports is kept and its own address appended.
-        send(get("/api/courses").header("X-Forwarded-For", "203.0.113.9").build());
-        RecordedRequest atCore = take(CORE_REQUESTS, "/api/courses");
-        assertThat(atCore.getHeader("X-Forwarded-For")).isEqualTo("203.0.113.9, 127.0.0.1");
+        send(get("/api/auth/session").header("X-Forwarded-For", "203.0.113.9").build());
+        RecordedRequest atIdentity = take(IDENTITY_REQUESTS, "/api/auth/session");
+        assertThat(atIdentity.getHeader("X-Forwarded-For")).isEqualTo("203.0.113.9, 127.0.0.1");
     }
 
     @Test
-    void coresInternalApiIsNeverReachable() throws Exception {
+    void coreGetsAUserTokenAndNeverTheCookie() throws Exception {
+        assertThat(send(get("/api/courses").build()).statusCode()).isEqualTo(401);
+        assertThat(CORE_REQUESTS).isEmpty();
+
+        String session = newSession("user-token-core");
+        HttpResponse<String> response =
+                send(get("/api/courses").header("Cookie", "mdl_session=" + session).build());
+        assertThat(response.statusCode()).isEqualTo(200);
+        RecordedRequest atCore = take(CORE_REQUESTS, "/api/courses");
+        assertThat(atCore.getHeader("Authorization")).isEqualTo("Bearer user-token-core");
+        assertThat(atCore.getHeader("Cookie")).isNull();
+    }
+
+    @Test
+    void theProfileIsCoresAndTheRestOfTheAccountIsIdentitys() throws Exception {
+        String session = newSession("user-token-me");
+        String cookie = "mdl_session=" + session;
+
+        send(get("/api/users/me").header("Cookie", cookie).build());
+        assertThat(take(CORE_REQUESTS, "/api/users/me").getHeader("Authorization"))
+                .isEqualTo("Bearer user-token-me");
+
+        send(get("/api/users/me/picture").header("Cookie", cookie).build());
+        assertThat(take(IDENTITY_REQUESTS, "/api/users/me/picture").getHeader("Cookie"))
+                .contains(cookie);
+        send(get("/api/users/sessions").header("Cookie", cookie).build());
+        take(IDENTITY_REQUESTS, "/api/users/sessions");
+    }
+
+    @Test
+    void corsPreflightIsAnsweredHereForEveryService() throws Exception {
+        for (String path : List.of("/api/courses", "/api/auth/login", "/api/chat/messages")) {
+            HttpResponse<String> preflight =
+                    send(
+                            get(path)
+                                    .method("OPTIONS", HttpRequest.BodyPublishers.noBody())
+                                    .header("Origin", "http://localhost:4200")
+                                    .header("Access-Control-Request-Method", "POST")
+                                    .header("Access-Control-Request-Headers", "x-xsrf-token")
+                                    .build());
+            assertThat(preflight.statusCode()).as(path).isEqualTo(200);
+            assertThat(preflight.headers().firstValue("Access-Control-Allow-Origin"))
+                    .as(path)
+                    .contains("http://localhost:4200");
+            assertThat(preflight.headers().firstValue("Access-Control-Allow-Credentials"))
+                    .as(path)
+                    .contains("true");
+        }
+        HttpResponse<String> foreign =
+                send(
+                        get("/api/courses")
+                                .method("OPTIONS", HttpRequest.BodyPublishers.noBody())
+                                .header("Origin", "https://evil.example")
+                                .header("Access-Control-Request-Method", "POST")
+                                .build());
+        assertThat(foreign.statusCode()).isEqualTo(403);
+        assertThat(IDENTITY_REQUESTS.stream().anyMatch(r -> "OPTIONS".equals(r.getMethod())))
+                .isFalse();
+        assertThat(CORE_REQUESTS).isEmpty();
+    }
+
+    @Test
+    void internalApisAreNeverReachable() throws Exception {
         assertThat(send(get("/internal/directory/users/1").build()).statusCode()).isEqualTo(404);
         assertThat(send(get("/internal/.well-known/jwks.json").build()).statusCode())
                 .isEqualTo(404);
         assertThat(
-                        CORE_REQUESTS.stream()
+                        IDENTITY_REQUESTS.stream()
                                 .anyMatch(r -> r.getPath().startsWith("/internal/directory")))
                 .isFalse();
     }
 
     @Test
-    void chatNeedsASessionCoreAccepts() throws Exception {
+    void chatNeedsASessionIdentityAccepts() throws Exception {
         assertThat(send(get("/api/chat/status").build()).statusCode()).isEqualTo(401);
         assertThat(
                         send(get("/api/chat/status")
@@ -245,7 +321,7 @@ class GatewayIT {
                                 .statusCode())
                 .isEqualTo(200);
 
-        SESSIONS.remove(session); // core no longer accepts it
+        SESSIONS.remove(session); // identity-service no longer accepts it
         publishRevoked(sha256(session));
 
         Instant deadline = Instant.now().plusSeconds(15);
@@ -278,8 +354,8 @@ class GatewayIT {
 
     // ── helpers ──────────────────────────────────────────────────────────────
 
-    private static MockResponse core(RecordedRequest request) {
-        CORE_REQUESTS.add(request);
+    private static MockResponse identity(RecordedRequest request) {
+        IDENTITY_REQUESTS.add(request);
         String path = request.getPath();
         if (path.equals("/internal/oauth2/token")) {
             return json(
@@ -322,7 +398,7 @@ class GatewayIT {
                 return new MockResponse().setResponseCode(400);
             }
         }
-        return new MockResponse().setBody("from core " + path);
+        return new MockResponse().setBody("from identity " + path);
     }
 
     private static String newSession(String userToken) {

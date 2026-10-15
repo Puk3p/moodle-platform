@@ -6,9 +6,10 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Header;
 
 /**
- * Events core publishes that messaging acts on. Core sends JSON with a logical type in the {@code
- * event-type} header; these records are messaging's own reading of them, so the two never share
- * classes. Unknown fields are ignored, so core can add some.
+ * Events other services publish that messaging acts on (identity-service's account and session
+ * events, assessment-service's attempts). They send JSON with a logical type in the {@code
+ * event-type} header; these records are messaging's own reading of them, so services never share
+ * classes. Unknown fields are ignored, so publishers can add some.
  */
 final class CoreEvents {
 
