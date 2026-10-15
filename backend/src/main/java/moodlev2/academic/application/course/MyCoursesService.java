@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import moodlev2.academic.application.course.CourseCalendar.Entry;
 import moodlev2.academic.infrastructure.persistence.AnnouncementRepository;
 import moodlev2.academic.infrastructure.persistence.CourseRepository;
 import moodlev2.academic.infrastructure.persistence.entity.AnnouncementEntity;
@@ -19,8 +20,6 @@ import moodlev2.academic.web.course.dto.DashboardHomeResponse;
 import moodlev2.academic.web.course.dto.DeadlineDto;
 import moodlev2.identity.api.DirectoryApi;
 import moodlev2.identity.api.UserSummary;
-import moodlev2.progress.api.CalendarApi;
-import moodlev2.progress.api.CalendarEntry;
 import moodlev2.shared.util.ColorUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,7 +31,7 @@ public class MyCoursesService {
     private final DirectoryApi directory;
     private final TeacherNames teacherNames;
     private final CourseRepository courseRepository;
-    private final CalendarApi calendar;
+    private final CourseCalendar calendar;
     private final AnnouncementRepository announcementRepository;
 
     @Transactional(readOnly = true)
@@ -96,7 +95,7 @@ public class MyCoursesService {
                 color);
     }
 
-    private DeadlineDto mapToDeadlineDto(CalendarEntry e, String courseCode) {
+    private DeadlineDto mapToDeadlineDto(Entry e, String courseCode) {
         long days = java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), e.date());
         String dueText =
                 (days == 0) ? "Today" : (days == 1) ? "Tomorrow" : "Due in " + days + " days";

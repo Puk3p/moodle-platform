@@ -20,6 +20,7 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root-dev}
       CORE_DB_PASSWORD: ${CORE_DB_PASSWORD:-core-dev}
       MESSAGING_DB_PASSWORD: ${MESSAGING_DB_PASSWORD:-messaging-dev}
+      PROGRESS_DB_PASSWORD: ${PROGRESS_DB_PASSWORD:-progress-dev}
     volumes:
       - mysql-data:/var/lib/mysql
       - ./mysql/init:/docker-entrypoint-initdb.d:ro
@@ -31,6 +32,23 @@ services:
       interval: 5s
       timeout: 5s
       retries: 30
+
+  # Creates any missing database or account on every start (a new service on an old volume).
+  db-init:
+    image: mysql:8.0
+    restart: "no"
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root-dev}
+      CORE_DB_PASSWORD: ${CORE_DB_PASSWORD:-core-dev}
+      MESSAGING_DB_PASSWORD: ${MESSAGING_DB_PASSWORD:-messaging-dev}
+      PROGRESS_DB_PASSWORD: ${PROGRESS_DB_PASSWORD:-progress-dev}
+    volumes:
+      - ./mysql/init:/init:ro
+    entrypoint: ["bash", "/init/01-databases.sh"]
+    depends_on:
+      mysql:
+        condition: service_healthy
 
   kafka:
     image: apache/kafka:3.9.1
@@ -49,6 +67,8 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_NUM_PARTITIONS: 3
+      # The image defaults to /tmp/kafka-logs inside the container; keep the log on the volume.
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
     volumes:
       - kafka-data:/var/lib/kafka/data
     healthcheck:
@@ -73,6 +93,8 @@ services:
       JWT_SECRET: ${JWT_SECRET:-local-dev-only-secret-0123456789abcdef0123456789}
       INTERNAL_CLIENT_GATEWAY_SECRET: ${INTERNAL_CLIENT_GATEWAY_SECRET:-gateway-dev-secret}
       INTERNAL_CLIENT_MESSAGING_SECRET: ${INTERNAL_CLIENT_MESSAGING_SECRET:-messaging-dev-secret}
+      INTERNAL_CLIENT_PROGRESS_SECRET: ${INTERNAL_CLIENT_PROGRESS_SECRET:-progress-dev-secret}
+      PROGRESS_URL: http://progress-service:8085
       INTERNAL_JWT_PRIVATE_KEY: ${INTERNAL_JWT_PRIVATE_KEY:-}
       INTERNAL_JWT_PUBLIC_KEY: ${INTERNAL_JWT_PUBLIC_KEY:-}
       # Plain HTTP locally: no Secure/__Host- cookies. true behind HTTPS.
@@ -95,8 +117,8 @@ services:
       - core-uploads:/app/uploads
       - core-profile-pictures:/app/profile-pictures
     depends_on:
-      mysql:
-        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
       kafka:
         condition: service_healthy
     healthcheck:
@@ -132,6 +154,31 @@ services:
       retries: 60
       start_period: 15s
 
+  progress-service:
+    <<: *java
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args:
+        MODULE: services/progress-service
+    image: moodle/progress-service:dev
+    environment:
+      <<: *java-env
+      DB_URL: jdbc:mysql://mysql:3306/progress
+      DB_USERNAME: progress
+      DB_PASSWORD: ${PROGRESS_DB_PASSWORD:-progress-dev}
+      CORE_URL: http://core:8080
+      INTERNAL_CLIENT_SECRET: ${INTERNAL_CLIENT_PROGRESS_SECRET:-progress-dev-secret}
+    depends_on:
+      core:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8085/actuator/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 15s
+
   gateway:
     <<: *java
     build:
@@ -144,6 +191,7 @@ services:
       <<: *java-env
       CORE_URL: http://core:8080
       MESSAGING_URL: http://messaging-service:8082
+      PROGRESS_URL: http://progress-service:8085
       INTERNAL_CLIENT_SECRET: ${INTERNAL_CLIENT_GATEWAY_SECRET:-gateway-dev-secret}
       SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME:-mdl_session}
       # Who may report a client address in X-Forwarded-For. Local default: anyone (the only client
@@ -157,6 +205,8 @@ services:
       core:
         condition: service_healthy
       messaging-service:
+        condition: service_healthy
+      progress-service:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]

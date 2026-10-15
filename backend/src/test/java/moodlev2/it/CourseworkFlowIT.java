@@ -10,8 +10,8 @@ import org.junit.jupiter.api.Test;
 
 /**
  * A teacher builds a course with an assignment; a student in an assigned class sees it, submits,
- * and gets the grade back. Covers course, class, resource, calendar and assignment code paths and
- * the "who belongs to a course" rule they share.
+ * and gets the grade back. Covers course, class, resource and assignment code paths and the "who
+ * belongs to a course" rule they share.
  */
 class CourseworkFlowIT extends IntegrationTestBase {
 
@@ -33,9 +33,6 @@ class CourseworkFlowIT extends IntegrationTestBase {
         JsonNode details = student.api().get("/api/courses/" + course.id()).expect(200).json();
         assertThat(details.get("courseCode").asText()).isEqualTo(course.code());
         assertThat(details.toString()).contains(title);
-
-        JsonNode calendar = student.api().get("/api/calendar").expect(200).json();
-        assertThat(calendar.get("events").toString()).contains(title + " (Deadline)");
 
         student.api().get("/api/courses/my-dashboard").expect(200);
         JsonNode me = student.api().get("/api/users/me").expect(200).json();
@@ -98,14 +95,10 @@ class CourseworkFlowIT extends IntegrationTestBase {
                 .expect(409);
 
         // Pages that aggregate across areas keep answering.
-        // A class member is in the course for grades too, not only direct enrollees.
-        JsonNode grades = student.api().get("/api/grades").expect(200).json();
-        assertThat(grades.get("courses").toString()).contains(course.code());
         teacher.api().get("/api/teacher/dashboard").expect(200);
         JsonNode students =
                 teacher.api().get("/api/courses/" + course.code() + "/students").expect(200).json();
         assertThat(students.get("students").toString()).contains(student.email());
-        admin.api().get("/api/admin/grades").expect(200);
     }
 
     @Test

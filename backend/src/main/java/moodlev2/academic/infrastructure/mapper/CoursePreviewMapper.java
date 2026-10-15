@@ -5,6 +5,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import moodlev2.academic.application.course.CourseCalendar.Entry;
 import moodlev2.academic.infrastructure.persistence.entity.AnnouncementEntity;
 import moodlev2.academic.infrastructure.persistence.entity.CourseEntity;
 import moodlev2.academic.infrastructure.persistence.entity.CourseModuleEntity;
@@ -15,7 +16,6 @@ import moodlev2.academic.web.course.dto.preview.DeadlinePreviewDto;
 import moodlev2.academic.web.course.dto.preview.ModuleItemPreviewDto;
 import moodlev2.academic.web.course.dto.preview.ModulePreviewDto;
 import moodlev2.assessment.api.QuizCatalogApi.CourseQuiz;
-import moodlev2.progress.api.CalendarEntry;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -27,7 +27,7 @@ public class CoursePreviewMapper {
             CourseEntity course,
             String instructorName,
             List<AnnouncementEntity> announcements,
-            List<CalendarEntry> events,
+            List<Entry> events,
             List<CourseQuiz> quizzes) {
 
         List<ModulePreviewDto> moduleDtos =
@@ -147,7 +147,7 @@ public class CoursePreviewMapper {
         return new AnnouncementPreviewDto(a.getTitle(), a.getBody(), timeAgo);
     }
 
-    private DeadlinePreviewDto mapDeadline(CalendarEntry e) {
+    private DeadlinePreviewDto mapDeadline(Entry e) {
         return new DeadlinePreviewDto(
                 e.title(), e.date().format(dateFormatter), true, "fa-triangle-exclamation");
     }

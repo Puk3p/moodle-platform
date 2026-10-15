@@ -34,8 +34,16 @@ class CourseworkFlowE2E extends E2EBase {
         assertThat(details.get("courseCode").asText()).isEqualTo(course.code());
         assertThat(details.toString()).contains(title);
 
-        JsonNode calendar = student.api().get("/api/calendar").expect(200).json();
-        assertThat(calendar.get("events").toString()).contains(title + " (Deadline)");
+        // The deadline reaches progress-service's calendar through Kafka.
+        eventually(
+                () ->
+                        student.api()
+                                .get("/api/calendar")
+                                .expect(200)
+                                .json()
+                                .get("events")
+                                .toString()
+                                .contains(title + " (Deadline)"));
 
         student.api().get("/api/courses/my-dashboard").expect(200);
         JsonNode me = student.api().get("/api/users/me").expect(200).json();

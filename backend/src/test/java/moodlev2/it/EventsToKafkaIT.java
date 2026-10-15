@@ -51,6 +51,32 @@ class EventsToKafkaIT extends IntegrationTestBase {
         awaitRecord("identity.session", "identity.SessionsRevoked", String.valueOf(student.id()));
     }
 
+    @Test
+    void anAssignmentWithADeadlineIsPublishedForTheCalendar() throws Exception {
+        TestUser admin = admin();
+        TestUser teacher = teacher();
+        Course course = createCourse(teacher, createClass(admin));
+        Map<String, Object> parts = new java.util.LinkedHashMap<>();
+        parts.put("courseCode", course.code());
+        parts.put("moduleId", course.moduleId());
+        parts.put("title", "Report " + course.code());
+        parts.put("type", "Assignment");
+        parts.put("isVisible", "true");
+        parts.put("maxGrade", 10);
+        parts.put("submissionType", "TEXT");
+        parts.put("dueDate", java.time.LocalDateTime.now().plusDays(3).withNano(0).toString());
+        teacher.api().multipart("POST", "/api/resources", parts).expect(200);
+
+        ConsumerRecord<String, String> record =
+                awaitRecord(
+                        "academic.coursework",
+                        "academic.AssignmentPublished",
+                        String.valueOf(course.id()));
+        JsonNode payload = ApiClient.JSON.readTree(record.value());
+        assertThat(payload.get("title").asText()).isEqualTo("Report " + course.code());
+        assertThat(payload.get("dueDate").asText()).isNotBlank();
+    }
+
     private ConsumerRecord<String, String> awaitRecord(String topic, String type, String key) {
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA.getBootstrapServers());

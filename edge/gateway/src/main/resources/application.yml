@@ -50,6 +50,17 @@ spring:
               filters:
                 - SessionToken
 
+            # ── progress-service: grades and calendar ──────────────────────
+            - id: progress-api
+              uri: ${PROGRESS_URL:http://localhost:8085}
+              order: -10
+              predicates:
+                - Path=/api/grades/**,/api/admin/grades/**,/api/calendar/**
+              filters:
+                - DoubleSubmitCsrf
+                - SessionToken
+                - SecureHeaders
+
             # ── core: everything else, untouched (it authenticates itself) ──
             - id: core
               uri: ${CORE_URL:http://localhost:8081}
