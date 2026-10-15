@@ -40,20 +40,23 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.kafka.KafkaContainer;
 
-/** assessment-service on its own: MySQL and Kafka in containers, core played by FakeCore. */
+/**
+ * assessment-service on its own: MySQL and Kafka in containers, identity- and academic-service
+ * played by FakeServices.
+ */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class AssessmentServiceIT {
 
     static final MySQLContainer<?> MYSQL =
             new MySQLContainer<>("mysql:8.0").withDatabaseName("assessment");
     static final KafkaContainer KAFKA = new KafkaContainer("apache/kafka:3.9.1");
-    static final FakeCore CORE = new FakeCore();
+    static final FakeServices SERVICES = new FakeServices();
 
     static {
         MYSQL.start();
         KAFKA.start();
         try {
-            CORE.start();
+            SERVICES.start();
         } catch (java.io.IOException e) {
             throw new IllegalStateException(e);
         }
@@ -65,12 +68,12 @@ class AssessmentServiceIT {
         registry.add("spring.datasource.username", MYSQL::getUsername);
         registry.add("spring.datasource.password", MYSQL::getPassword);
         registry.add("spring.kafka.bootstrap-servers", KAFKA::getBootstrapServers);
-        // One fake plays both identity-service and core.
-        registry.add("app.identity.url", CORE::url);
-        registry.add("app.core.url", CORE::url);
+        // One fake plays both identity-service and academic-service.
+        registry.add("app.identity.url", SERVICES::url);
+        registry.add("app.academic.url", SERVICES::url);
         registry.add(
                 "spring.security.oauth2.client.registration.identity.client-secret",
-                () -> FakeCore.CLIENT_SECRET);
+                () -> FakeServices.CLIENT_SECRET);
         String uploads = java.nio.file.Files.createTempDirectory("assessment-it").toString();
         registry.add("app.uploads.dir", () -> uploads);
     }
@@ -78,7 +81,7 @@ class AssessmentServiceIT {
     @AfterAll
     static void stopCore() {
         try {
-            CORE.server.shutdown();
+            SERVICES.server.shutdown();
         } catch (java.io.IOException e) {
             // Going away anyway.
         }
@@ -93,15 +96,15 @@ class AssessmentServiceIT {
 
     @BeforeEach
     void people() {
-        CORE.users.clear();
-        CORE.coursesOfStudent.clear();
-        CORE.coursesTaught.clear();
-        CORE.studentsOfCourse.clear();
-        CORE.courses.clear();
-        CORE.addUser(TEACHER, "teacher@it.test", "TEACHER", null);
-        CORE.addUser(STUDENT, "student@it.test", "STUDENT", null);
-        CORE.addUser(OUTSIDER, "outsider@it.test", "STUDENT", null);
-        CORE.addCourse(10, "CS101", TEACHER, STUDENT);
+        SERVICES.users.clear();
+        SERVICES.coursesOfStudent.clear();
+        SERVICES.coursesTaught.clear();
+        SERVICES.studentsOfCourse.clear();
+        SERVICES.courses.clear();
+        SERVICES.addUser(TEACHER, "teacher@it.test", "TEACHER", null);
+        SERVICES.addUser(STUDENT, "student@it.test", "STUDENT", null);
+        SERVICES.addUser(OUTSIDER, "outsider@it.test", "STUDENT", null);
+        SERVICES.addCourse(10, "CS101", TEACHER, STUDENT);
     }
 
     @Test
@@ -111,7 +114,10 @@ class AssessmentServiceIT {
 
         // Authoring is for staff only.
         assertThat(
-                        post("/api/quizzes/create", Map.of("title", "x"), CORE.userToken(STUDENT))
+                        post(
+                                        "/api/quizzes/create",
+                                        Map.of("title", "x"),
+                                        SERVICES.userToken(STUDENT))
                                 .statusCode())
                 .isEqualTo(403);
         // Someone outside the course cannot even learn the quiz exists.
@@ -119,12 +125,12 @@ class AssessmentServiceIT {
                         post(
                                         "/api/quizzes/" + quizId + "/start",
                                         Map.of(),
-                                        CORE.userToken(OUTSIDER))
+                                        SERVICES.userToken(OUTSIDER))
                                 .statusCode())
                 .isEqualTo(404);
 
         HttpResponse<String> started =
-                post("/api/quizzes/" + quizId + "/start", Map.of(), CORE.userToken(STUDENT));
+                post("/api/quizzes/" + quizId + "/start", Map.of(), SERVICES.userToken(STUDENT));
         assertThat(started.statusCode()).as(started.body()).isEqualTo(200);
         JsonNode attempt = json.readTree(started.body());
         assertThat(attempt.get("messagingBlocked").asBoolean()).isTrue();
@@ -132,7 +138,9 @@ class AssessmentServiceIT {
         // messaging-service asks here while the quiz runs...
         assertThat(
                         json.readTree(
-                                get("/internal/exam-locks/users/" + STUDENT, CORE.serviceToken())
+                                get(
+                                                "/internal/exam-locks/users/" + STUDENT,
+                                                SERVICES.serviceToken())
                                         .body()))
                 .hasSize(1);
         // ...and hears about it from Kafka, through the outbox.
@@ -162,18 +170,23 @@ class AssessmentServiceIT {
                                 attempt.get("attemptId").asLong(),
                                 "answers",
                                 List.of(answer)),
-                        CORE.userToken(STUDENT));
+                        SERVICES.userToken(STUDENT));
         assertThat(json.readTree(submitted.body()).get("passed").asBoolean()).isTrue();
         assertThat(
                         json.readTree(
-                                get("/internal/exam-locks/users/" + STUDENT, CORE.serviceToken())
+                                get(
+                                                "/internal/exam-locks/users/" + STUDENT,
+                                                SERVICES.serviceToken())
                                         .body()))
                 .isEmpty();
 
-        // Core's course page asks for the course's quizzes; one attempt allowed, so none left.
+        // academic-service's course page asks for the course's quizzes; one attempt allowed, so
+        // none left.
         JsonNode quizzes =
                 json.readTree(
-                        get("/internal/quizzes/courses/10?viewerId=" + STUDENT, CORE.serviceToken())
+                        get(
+                                        "/internal/quizzes/courses/10?viewerId=" + STUDENT,
+                                        SERVICES.serviceToken())
                                 .body());
         JsonNode mine = find(quizzes, "title", title);
         assertThat(mine.get("moduleId").asLong()).isEqualTo(20);
@@ -185,7 +198,10 @@ class AssessmentServiceIT {
         String title = "Unfiled " + UUID.randomUUID();
         long quizId = createQuiz(title, false);
         assertThat(
-                        post("/api/quizzes/" + quizId + "/start", Map.of(), CORE.userToken(STUDENT))
+                        post(
+                                        "/api/quizzes/" + quizId + "/start",
+                                        Map.of(),
+                                        SERVICES.userToken(STUDENT))
                                 .statusCode())
                 .isEqualTo(200);
 
@@ -214,7 +230,7 @@ class AssessmentServiceIT {
     // ── helpers ──────────────────────────────────────────────────────────────
 
     private long createQuiz(String title, boolean blockMessaging) throws Exception {
-        String teacher = CORE.userToken(TEACHER);
+        String teacher = SERVICES.userToken(TEACHER);
         String category = "Cat " + UUID.randomUUID();
         Map<String, Object> newCategory = new HashMap<>();
         newCategory.put("name", category);

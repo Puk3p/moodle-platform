@@ -11,7 +11,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.server.ResponseStatusException;
 
-/** Same error shape as core ({@code {"error": "..."}}), so the SPA handles both alike. */
+/**
+ * Same error shape as the other services ({@code {"error": "..."}}), so the SPA handles all alike.
+ */
 @RestControllerAdvice
 public class ApiExceptionHandler {
 
@@ -28,10 +30,10 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(ex.getStatusCode()).body(Map.of("error", reason));
     }
 
-    /** Core is unreachable or its circuit breaker is open: fail fast, the client may retry. */
+    /** A service it needs is unreachable or its circuit breaker is open: fail fast, retry later. */
     @ExceptionHandler({CallNotPermittedException.class, RestClientException.class})
-    ResponseEntity<Map<String, String>> coreUnavailable(Exception ex) {
-        log.warn("Core unavailable: {}", ex.toString());
+    ResponseEntity<Map<String, String>> dependencyUnavailable(Exception ex) {
+        log.warn("Dependency unavailable: {}", ex.toString());
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .header("Retry-After", "5")
                 .body(

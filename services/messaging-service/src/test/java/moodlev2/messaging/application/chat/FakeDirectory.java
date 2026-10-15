@@ -6,11 +6,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import moodlev2.messaging.core.CoreDirectory;
-import moodlev2.messaging.core.Person;
+import moodlev2.messaging.clients.Directory;
+import moodlev2.messaging.clients.Person;
 
-/** An in-memory stand-in for core's directory. */
-final class FakeDirectory implements CoreDirectory {
+/** An in-memory stand-in for identity-service's directory. */
+final class FakeDirectory implements Directory {
 
     private final Map<Long, Person> users = new LinkedHashMap<>();
 

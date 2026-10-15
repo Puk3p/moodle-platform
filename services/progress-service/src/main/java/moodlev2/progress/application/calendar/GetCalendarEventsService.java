@@ -4,10 +4,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import moodlev2.progress.core.CoreCourses;
-import moodlev2.progress.core.CoreDirectory;
-import moodlev2.progress.core.Course;
-import moodlev2.progress.core.Person;
+import moodlev2.progress.clients.Course;
+import moodlev2.progress.clients.Courses;
+import moodlev2.progress.clients.Directory;
+import moodlev2.progress.clients.Person;
 import moodlev2.progress.infrastructure.persistence.CalendarEventRepository;
 import moodlev2.progress.web.calendar.dto.CalendarEventDto;
 import moodlev2.progress.web.calendar.dto.CalendarResponse;
@@ -18,8 +18,8 @@ import org.springframework.stereotype.Service;
 public class GetCalendarEventsService {
 
     private final CalendarEventRepository calendarRepository;
-    private final CoreDirectory directory;
-    private final CoreCourses membership;
+    private final Directory directory;
+    private final Courses membership;
 
     /** Entries of every course the user teaches or belongs to. */
     public CalendarResponse getCalendarEventsForUser(String email) {

@@ -64,9 +64,9 @@ public class ApiExceptionHandler {
                 .body(Map.of("error", ex.getReason(), "status", ex.getStatusCode().value()));
     }
 
-    /** Core is unreachable or its circuit breaker is open: fail fast, the client may retry. */
+    /** A service it needs is unreachable or its circuit breaker is open: fail fast, retry later. */
     @ExceptionHandler({CallNotPermittedException.class, RestClientException.class})
-    public ResponseEntity<Map<String, String>> coreUnavailable(Exception ex) {
+    public ResponseEntity<Map<String, String>> dependencyUnavailable(Exception ex) {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .header("Retry-After", "5")
                 .body(Map.of("error", "Quizzes are temporarily unavailable. Please try again."));

@@ -23,10 +23,10 @@ import org.springframework.security.web.authentication.HttpStatusEntryPoint;
  * Only the gateway (user tokens) and other services (service tokens) call this service, with RS256
  * tokens signed by identity-service. No sessions, no CSRF (the gateway enforces it).
  *
- * <p>The URL rules are core's, unchanged: authoring quizzes and the question bank is for staff;
- * students may start, submit and report proctoring on their own attempts. Authorities combine the
- * token scope ({@code SCOPE_user}/{@code SCOPE_internal}) with {@code ROLE_*} from its roles claim;
- * the caller's name is the {@code email} claim.
+ * <p>The URL rules are the monolith's, unchanged: authoring quizzes and the question bank is for
+ * staff; students may start, submit and report proctoring on their own attempts. Authorities
+ * combine the token scope ({@code SCOPE_user}/{@code SCOPE_internal}) with {@code ROLE_*} from its
+ * roles claim; the caller's name is the {@code email} claim.
  */
 @Configuration
 @EnableMethodSecurity
@@ -63,7 +63,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /** Quiz access passwords are stored hashed, as in core (same BCrypt format). */
+    /** Quiz access passwords are stored hashed, as in the monolith (same BCrypt format). */
     @Bean
     PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

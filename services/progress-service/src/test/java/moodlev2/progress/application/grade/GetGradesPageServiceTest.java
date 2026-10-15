@@ -13,10 +13,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import moodlev2.progress.core.CoreCourses;
-import moodlev2.progress.core.CoreDirectory;
-import moodlev2.progress.core.Course;
-import moodlev2.progress.core.Person;
+import moodlev2.progress.clients.Course;
+import moodlev2.progress.clients.Courses;
+import moodlev2.progress.clients.Directory;
+import moodlev2.progress.clients.Person;
 import moodlev2.progress.infrastructure.persistence.CalendarEventRepository;
 import moodlev2.progress.infrastructure.persistence.GradeRepository;
 import moodlev2.progress.infrastructure.persistence.entity.CalendarEventEntity;
@@ -36,8 +36,8 @@ class GetGradesPageServiceTest {
     private static final LocalDate TODAY = LocalDate.of(2026, 9, 30);
 
     @Mock private GradeRepository gradeRepository;
-    @Mock private CoreCourses membership;
-    @Mock private CoreDirectory directory;
+    @Mock private Courses membership;
+    @Mock private Directory directory;
     @Mock private CalendarEventRepository calendarEventRepository;
 
     private GetGradesPageService service;

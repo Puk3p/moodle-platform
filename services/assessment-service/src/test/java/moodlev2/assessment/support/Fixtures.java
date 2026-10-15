@@ -6,7 +6,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.Set;
-import moodlev2.assessment.core.UserSummary;
+import moodlev2.assessment.clients.UserSummary;
 
 /** Builders for service tests (no Spring context, no database). */
 public final class Fixtures {

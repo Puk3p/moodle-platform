@@ -85,19 +85,21 @@ spring:
               predicates:
                 - Path=/api/auth/**,/oauth2/**,/login/oauth2/**,/api/users/**,/api/admin/students/**,/api/classes/**,/api/admin/classes/**
 
-            # ── core: courses and coursework, and the profile page ─────────
-            # The profile combines the account with course lists, so it is core's, not identity's.
-            - id: core-profile
-              uri: ${CORE_URL:http://localhost:8081}
+            # ── academic-service: courses and coursework, and the profile page ─
+            # The profile combines the account with course lists, so it is academic's, not
+            # identity's.
+            - id: academic-profile
+              uri: ${ACADEMIC_URL:http://localhost:8081}
               order: -20
               predicates:
                 - Path=/api/users/me
               filters:
                 - DoubleSubmitCsrf
                 - SessionToken
-            # Everything else. Core sets its own security headers (a strict CSP for downloads).
-            - id: core
-              uri: ${CORE_URL:http://localhost:8081}
+            # Everything else. academic-service sets its own security headers (a strict CSP for
+            # downloads).
+            - id: academic
+              uri: ${ACADEMIC_URL:http://localhost:8081}
               order: 100
               predicates:
                 - Path=/**

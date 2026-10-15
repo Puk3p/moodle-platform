@@ -33,20 +33,23 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.kafka.KafkaContainer;
 
-/** progress-service on its own: its database and Kafka in containers, core played by FakeCore. */
+/**
+ * progress-service on its own: its database and Kafka in containers, identity- and academic-service
+ * played by FakeServices.
+ */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class ProgressServiceIT {
 
     static final MySQLContainer<?> MYSQL =
             new MySQLContainer<>("mysql:8.0").withDatabaseName("progress");
     static final KafkaContainer KAFKA = new KafkaContainer("apache/kafka:3.9.1");
-    static final FakeCore CORE = new FakeCore();
+    static final FakeServices SERVICES = new FakeServices();
 
     static {
         MYSQL.start();
         KAFKA.start();
         try {
-            CORE.start();
+            SERVICES.start();
         } catch (java.io.IOException e) {
             throw new IllegalStateException(e);
         }
@@ -58,18 +61,18 @@ class ProgressServiceIT {
         registry.add("spring.datasource.username", MYSQL::getUsername);
         registry.add("spring.datasource.password", MYSQL::getPassword);
         registry.add("spring.kafka.bootstrap-servers", KAFKA::getBootstrapServers);
-        // One fake plays both identity-service and core.
-        registry.add("app.identity.url", CORE::url);
-        registry.add("app.core.url", CORE::url);
+        // One fake plays both identity-service and academic-service.
+        registry.add("app.identity.url", SERVICES::url);
+        registry.add("app.academic.url", SERVICES::url);
         registry.add(
                 "spring.security.oauth2.client.registration.identity.client-secret",
-                () -> FakeCore.CLIENT_SECRET);
+                () -> FakeServices.CLIENT_SECRET);
     }
 
     @AfterAll
     static void stopCore() {
         try {
-            CORE.server.shutdown();
+            SERVICES.server.shutdown();
         } catch (java.io.IOException e) {
             // Going away anyway.
         }
@@ -84,24 +87,25 @@ class ProgressServiceIT {
 
     @BeforeEach
     void people() {
-        CORE.users.clear();
-        CORE.coursesOfStudent.clear();
-        CORE.coursesTaught.clear();
-        CORE.studentsOfCourse.clear();
-        CORE.courses.clear();
-        CORE.addUser(TEACHER, "teacher@it.test", "TEACHER", null);
-        CORE.addUser(STUDENT, "student@it.test", "STUDENT", null);
-        CORE.addUser(ADMIN, "admin@it.test", "ADMIN", null);
-        CORE.addCourse(10, "CS101", TEACHER, STUDENT);
+        SERVICES.users.clear();
+        SERVICES.coursesOfStudent.clear();
+        SERVICES.coursesTaught.clear();
+        SERVICES.studentsOfCourse.clear();
+        SERVICES.courses.clear();
+        SERVICES.addUser(TEACHER, "teacher@it.test", "TEACHER", null);
+        SERVICES.addUser(STUDENT, "student@it.test", "STUDENT", null);
+        SERVICES.addUser(ADMIN, "admin@it.test", "ADMIN", null);
+        SERVICES.addCourse(10, "CS101", TEACHER, STUDENT);
     }
 
     @Test
     void onlyUserTokensReachTheApiAndOnlyAdminsTheGradebook() throws Exception {
         assertThat(get("/api/grades", null).statusCode()).isEqualTo(401);
-        assertThat(get("/api/grades", CORE.serviceToken()).statusCode()).isEqualTo(403);
-        assertThat(get("/api/grades", CORE.userToken(STUDENT)).statusCode()).isEqualTo(200);
-        assertThat(get("/api/admin/grades", CORE.userToken(STUDENT)).statusCode()).isEqualTo(403);
-        assertThat(get("/api/admin/grades", CORE.userToken(ADMIN)).statusCode()).isEqualTo(200);
+        assertThat(get("/api/grades", SERVICES.serviceToken()).statusCode()).isEqualTo(403);
+        assertThat(get("/api/grades", SERVICES.userToken(STUDENT)).statusCode()).isEqualTo(200);
+        assertThat(get("/api/admin/grades", SERVICES.userToken(STUDENT)).statusCode())
+                .isEqualTo(403);
+        assertThat(get("/api/admin/grades", SERVICES.userToken(ADMIN)).statusCode()).isEqualTo(200);
     }
 
     @Test
@@ -132,13 +136,13 @@ class ProgressServiceIT {
         }
         assertThat(copies).isEqualTo(1);
 
-        // Core asks for course calendars through the internal API.
+        // academic-service asks for course calendars through the internal API.
         HttpResponse<String> internal =
-                post("/internal/calendar/courses", List.of(10), CORE.serviceToken());
+                post("/internal/calendar/courses", List.of(10), SERVICES.serviceToken());
         assertThat(internal.statusCode()).isEqualTo(200);
         assertThat(internal.body()).contains(title);
         assertThat(
-                        post("/internal/calendar/courses", List.of(10), CORE.userToken(STUDENT))
+                        post("/internal/calendar/courses", List.of(10), SERVICES.userToken(STUDENT))
                                 .statusCode())
                 .isEqualTo(403);
     }
@@ -150,10 +154,11 @@ class ProgressServiceIT {
                         + " VALUES (?, 10, 'Quiz 1', 18.5, 20, CURRENT_DATE, 'quiz')",
                 STUDENT);
 
-        JsonNode page = json.readTree(get("/api/grades", CORE.userToken(STUDENT)).body());
+        JsonNode page = json.readTree(get("/api/grades", SERVICES.userToken(STUDENT)).body());
         assertThat(page.get("courses").toString()).contains("CS101").contains("18.5/20");
 
-        JsonNode gradebook = json.readTree(get("/api/admin/grades", CORE.userToken(ADMIN)).body());
+        JsonNode gradebook =
+                json.readTree(get("/api/admin/grades", SERVICES.userToken(ADMIN)).body());
         assertThat(gradebook.toString()).contains("First2 Last2").contains("CS101");
 
         publish(
@@ -168,7 +173,7 @@ class ProgressServiceIT {
 
     private String calendarOf(long userId) {
         try {
-            return get("/api/calendar", CORE.userToken(userId)).body();
+            return get("/api/calendar", SERVICES.userToken(userId)).body();
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }

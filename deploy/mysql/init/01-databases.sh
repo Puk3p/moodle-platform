@@ -6,17 +6,17 @@
 # db-init service, so a newly extracted service gets its database on an existing installation.
 set -euo pipefail
 mysql ${MYSQL_HOST:+-h "$MYSQL_HOST"} -uroot -p"${MYSQL_ROOT_PASSWORD}" <<SQL
-CREATE DATABASE IF NOT EXISTS moodle;
+CREATE DATABASE IF NOT EXISTS academic;
 CREATE DATABASE IF NOT EXISTS identity;
 CREATE DATABASE IF NOT EXISTS messaging;
 CREATE DATABASE IF NOT EXISTS progress;
 CREATE DATABASE IF NOT EXISTS assessment;
-CREATE USER IF NOT EXISTS 'core'@'%' IDENTIFIED BY '${CORE_DB_PASSWORD}';
+CREATE USER IF NOT EXISTS 'academic'@'%' IDENTIFIED BY '${ACADEMIC_DB_PASSWORD}';
 CREATE USER IF NOT EXISTS 'identity'@'%' IDENTIFIED BY '${IDENTITY_DB_PASSWORD}';
 CREATE USER IF NOT EXISTS 'messaging'@'%' IDENTIFIED BY '${MESSAGING_DB_PASSWORD}';
 CREATE USER IF NOT EXISTS 'progress'@'%' IDENTIFIED BY '${PROGRESS_DB_PASSWORD}';
 CREATE USER IF NOT EXISTS 'assessment'@'%' IDENTIFIED BY '${ASSESSMENT_DB_PASSWORD}';
-GRANT ALL PRIVILEGES ON moodle.* TO 'core'@'%';
+GRANT ALL PRIVILEGES ON academic.* TO 'academic'@'%';
 GRANT ALL PRIVILEGES ON identity.* TO 'identity'@'%';
 GRANT ALL PRIVILEGES ON messaging.* TO 'messaging'@'%';
 GRANT ALL PRIVILEGES ON progress.* TO 'progress'@'%';

@@ -11,4 +11,5 @@ node_modules
 **/.idea
 **/.DS_Store
 **/* 2.*
+**/SECURITY_AUDIT.md
 deploy/.env

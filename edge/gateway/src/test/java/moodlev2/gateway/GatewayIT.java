@@ -42,8 +42,8 @@ import org.testcontainers.kafka.KafkaContainer;
 
 /**
  * The gateway between a browser and three stand-ins: identity-service (token endpoint, session
- * resolution and its own cookie-authenticated routes), and core and messaging-service, which only
- * ever see user tokens (they record what reaches them).
+ * resolution and its own cookie-authenticated routes), and academic- and messaging-service, which
+ * only ever see user tokens (they record what reaches them).
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class GatewayIT {
@@ -51,7 +51,7 @@ class GatewayIT {
     static final KafkaContainer KAFKA = new KafkaContainer("apache/kafka:3.9.1");
     static final MockWebServer IDENTITY = new MockWebServer();
     static final MockWebServer MESSAGING = new MockWebServer();
-    static final MockWebServer CORE = new MockWebServer();
+    static final MockWebServer ACADEMIC = new MockWebServer();
 
     /** Session token → user token, as identity-service resolves them (for the matching browser). */
     static final Map<String, String> SESSIONS = new ConcurrentHashMap<>();
@@ -59,7 +59,7 @@ class GatewayIT {
     static final AtomicInteger RESOLVE_CALLS = new AtomicInteger();
     static final BlockingQueue<RecordedRequest> IDENTITY_REQUESTS = new LinkedBlockingQueue<>();
     static final BlockingQueue<RecordedRequest> MESSAGING_REQUESTS = new LinkedBlockingQueue<>();
-    static final BlockingQueue<RecordedRequest> CORE_REQUESTS = new LinkedBlockingQueue<>();
+    static final BlockingQueue<RecordedRequest> ACADEMIC_REQUESTS = new LinkedBlockingQueue<>();
     static final String BROWSER = "Mozilla/5.0 (it)";
 
     static {
@@ -86,18 +86,18 @@ class GatewayIT {
                                 .setBody("{\"from\":\"messaging\"}");
                     }
                 });
-        CORE.setDispatcher(
+        ACADEMIC.setDispatcher(
                 new Dispatcher() {
                     @Override
                     public MockResponse dispatch(RecordedRequest request) {
-                        CORE_REQUESTS.add(request);
-                        return new MockResponse().setBody("from core " + request.getPath());
+                        ACADEMIC_REQUESTS.add(request);
+                        return new MockResponse().setBody("from academic " + request.getPath());
                     }
                 });
         try {
             IDENTITY.start();
             MESSAGING.start();
-            CORE.start();
+            ACADEMIC.start();
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
@@ -107,7 +107,7 @@ class GatewayIT {
     static void properties(DynamicPropertyRegistry registry) {
         registry.add("IDENTITY_URL", () -> base(IDENTITY));
         registry.add("MESSAGING_URL", () -> base(MESSAGING));
-        registry.add("CORE_URL", () -> base(CORE));
+        registry.add("ACADEMIC_URL", () -> base(ACADEMIC));
         registry.add(
                 "spring.security.oauth2.client.registration.identity.client-secret",
                 () -> "gw-secret");
@@ -117,7 +117,7 @@ class GatewayIT {
 
     @AfterAll
     static void stop() {
-        for (MockWebServer server : List.of(IDENTITY, MESSAGING, CORE)) {
+        for (MockWebServer server : List.of(IDENTITY, MESSAGING, ACADEMIC)) {
             try {
                 server.shutdown();
             } catch (IOException e) {
@@ -134,7 +134,7 @@ class GatewayIT {
     void reset() {
         IDENTITY_REQUESTS.clear();
         MESSAGING_REQUESTS.clear();
-        CORE_REQUESTS.clear();
+        ACADEMIC_REQUESTS.clear();
     }
 
     @Test
@@ -160,26 +160,26 @@ class GatewayIT {
     }
 
     @Test
-    void coreGetsAUserTokenAndNeverTheCookie() throws Exception {
+    void academicGetsAUserTokenAndNeverTheCookie() throws Exception {
         assertThat(send(get("/api/courses").build()).statusCode()).isEqualTo(401);
-        assertThat(CORE_REQUESTS).isEmpty();
+        assertThat(ACADEMIC_REQUESTS).isEmpty();
 
-        String session = newSession("user-token-core");
+        String session = newSession("user-token-academic");
         HttpResponse<String> response =
                 send(get("/api/courses").header("Cookie", "mdl_session=" + session).build());
         assertThat(response.statusCode()).isEqualTo(200);
-        RecordedRequest atCore = take(CORE_REQUESTS, "/api/courses");
-        assertThat(atCore.getHeader("Authorization")).isEqualTo("Bearer user-token-core");
-        assertThat(atCore.getHeader("Cookie")).isNull();
+        RecordedRequest atAcademic = take(ACADEMIC_REQUESTS, "/api/courses");
+        assertThat(atAcademic.getHeader("Authorization")).isEqualTo("Bearer user-token-academic");
+        assertThat(atAcademic.getHeader("Cookie")).isNull();
     }
 
     @Test
-    void theProfileIsCoresAndTheRestOfTheAccountIsIdentitys() throws Exception {
+    void theProfileIsAcademicsAndTheRestOfTheAccountIsIdentitys() throws Exception {
         String session = newSession("user-token-me");
         String cookie = "mdl_session=" + session;
 
         send(get("/api/users/me").header("Cookie", cookie).build());
-        assertThat(take(CORE_REQUESTS, "/api/users/me").getHeader("Authorization"))
+        assertThat(take(ACADEMIC_REQUESTS, "/api/users/me").getHeader("Authorization"))
                 .isEqualTo("Bearer user-token-me");
 
         send(get("/api/users/me/picture").header("Cookie", cookie).build());
@@ -218,7 +218,7 @@ class GatewayIT {
         assertThat(foreign.statusCode()).isEqualTo(403);
         assertThat(IDENTITY_REQUESTS.stream().anyMatch(r -> "OPTIONS".equals(r.getMethod())))
                 .isFalse();
-        assertThat(CORE_REQUESTS).isEmpty();
+        assertThat(ACADEMIC_REQUESTS).isEmpty();
     }
 
     @Test

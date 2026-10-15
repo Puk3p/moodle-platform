@@ -13,7 +13,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import moodlev2.assessment.core.UserSummary;
+import moodlev2.assessment.clients.UserSummary;
 import moodlev2.assessment.infrastructure.persistence.ProctorEventRepository;
 import moodlev2.assessment.infrastructure.persistence.QuizAttemptRepository;
 import moodlev2.assessment.infrastructure.persistence.entity.ProctorEventEntity;

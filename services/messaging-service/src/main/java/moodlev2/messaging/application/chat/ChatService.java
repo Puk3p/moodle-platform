@@ -16,11 +16,11 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import moodlev2.messaging.core.CoreDirectory;
-import moodlev2.messaging.core.CoreExamLocks;
-import moodlev2.messaging.core.CoreMembership;
-import moodlev2.messaging.core.Course;
-import moodlev2.messaging.core.Person;
+import moodlev2.messaging.clients.Course;
+import moodlev2.messaging.clients.Directory;
+import moodlev2.messaging.clients.ExamLocks;
+import moodlev2.messaging.clients.Membership;
+import moodlev2.messaging.clients.Person;
 import moodlev2.messaging.infrastructure.persistence.ChatMessageRepository;
 import moodlev2.messaging.infrastructure.persistence.entity.ChatMessageEntity;
 import moodlev2.messaging.web.chat.dto.ChatContactDto;
@@ -55,9 +55,9 @@ public class ChatService {
             "Messaging is only available between teachers and students.";
 
     private final ChatMessageRepository messageRepository;
-    private final CoreDirectory directory;
-    private final CoreExamLocks examLocks;
-    private final CoreMembership membership;
+    private final Directory directory;
+    private final ExamLocks examLocks;
+    private final Membership membership;
     private final SimpMessagingTemplate messaging;
 
     @Transactional(readOnly = true)

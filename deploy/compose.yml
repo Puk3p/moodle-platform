@@ -18,7 +18,7 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root-dev}
-      CORE_DB_PASSWORD: ${CORE_DB_PASSWORD:-core-dev}
+      ACADEMIC_DB_PASSWORD: ${ACADEMIC_DB_PASSWORD:-academic-dev}
       IDENTITY_DB_PASSWORD: ${IDENTITY_DB_PASSWORD:-identity-dev}
       MESSAGING_DB_PASSWORD: ${MESSAGING_DB_PASSWORD:-messaging-dev}
       PROGRESS_DB_PASSWORD: ${PROGRESS_DB_PASSWORD:-progress-dev}
@@ -42,7 +42,7 @@ services:
     environment:
       MYSQL_HOST: mysql
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root-dev}
-      CORE_DB_PASSWORD: ${CORE_DB_PASSWORD:-core-dev}
+      ACADEMIC_DB_PASSWORD: ${ACADEMIC_DB_PASSWORD:-academic-dev}
       IDENTITY_DB_PASSWORD: ${IDENTITY_DB_PASSWORD:-identity-dev}
       MESSAGING_DB_PASSWORD: ${MESSAGING_DB_PASSWORD:-messaging-dev}
       PROGRESS_DB_PASSWORD: ${PROGRESS_DB_PASSWORD:-progress-dev}
@@ -133,30 +133,30 @@ services:
       retries: 60
       start_period: 20s
 
-  core:
+  academic-service:
     <<: *java
     build:
       context: ..
       dockerfile: deploy/Dockerfile
       args:
-        MODULE: backend
-    image: moodle/core:dev
+        MODULE: services/academic-service
+    image: moodle/academic-service:dev
     environment:
       <<: *java-env
-      DB_URL: jdbc:mysql://mysql:3306/moodle
-      DB_USERNAME: core
-      DB_PASSWORD: ${CORE_DB_PASSWORD:-core-dev}
+      DB_URL: jdbc:mysql://mysql:3306/academic
+      DB_USERNAME: academic
+      DB_PASSWORD: ${ACADEMIC_DB_PASSWORD:-academic-dev}
       IDENTITY_URL: http://identity-service:8083
       INTERNAL_CLIENT_SECRET: ${INTERNAL_CLIENT_ACADEMIC_SECRET:-academic-dev-secret}
       PROGRESS_URL: http://progress-service:8085
       ASSESSMENT_URL: http://assessment-service:8084
     volumes:
-      - core-uploads:/app/uploads
+      - academic-uploads:/app/uploads
     depends_on:
       identity-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      test: ["CMD", "curl", "-fsS", "http://localhost:8081/actuator/health"]
       interval: 5s
       timeout: 5s
       retries: 60
@@ -176,12 +176,12 @@ services:
       DB_USERNAME: messaging
       DB_PASSWORD: ${MESSAGING_DB_PASSWORD:-messaging-dev}
       IDENTITY_URL: http://identity-service:8083
-      CORE_URL: http://core:8080
+      ACADEMIC_URL: http://academic-service:8081
       ASSESSMENT_URL: http://assessment-service:8084
       INTERNAL_CLIENT_SECRET: ${INTERNAL_CLIENT_MESSAGING_SECRET:-messaging-dev-secret}
       APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://localhost:4200}
     depends_on:
-      core:
+      academic-service:
         condition: service_healthy
       assessment-service:
         condition: service_healthy
@@ -206,13 +206,13 @@ services:
       DB_USERNAME: assessment
       DB_PASSWORD: ${ASSESSMENT_DB_PASSWORD:-assessment-dev}
       IDENTITY_URL: http://identity-service:8083
-      CORE_URL: http://core:8080
+      ACADEMIC_URL: http://academic-service:8081
       INTERNAL_CLIENT_SECRET: ${INTERNAL_CLIENT_ASSESSMENT_SECRET:-assessment-dev-secret}
       UPLOADS_DIR: /app/uploads
     volumes:
       - assessment-uploads:/app/uploads
     depends_on:
-      core:
+      academic-service:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8084/actuator/health"]
@@ -235,10 +235,10 @@ services:
       DB_USERNAME: progress
       DB_PASSWORD: ${PROGRESS_DB_PASSWORD:-progress-dev}
       IDENTITY_URL: http://identity-service:8083
-      CORE_URL: http://core:8080
+      ACADEMIC_URL: http://academic-service:8081
       INTERNAL_CLIENT_SECRET: ${INTERNAL_CLIENT_PROGRESS_SECRET:-progress-dev-secret}
     depends_on:
-      core:
+      academic-service:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8085/actuator/health"]
@@ -258,7 +258,7 @@ services:
     environment:
       <<: *java-env
       IDENTITY_URL: http://identity-service:8083
-      CORE_URL: http://core:8080
+      ACADEMIC_URL: http://academic-service:8081
       MESSAGING_URL: http://messaging-service:8082
       PROGRESS_URL: http://progress-service:8085
       ASSESSMENT_URL: http://assessment-service:8084
@@ -274,7 +274,7 @@ services:
     depends_on:
       identity-service:
         condition: service_healthy
-      core:
+      academic-service:
         condition: service_healthy
       messaging-service:
         condition: service_healthy
@@ -294,4 +294,4 @@ volumes:
   identity-profile-pictures:
   mysql-data:
   kafka-data:
-  core-uploads:
+  academic-uploads:

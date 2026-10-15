@@ -5,8 +5,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
  * Quizzes, attempts, proctoring and the question bank, in their own database. Users and courses
- * belong to other services, reached through core's internal API ({@link moodlev2.assessment.core});
- * attempt changes are published to Kafka through a transactional outbox.
+ * belong to identity-service and academic-service, reached through their internal APIs ({@link
+ * moodlev2.assessment.clients}); attempt changes are published to Kafka through a transactional
+ * outbox.
  */
 @SpringBootApplication
 public class AssessmentServiceApplication {

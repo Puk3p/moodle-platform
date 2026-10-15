@@ -15,8 +15,7 @@
     <name>moodle-platform</name>
 
     <modules>
-        <!-- The original application; services are carved out of it one at a time. -->
-        <module>backend</module>
+        <module>services/academic-service</module>
         <module>services/identity-service</module>
         <module>services/messaging-service</module>
         <module>services/progress-service</module>

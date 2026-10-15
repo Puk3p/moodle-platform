@@ -6,9 +6,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Keeps conversations consistent with account changes made in core. Messages refer to people by
- * email, so a rename must carry the history along, and a deleted account's conversations must go
- * before someone else can register the address. Both are idempotent: replaying an event is
+ * Keeps conversations consistent with account changes made in identity-service. Messages refer to
+ * people by email, so a rename must carry the history along, and a deleted account's conversations
+ * must go before someone else can register the address. Both are idempotent: replaying an event is
  * harmless.
  */
 @Service

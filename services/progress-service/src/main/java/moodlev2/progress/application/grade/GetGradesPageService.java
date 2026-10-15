@@ -10,10 +10,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import moodlev2.progress.core.CoreCourses;
-import moodlev2.progress.core.CoreDirectory;
-import moodlev2.progress.core.Course;
-import moodlev2.progress.core.Person;
+import moodlev2.progress.clients.Course;
+import moodlev2.progress.clients.Courses;
+import moodlev2.progress.clients.Directory;
+import moodlev2.progress.clients.Person;
 import moodlev2.progress.infrastructure.persistence.CalendarEventRepository;
 import moodlev2.progress.infrastructure.persistence.GradeRepository;
 import moodlev2.progress.infrastructure.persistence.entity.GradeEntity;
@@ -35,17 +35,17 @@ public class GetGradesPageService {
     static final int MAX_UPCOMING = 4;
 
     private final GradeRepository gradeRepository;
-    private final CoreCourses membership;
+    private final Courses membership;
     private final CalendarEventRepository calendarEventRepository;
-    private final CoreDirectory directory;
+    private final Directory directory;
     private final Clock clock;
 
     @Autowired
     public GetGradesPageService(
             GradeRepository gradeRepository,
-            CoreCourses membership,
+            Courses membership,
             CalendarEventRepository calendarEventRepository,
-            CoreDirectory directory) {
+            Directory directory) {
         this(
                 gradeRepository,
                 membership,
@@ -56,9 +56,9 @@ public class GetGradesPageService {
 
     GetGradesPageService(
             GradeRepository gradeRepository,
-            CoreCourses membership,
+            Courses membership,
             CalendarEventRepository calendarEventRepository,
-            CoreDirectory directory,
+            Directory directory,
             Clock clock) {
         this.gradeRepository = gradeRepository;
         this.membership = membership;

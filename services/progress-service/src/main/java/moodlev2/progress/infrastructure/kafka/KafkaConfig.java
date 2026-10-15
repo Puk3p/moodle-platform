@@ -12,8 +12,8 @@ import org.springframework.util.backoff.ExponentialBackOff;
 class KafkaConfig {
 
     /**
-     * Retries a failing record with backoff (core briefly unreachable, a database hiccup), then
-     * publishes it to {@code <topic>.DLT} and moves on. Malformed JSON is not retried.
+     * Retries a failing record with backoff (a service briefly unreachable, a database hiccup),
+     * then publishes it to {@code <topic>.DLT} and moves on. Malformed JSON is not retried.
      */
     @Bean
     CommonErrorHandler kafkaErrorHandler(KafkaTemplate<Object, Object> template) {

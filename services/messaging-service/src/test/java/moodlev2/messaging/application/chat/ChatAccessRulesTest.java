@@ -7,8 +7,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import moodlev2.messaging.core.OpenExam;
-import moodlev2.messaging.core.Person;
+import moodlev2.messaging.clients.OpenExam;
+import moodlev2.messaging.clients.Person;
 import org.junit.jupiter.api.Test;
 
 class ChatAccessRulesTest {

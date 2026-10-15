@@ -8,10 +8,10 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
-import moodlev2.progress.core.CoreCourses;
-import moodlev2.progress.core.CoreDirectory;
-import moodlev2.progress.core.Course;
-import moodlev2.progress.core.Person;
+import moodlev2.progress.clients.Course;
+import moodlev2.progress.clients.Courses;
+import moodlev2.progress.clients.Directory;
+import moodlev2.progress.clients.Person;
 import moodlev2.progress.infrastructure.persistence.GradeRepository;
 import moodlev2.progress.infrastructure.persistence.entity.GradeEntity;
 import moodlev2.progress.web.grade.dto.AdminGradeDto;
@@ -23,8 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class AdminGradebookService {
 
     private final GradeRepository gradeRepository;
-    private final CoreDirectory directory;
-    private final CoreCourses catalog;
+    private final Directory directory;
+    private final Courses catalog;
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, hh:mm a");
 
     @Transactional(readOnly = true)

@@ -1,5 +1,5 @@
--- One-time move of accounts, classes, sessions and profile pictures from core's database (moodle)
--- to identity-service's (identity), for an installation that ran them inside core. Run as root
+-- One-time move of accounts, classes, sessions and profile pictures from the monolith's database (moodle)
+-- to identity-service's (identity), for an installation that ran them inside the monolith. Run as root
 -- after identity-service has started once (Flyway creates the tables) and BEFORE the gateway sends
 -- it any traffic: an account registered in the meantime could take an id or email still in use
 -- here.
@@ -17,7 +17,7 @@
 --   docker run --rm -v moodle_core-profile-pictures:/from:ro -v moodle_identity-profile-pictures:/to \
 --     alpine sh -c 'cp -a /from/. /to/'
 --
--- core's tables are left untouched; drop them once the move has been checked.
+-- The moodle tables are left untouched; drop them once the move has been checked.
 
 INSERT INTO identity.classes (id, name)
 SELECT c.id, c.name

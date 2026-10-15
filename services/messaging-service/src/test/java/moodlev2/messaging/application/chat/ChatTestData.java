@@ -3,8 +3,8 @@ package moodlev2.messaging.application.chat;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Set;
-import moodlev2.messaging.core.OpenExam;
-import moodlev2.messaging.core.Person;
+import moodlev2.messaging.clients.OpenExam;
+import moodlev2.messaging.clients.Person;
 
 final class ChatTestData {
 

@@ -30,8 +30,8 @@ import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.kafka.KafkaContainer;
 
 /**
- * messaging-service on its own: its database and Kafka in containers, core played by {@link
- * FakeCore}. Requests carry the user tokens the gateway would forward.
+ * messaging-service on its own: its database and Kafka in containers, the services it calls played
+ * by {@link FakeServices}. Requests carry the user tokens the gateway would forward.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class MessagingServiceIT {
@@ -39,13 +39,13 @@ class MessagingServiceIT {
     static final MySQLContainer<?> MYSQL =
             new MySQLContainer<>("mysql:8.0").withDatabaseName("messaging");
     static final KafkaContainer KAFKA = new KafkaContainer("apache/kafka:3.9.1");
-    static final FakeCore CORE = new FakeCore();
+    static final FakeServices SERVICES = new FakeServices();
 
     static {
         MYSQL.start();
         KAFKA.start();
         try {
-            CORE.start();
+            SERVICES.start();
         } catch (java.io.IOException e) {
             throw new IllegalStateException(e);
         }
@@ -57,18 +57,18 @@ class MessagingServiceIT {
         registry.add("spring.datasource.username", MYSQL::getUsername);
         registry.add("spring.datasource.password", MYSQL::getPassword);
         registry.add("spring.kafka.bootstrap-servers", KAFKA::getBootstrapServers);
-        // One fake plays both identity-service and core.
-        registry.add("app.identity.url", CORE::url);
-        registry.add("app.core.url", CORE::url);
-        registry.add("app.assessment.url", CORE::url);
+        // One fake plays both identity-service and academic-service.
+        registry.add("app.identity.url", SERVICES::url);
+        registry.add("app.academic.url", SERVICES::url);
+        registry.add("app.assessment.url", SERVICES::url);
         registry.add(
                 "spring.security.oauth2.client.registration.identity.client-secret",
-                () -> FakeCore.CLIENT_SECRET);
+                () -> FakeServices.CLIENT_SECRET);
     }
 
     @AfterAll
     static void stopCore() throws java.io.IOException {
-        CORE.server.shutdown();
+        SERVICES.server.shutdown();
     }
 
     private static final long TEACHER = 1, STUDENT = 2, OTHER_STUDENT = 3;
@@ -80,16 +80,16 @@ class MessagingServiceIT {
 
     @BeforeEach
     void people() {
-        CORE.down.set(false);
-        CORE.users.clear();
-        CORE.coursesOfStudent.clear();
-        CORE.coursesTaught.clear();
-        CORE.studentsOfCourse.clear();
-        CORE.openExams.clear();
-        CORE.addUser(TEACHER, "teacher@it.test", "TEACHER", null);
-        CORE.addUser(STUDENT, "student@it.test", "STUDENT", 7L);
-        CORE.addUser(OTHER_STUDENT, "other@it.test", "STUDENT", null);
-        CORE.addCourse(10, "CS101", TEACHER, STUDENT);
+        SERVICES.down.set(false);
+        SERVICES.users.clear();
+        SERVICES.coursesOfStudent.clear();
+        SERVICES.coursesTaught.clear();
+        SERVICES.studentsOfCourse.clear();
+        SERVICES.openExams.clear();
+        SERVICES.addUser(TEACHER, "teacher@it.test", "TEACHER", null);
+        SERVICES.addUser(STUDENT, "student@it.test", "STUDENT", 7L);
+        SERVICES.addUser(OTHER_STUDENT, "other@it.test", "STUDENT", null);
+        SERVICES.addCourse(10, "CS101", TEACHER, STUDENT);
     }
 
     @Test
@@ -97,19 +97,19 @@ class MessagingServiceIT {
         assertThat(get("/api/chat/status", null).statusCode()).isEqualTo(401);
         assertThat(get("/api/chat/status", "not-a-jwt").statusCode()).isEqualTo(401);
         // Signed by identity-service, but a service token: not a user.
-        assertThat(get("/api/chat/status", CORE.serviceToken()).statusCode()).isEqualTo(403);
+        assertThat(get("/api/chat/status", SERVICES.serviceToken()).statusCode()).isEqualTo(403);
 
-        HttpResponse<String> status = get("/api/chat/status", CORE.userToken(STUDENT));
+        HttpResponse<String> status = get("/api/chat/status", SERVICES.userToken(STUDENT));
         assertThat(status.statusCode()).isEqualTo(200);
         assertThat(json.readTree(status.body()).get("available").asBoolean()).isTrue();
         // It looked the student up with its own client-credentials token.
-        assertThat(CORE.tokenRequests).isNotEmpty();
+        assertThat(SERVICES.tokenRequests).isNotEmpty();
     }
 
     @Test
     void teacherAndStudentChatAndContactsComeFromCoreMembership() throws Exception {
         JsonNode contacts =
-                json.readTree(get("/api/chat/contacts", CORE.userToken(STUDENT)).body());
+                json.readTree(get("/api/chat/contacts", SERVICES.userToken(STUDENT)).body());
         assertThat(contacts.toString()).contains("teacher@it.test").contains("CS101");
 
         HttpResponse<String> sent =
@@ -120,35 +120,36 @@ class MessagingServiceIT {
                                 "student@it.test",
                                 "content",
                                 "Welcome " + System.nanoTime()),
-                        CORE.userToken(TEACHER));
+                        SERVICES.userToken(TEACHER));
         assertThat(sent.statusCode()).isEqualTo(201);
         String content = json.readTree(sent.body()).get("content").asText();
 
-        assertThat(get("/api/chat/history", CORE.userToken(STUDENT)).body()).contains(content);
+        assertThat(get("/api/chat/history", SERVICES.userToken(STUDENT)).body()).contains(content);
 
-        // Student to student is refused, as in core.
+        // Student to student is refused, as in the monolith.
         assertThat(
                         post(
                                         "/api/chat/messages",
                                         Map.of("recipient", "other@it.test", "content", "hi"),
-                                        CORE.userToken(STUDENT))
+                                        SERVICES.userToken(STUDENT))
                                 .statusCode())
                 .isEqualTo(403);
     }
 
     @Test
     void anOpenMessagingBlockingQuizLocksTheStudent() throws Exception {
-        CORE.openExams.put(
+        SERVICES.openExams.put(
                 STUDENT,
                 List.of(Map.of("startedAt", Instant.now().toString(), "durationMinutes", 30)));
 
-        JsonNode status = json.readTree(get("/api/chat/status", CORE.userToken(STUDENT)).body());
+        JsonNode status =
+                json.readTree(get("/api/chat/status", SERVICES.userToken(STUDENT)).body());
         assertThat(status.get("reason").asText()).isEqualTo("QUIZ_IN_PROGRESS");
         assertThat(
                         post(
                                         "/api/chat/messages",
                                         Map.of("recipient", "teacher@it.test", "content", "help"),
-                                        CORE.userToken(STUDENT))
+                                        SERVICES.userToken(STUDENT))
                                 .statusCode())
                 .isEqualTo(423);
     }
@@ -160,11 +161,11 @@ class MessagingServiceIT {
                         post(
                                         "/api/chat/messages",
                                         Map.of("recipient", "student@it.test", "content", content),
-                                        CORE.userToken(TEACHER))
+                                        SERVICES.userToken(TEACHER))
                                 .statusCode())
                 .isEqualTo(201);
 
-        CORE.addUser(STUDENT, "renamed@it.test", "STUDENT", 7L);
+        SERVICES.addUser(STUDENT, "renamed@it.test", "STUDENT", 7L);
         publish(
                 "identity.user",
                 String.valueOf(STUDENT),
@@ -191,15 +192,15 @@ class MessagingServiceIT {
 
     @Test
     void whenCoreIsDownCallsFailFastWith503() throws Exception {
-        CORE.down.set(true);
-        HttpResponse<String> response = get("/api/chat/status", CORE.userToken(STUDENT));
+        SERVICES.down.set(true);
+        HttpResponse<String> response = get("/api/chat/status", SERVICES.userToken(STUDENT));
         assertThat(response.statusCode()).isEqualTo(503);
         assertThat(response.headers().firstValue("Retry-After")).isPresent();
     }
 
     private String historyOf(long userId) {
         try {
-            return get("/api/chat/history", CORE.userToken(userId)).body();
+            return get("/api/chat/history", SERVICES.userToken(userId)).body();
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }

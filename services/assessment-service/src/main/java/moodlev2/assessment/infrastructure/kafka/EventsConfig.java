@@ -23,9 +23,10 @@ import org.springframework.util.backoff.ExponentialBackOff;
 /**
  * Events this service publishes, and how it handles the ones it consumes.
  *
- * <p>Outbound, as in core: a {@link QuizAttemptChangedEvent} is recorded in EVENT_PUBLICATION with
- * the attempt and sent to {@code assessment.attempt} after commit, keyed by user, labelled {@code
- * assessment.QuizAttemptChanged}. messaging-service locks and unlocks chat on it.
+ * <p>Outbound, as in academic-service: a {@link QuizAttemptChangedEvent} is recorded in
+ * EVENT_PUBLICATION with the attempt and sent to {@code assessment.attempt} after commit, keyed by
+ * user, labelled {@code assessment.QuizAttemptChanged}. messaging-service locks and unlocks chat on
+ * it.
  */
 @Configuration
 class EventsConfig {

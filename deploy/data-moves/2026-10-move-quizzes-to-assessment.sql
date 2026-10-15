@@ -1,13 +1,13 @@
--- One-time move of quizzes, attempts, proctoring and the question bank from core's database
--- (moodle) to assessment-service's (assessment), for an installation that ran them inside core.
+-- One-time move of quizzes, attempts, proctoring and the question bank from the monolith's
+-- database (moodle) to assessment-service's (assessment), for an installation that ran them inside the monolith.
 -- Run as root after assessment-service has started once (Flyway creates the tables):
 --
 --   docker compose -f deploy/compose.yml exec -T mysql \
 --     sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD"' < deploy/data-moves/2026-10-move-quizzes-to-assessment.sql
 --
 -- Safe to run twice; ids are kept. Parents before children, so the foreign keys inside the
--- assessment database are satisfied. Question images: copy core's ./uploads files referenced by
--- questions.image_url into the assessment-uploads volume. core's tables are left untouched; drop
+-- assessment database are satisfied. Question images: copy the files referenced by
+-- questions.image_url from the core-uploads volume into assessment-uploads. The moodle tables are left untouched; drop
 -- them once the move has been checked.
 
 INSERT INTO assessment.quizzes (id, course_id, module_id, title, description, status, questions_count, duration_minutes, max_attempts, passing_score, shuffle_options, access_password, available_from, available_to, generation_type, block_messaging, created_at, updated_at)

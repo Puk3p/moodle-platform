@@ -16,9 +16,9 @@ import static org.mockito.Mockito.when;
 
 import java.time.Duration;
 import java.util.List;
-import moodlev2.messaging.core.CoreExamLocks;
-import moodlev2.messaging.core.CoreMembership;
-import moodlev2.messaging.core.Person;
+import moodlev2.messaging.clients.ExamLocks;
+import moodlev2.messaging.clients.Membership;
+import moodlev2.messaging.clients.Person;
 import moodlev2.messaging.infrastructure.persistence.ChatMessageRepository;
 import moodlev2.messaging.infrastructure.persistence.entity.ChatMessageEntity;
 import moodlev2.messaging.web.chat.dto.ChatMessageDto;
@@ -38,8 +38,8 @@ import org.springframework.web.server.ResponseStatusException;
 class ChatServiceTest {
 
     @Mock private ChatMessageRepository messageRepository;
-    @Mock private CoreExamLocks examLocks;
-    @Mock private CoreMembership membership;
+    @Mock private ExamLocks examLocks;
+    @Mock private Membership membership;
     @Mock private SimpMessagingTemplate messaging;
 
     private ChatService chatService;

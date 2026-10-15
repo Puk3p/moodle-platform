@@ -22,8 +22,8 @@ import org.springframework.security.web.authentication.HttpStatusEntryPoint;
  * present RS256 tokens signed by identity-service. No sessions, no CSRF (the gateway enforces it).
  *
  * <p>Authorities: {@code SCOPE_user} / {@code SCOPE_internal} from the token's scope, plus {@code
- * ROLE_*} from its {@code roles} claim, so {@code hasRole('ADMIN')} works as it did in core. The
- * caller's name is the {@code email} claim.
+ * ROLE_*} from its {@code roles} claim, so {@code hasRole('ADMIN')} works as it did in the
+ * monolith. The caller's name is the {@code email} claim.
  */
 @Configuration
 @EnableMethodSecurity

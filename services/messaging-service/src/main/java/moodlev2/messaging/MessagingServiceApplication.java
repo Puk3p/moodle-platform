@@ -5,8 +5,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
  * Chat between teachers and students: the REST API, live delivery over WebSocket, and the
- * conversation history in its own database. Users, courses and quiz locks belong to core, reached
- * through its internal API ({@link moodlev2.messaging.core}) and its events on Kafka.
+ * conversation history in its own database. Users, courses and quiz locks belong to identity-,
+ * academic- and assessment-service, reached through their internal APIs ({@link
+ * moodlev2.messaging.clients}) and their events on Kafka.
  */
 @SpringBootApplication
 public class MessagingServiceApplication {

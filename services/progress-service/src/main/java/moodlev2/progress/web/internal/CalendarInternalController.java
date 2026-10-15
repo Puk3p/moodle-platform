@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Course calendars for other services (core's dashboard and course preview). */
+/** Course calendars for other services (academic-service's dashboard and course preview). */
 @RestController
 @RequestMapping("/internal/calendar")
 @RequiredArgsConstructor

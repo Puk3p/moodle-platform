@@ -5,8 +5,8 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
-import moodlev2.messaging.core.OpenExam;
-import moodlev2.messaging.core.Person;
+import moodlev2.messaging.clients.OpenExam;
+import moodlev2.messaging.clients.Person;
 
 /**
  * Who may message whom, and when messaging is locked. Pure functions over entities so the rules can

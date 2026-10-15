@@ -152,7 +152,7 @@
     </build>
 
     <profiles>
-        <!-- See backend/pom.xml: build outside ./target (e.g. iCloud-synced checkouts). -->
+        <!-- Build outside ./target (e.g. iCloud-synced checkouts): -Dmoodle.build.root=<dir> -->
         <profile>
             <id>external-build-dir</id>
             <activation>

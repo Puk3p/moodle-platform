@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * For other services: exam locks (messaging-service blocks chat during a quiz) and a course's
- * quizzes (core's course page and preview).
+ * quizzes (academic-service's course page and preview).
  */
 @RestController
 @RequestMapping("/internal")

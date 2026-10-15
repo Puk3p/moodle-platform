@@ -6,11 +6,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import moodlev2.assessment.core.ClassSummary;
-import moodlev2.assessment.core.DirectoryApi;
-import moodlev2.assessment.core.UserSummary;
+import moodlev2.assessment.clients.ClassSummary;
+import moodlev2.assessment.clients.DirectoryApi;
+import moodlev2.assessment.clients.UserSummary;
 
-/** An in-memory stand-in for core's directory. */
+/** An in-memory stand-in for identity-service's directory. */
 public final class FakeDirectory implements DirectoryApi {
 
     private final Map<Long, UserSummary> users = new LinkedHashMap<>();
