@@ -227,6 +227,37 @@ class AssessmentServiceIT {
                 () -> count("SELECT COUNT(*) FROM quiz_attempts WHERE user_id = " + STUDENT) == 0);
     }
 
+    @Test
+    void aNewDatabaseStartsWithTheMonolithsSampleQuizzesAndQuestionBank() throws Exception {
+        // The sample course CS201 (id 1 in academic-service) lists its published quiz only.
+        HttpResponse<String> quizzes = get("/internal/quizzes/courses/1", SERVICES.serviceToken());
+        assertThat(quizzes.statusCode()).isEqualTo(200);
+        assertThat(quizzes.body())
+                .contains("Complexity Basics")
+                .doesNotContain("Random Weekly Quiz");
+
+        assertThat(count("SELECT COUNT(*) FROM quiz_questions WHERE quiz_id = 1")).isEqualTo(2);
+        assertThat(count("SELECT COUNT(*) FROM quiz_options WHERE question_id IN (1, 2)"))
+                .isEqualTo(6);
+        // The sample student's (id 1 in identity-service) finished attempt, with its answers.
+        assertThat(
+                        count(
+                                "SELECT COUNT(*) FROM quiz_attempts a JOIN quiz_responses r"
+                                        + " ON r.attempt_id = a.id WHERE a.id = 1"
+                                        + " AND a.user_id = 1 AND a.status = 'COMPLETED'"))
+                .isEqualTo(2);
+        // The draft has no access password: the monolith's V5 hash matched none, V6 cleared it.
+        assertThat(count("SELECT COUNT(*) FROM quizzes WHERE id = 2 AND access_password IS NULL"))
+                .isEqualTo(1);
+
+        assertThat(count("SELECT COUNT(*) FROM categories WHERE id BETWEEN 1 AND 7")).isEqualTo(7);
+        assertThat(count("SELECT COUNT(*) FROM questions WHERE id BETWEEN 1 AND 6")).isEqualTo(6);
+        assertThat(count("SELECT COUNT(*) FROM question_tags WHERE question_id BETWEEN 1 AND 6"))
+                .isEqualTo(9);
+        assertThat(count("SELECT COUNT(*) FROM question_bank_options WHERE question_id IN (2, 3)"))
+                .isEqualTo(6);
+    }
+
     // ── helpers ──────────────────────────────────────────────────────────────
 
     private long createQuiz(String title, boolean blockMessaging) throws Exception {

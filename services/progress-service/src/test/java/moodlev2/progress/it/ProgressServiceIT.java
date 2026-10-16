@@ -169,6 +169,25 @@ class ProgressServiceIT {
         eventually(() -> count("SELECT COUNT(*) FROM grades WHERE user_id = " + STUDENT) == 0);
     }
 
+    @Test
+    void aNewDatabaseStartsWithTheMonolithsSampleGradesAndCalendar() throws Exception {
+        // The sample courses CS201 and CS350 (ids 1 and 2 in academic-service).
+        HttpResponse<String> calendar =
+                post("/internal/calendar/courses", List.of(1, 2), SERVICES.serviceToken());
+        assertThat(calendar.statusCode()).isEqualTo(200);
+        assertThat(calendar.body()).contains("Lab 4 Submission", "Quiz 2", "Project Proposal");
+        // Dated from the day the database was created, so they are still ahead.
+        assertThat(
+                        count(
+                                "SELECT COUNT(*) FROM calendar_events WHERE id BETWEEN 1 AND 3"
+                                        + " AND event_date > CURRENT_DATE"))
+                .isEqualTo(3);
+
+        // The sample student's (id 1 in identity-service) two grades.
+        assertThat(count("SELECT COUNT(*) FROM grades WHERE user_id = 1 AND course_id IN (1, 2)"))
+                .isEqualTo(2);
+    }
+
     // ── helpers ──────────────────────────────────────────────────────────────
 
     private String calendarOf(long userId) {
