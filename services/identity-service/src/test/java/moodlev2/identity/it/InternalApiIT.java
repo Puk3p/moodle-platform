@@ -3,9 +3,14 @@ package moodlev2.identity.it;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
+import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
+import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -13,6 +18,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -41,6 +47,33 @@ class InternalApiIT extends IntegrationTestBase {
         assertThat(jwt.getJWTClaimsSet().getIssuer()).isEqualTo("moodle-identity");
         assertThat(jwt.getJWTClaimsSet().getAudience()).containsExactly("moodle-internal");
         assertThat(jwt.getJWTClaimsSet().getStringClaim("scope")).isEqualTo("internal");
+    }
+
+    @Test
+    void aForgedOrMalformedTokenIsRefusedWith401() throws Exception {
+        // Shaped like a real service token, signed by a key this service never published: what a
+        // client still holds after a restart that generated new keys, or what an attacker sends.
+        RSAKey stranger = new RSAKeyGenerator(2048).keyID("stranger").generate();
+        SignedJWT forged =
+                new SignedJWT(
+                        new JWSHeader.Builder(JWSAlgorithm.RS256).keyID("stranger").build(),
+                        new JWTClaimsSet.Builder()
+                                .issuer("moodle-identity")
+                                .audience("moodle-internal")
+                                .subject("service:it-service")
+                                .claim("scope", "internal")
+                                .expirationTime(new Date(System.currentTimeMillis() + 60_000))
+                                .build());
+        forged.sign(new RSASSASigner(stranger));
+
+        for (String token : List.of(forged.serialize(), "not-a-jwt")) {
+            HttpResponse<String> response = get("/internal/directory/users/1", token);
+            assertThat(response.statusCode()).as(token).isEqualTo(401);
+            // So a client knows to drop the token and get a new one.
+            assertThat(response.headers().firstValue("WWW-Authenticate"))
+                    .as(token)
+                    .hasValueSatisfying(h -> assertThat(h).contains("invalid_token"));
+        }
     }
 
     @Test
