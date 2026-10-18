@@ -33,7 +33,9 @@ deploying MoodleV2 for a real school (target scale: ~300 users).
    and create the first admin account through a controlled path.
 3. **Set strong secrets** for `JWT_SECRET`, the databases, the internal clients
    (`INTERNAL_CLIENT_*_SECRET`), OAuth and mail via environment variables (see
-   `deploy/.env.example`). Never commit `.env`.
+   `deploy/.env.example`). Never commit `.env`. Unless `INTERNAL_JWT_PRIVATE_KEY` is set,
+   identity-service keeps the key that signs every internal token in its own database, next to
+   password hashes and 2FA secrets: treat that database and its backups accordingly.
 4. **Terminate TLS** (HTTPS) at a reverse proxy (nginx/Caddy/Traefik) and point
    `APP_FRONTEND_URL`, `APP_CORS_ALLOWED_ORIGINS`, and `OAUTH_BASE_URL` at the real HTTPS
    domains. Update the front-end WebSocket URL to `wss://`.
@@ -46,8 +48,7 @@ load balancer is **not required** for this scale. Put the gateway behind one rev
 TLS and static-asset caching; it is the only service that needs to be reachable. If you ever run
 several instances of a service, these pieces must move first:
 
-- identity-service: the in-memory sign-in rate limiter and 2FA challenges (→ Redis), and a
-  configured `INTERNAL_JWT_PRIVATE_KEY` / `INTERNAL_JWT_PUBLIC_KEY` so every instance signs with
-  the same key;
+- identity-service: the in-memory sign-in rate limiter and 2FA challenges (→ Redis). Its token
+  signing key is already shared: every instance reads the same one from its database;
 - messaging-service: the STOMP simple broker (→ an external broker such as RabbitMQ);
 - the gateway already keeps a token cache per instance, evicted through Kafka.

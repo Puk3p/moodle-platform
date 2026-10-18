@@ -21,6 +21,7 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import moodlev2.identity.infrastructure.security.InternalJwtKeys;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -47,6 +48,22 @@ class InternalApiIT extends IntegrationTestBase {
         assertThat(jwt.getJWTClaimsSet().getIssuer()).isEqualTo("moodle-identity");
         assertThat(jwt.getJWTClaimsSet().getAudience()).containsExactly("moodle-internal");
         assertThat(jwt.getJWTClaimsSet().getStringClaim("scope")).isEqualTo("internal");
+    }
+
+    @Test
+    void theSigningKeyIsKeptForRestartsAndOtherInstances() throws Exception {
+        JWKSet published = jwks();
+        String tokenBefore = serviceToken();
+
+        // What a restarted, or a second, instance loads from the same database.
+        InternalJwtKeys restarted = new InternalJwtKeys("", "", jdbc);
+
+        assertThat(restarted.publicJwks().getKeys().get(0).getKeyID())
+                .isEqualTo(published.getKeys().get(0).getKeyID());
+        assertThat(SignedJWT.parse(tokenBefore).verify(new RSASSAVerifier(restarted.publicKey())))
+                .isTrue();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM signing_keys", Integer.class))
+                .isEqualTo(1);
     }
 
     @Test

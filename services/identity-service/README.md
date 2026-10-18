@@ -47,7 +47,7 @@ Environment variables (defaults suit local development):
 | `KAFKA_BOOTSTRAP_SERVERS` | localhost:9092 | Kafka |
 | `JWT_SECRET` |  | Key for the short pre-2FA challenge token (≥ 32 bytes) |
 | `INTERNAL_CLIENT_{GATEWAY,ACADEMIC,ASSESSMENT,PROGRESS,MESSAGING}_SECRET` |  | Who may get tokens; a blank secret disables that client |
-| `INTERNAL_JWT_PRIVATE_KEY, INTERNAL_JWT_PUBLIC_KEY` | generated per start | RS256 signing key pair (PEM); set it for more than one instance |
+| `INTERNAL_JWT_PRIVATE_KEY, INTERNAL_JWT_PUBLIC_KEY` | generated once, kept in the database | RS256 signing key pair (PEM); set both to keep the private key out of the database |
 | `APP_SESSION_COOKIE_SECURE` | true | `false` only for plain-HTTP local development |
 | `SERVER_TOMCAT_REMOTEIP_INTERNALPROXIES` | private networks | Proxies trusted for X-Forwarded-For (rate limits and session records use the client address) |
 | `APP_FRONTEND_URL, OAUTH_BASE_URL` | localhost | Redirects after OAuth, links in reset mail |

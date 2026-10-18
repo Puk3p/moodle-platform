@@ -215,7 +215,7 @@ Moving an existing single-database installation over: start the stack, then run 
 | `MYSQL_ROOT_PASSWORD`, `*_DB_PASSWORD` | The MySQL root password and one password per service account |
 | `JWT_SECRET` | identity-service's key for the short pre-2FA challenge token (≥ 32 bytes) |
 | `INTERNAL_CLIENT_*_SECRET` | Each service's secret for identity-service's token endpoint (client credentials) |
-| `INTERNAL_JWT_PRIVATE_KEY` / `INTERNAL_JWT_PUBLIC_KEY` | RS256 key pair for internal tokens; needed with more than one identity-service instance |
+| `INTERNAL_JWT_PRIVATE_KEY` / `INTERNAL_JWT_PUBLIC_KEY` | Optional RS256 key pair for internal tokens; left empty, identity-service generates one once and keeps it in its database |
 | `APP_SESSION_COOKIE_SECURE`, `SESSION_COOKIE_NAME` | `true` / `__Host-mdl_session` behind HTTPS |
 | `TRUSTED_PROXIES`, `IDENTITY_TRUSTED_PROXIES` | Who may report client addresses (the reverse proxy, the gateway) |
 | `PUBLIC_BASE_URL`, `APP_FRONTEND_URL`, `APP_CORS_ALLOWED_ORIGINS` | Public URLs (OAuth redirects, reset links, CORS) |
