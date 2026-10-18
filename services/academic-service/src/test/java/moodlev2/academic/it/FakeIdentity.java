@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
@@ -44,6 +45,8 @@ final class FakeIdentity {
     private final Map<Long, Map<String, Object>> users = new ConcurrentHashMap<>();
     private final Map<Long, String> classes = new ConcurrentHashMap<>();
     private final Set<Long> twoFactor = ConcurrentHashMap.newKeySet();
+    private final List<String> issuedServiceTokens = new CopyOnWriteArrayList<>();
+    private final Set<String> refusedTokens = ConcurrentHashMap.newKeySet();
     private final ObjectMapper json = JsonMapper.builder().build();
     private final RSAKey key;
     private final RSAKey strangerKey;
@@ -111,6 +114,19 @@ final class FakeIdentity {
 
     void enableTwoFactor(long userId) {
         twoFactor.add(userId);
+    }
+
+    /** Client-credentials tokens granted so far. */
+    int serviceTokensIssued() {
+        return issuedServiceTokens.size();
+    }
+
+    /**
+     * From now on, refuses the tokens granted so far, as identity-service does after a restart that
+     * generated new signing keys.
+     */
+    void refuseTokensIssuedSoFar() {
+        refusedTokens.addAll(issuedServiceTokens);
     }
 
     /** What the gateway forwards for a signed-in user: their id, email, roles and class. */
@@ -181,21 +197,25 @@ final class FakeIdentity {
             if (!expected.equals(request.getHeader("Authorization"))) {
                 return new MockResponse().setResponseCode(401);
             }
-            return ok(
-                    Map.of(
-                            "access_token",
-                            sign(
-                                    new JWTClaimsSet.Builder()
-                                            .subject("service:" + CLIENT_ID)
-                                            .claim("scope", "internal"),
-                                    key),
-                            "token_type",
-                            "Bearer",
-                            "expires_in",
-                            300));
+            String token =
+                    sign(
+                            new JWTClaimsSet.Builder()
+                                    .subject("service:" + CLIENT_ID)
+                                    .claim("scope", "internal")
+                                    // Unique per grant, so each token can be told apart.
+                                    .jwtID(java.util.UUID.randomUUID().toString()),
+                            key);
+            issuedServiceTokens.add(token);
+            return ok(Map.of("access_token", token, "token_type", "Bearer", "expires_in", 300));
         }
-        if (!String.valueOf(request.getHeader("Authorization")).startsWith("Bearer ")) {
+        String authorization = String.valueOf(request.getHeader("Authorization"));
+        if (!authorization.startsWith("Bearer ")) {
             return new MockResponse().setResponseCode(401);
+        }
+        if (refusedTokens.contains(authorization.substring("Bearer ".length()))) {
+            return new MockResponse()
+                    .setResponseCode(401)
+                    .setHeader("WWW-Authenticate", "Bearer error=\"invalid_token\"");
         }
         String[] parts = path.split("/");
         switch (path.replaceAll("/\\d+", "/{id}")) {

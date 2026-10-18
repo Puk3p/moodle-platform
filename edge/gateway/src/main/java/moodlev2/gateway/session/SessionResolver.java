@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
+import reactor.util.retry.Retry;
 
 /**
  * Exchanges a browser's session cookie for a user token, by asking identity-service (which applies
@@ -55,13 +56,22 @@ public class SessionResolver {
                                 "remoteAddress", remoteAddress == null ? "" : remoteAddress))
                 .retrieve()
                 .bodyToMono(ResolvedSession.class)
+                // 401: identity-service refused the gateway's own token, which is now dropped;
+                // once more with a fresh one, so nobody is signed out over it.
+                .retryWhen(Retry.max(1).filter(SessionResolver::tokenRefused))
                 .doOnNext(resolved -> cache.put(key, resolved))
+                // 404: no live session for this cookie.
                 .onErrorResume(
                         WebClientResponseException.class,
                         e ->
-                                e.getStatusCode() == HttpStatus.UNAUTHORIZED
+                                e.getStatusCode() == HttpStatus.NOT_FOUND
                                         ? Mono.empty()
                                         : Mono.error(e));
+    }
+
+    private static boolean tokenRefused(Throwable failure) {
+        return failure instanceof WebClientResponseException e
+                && e.getStatusCode() == HttpStatus.UNAUTHORIZED;
     }
 
     /** Sessions identity-service revoked (logout, password change, theft detection...). */

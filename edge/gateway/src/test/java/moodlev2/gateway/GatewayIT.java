@@ -17,6 +17,7 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -57,6 +58,11 @@ class GatewayIT {
     static final Map<String, String> SESSIONS = new ConcurrentHashMap<>();
 
     static final AtomicInteger RESOLVE_CALLS = new AtomicInteger();
+
+    /** The gateway's client-credentials tokens: each grant is numbered; refused ones get a 401. */
+    static final AtomicInteger TOKENS_ISSUED = new AtomicInteger();
+
+    static final Set<String> REFUSED_TOKENS = ConcurrentHashMap.newKeySet();
     static final BlockingQueue<RecordedRequest> IDENTITY_REQUESTS = new LinkedBlockingQueue<>();
     static final BlockingQueue<RecordedRequest> MESSAGING_REQUESTS = new LinkedBlockingQueue<>();
     static final BlockingQueue<RecordedRequest> ACADEMIC_REQUESTS = new LinkedBlockingQueue<>();
@@ -336,6 +342,33 @@ class GatewayIT {
     }
 
     @Test
+    void aRefusedGatewayTokenIsReplacedAndNobodyIsSignedOut() throws Exception {
+        String session = newSession("user-token-6");
+        assertThat(
+                        send(get("/api/chat/status")
+                                        .header("Cookie", "mdl_session=" + session)
+                                        .build())
+                                .statusCode())
+                .isEqualTo(200);
+        int issued = TOKENS_ISSUED.get();
+        MESSAGING_REQUESTS.clear();
+
+        // identity-service restarted with new keys: the gateway's token is now refused.
+        for (int i = 1; i <= issued; i++) {
+            REFUSED_TOKENS.add("gateway-token-" + i);
+        }
+
+        // A browser the gateway has not cached yet, so it has to ask identity-service.
+        String another = newSession("user-token-7");
+        HttpResponse<String> response =
+                send(get("/api/chat/status").header("Cookie", "mdl_session=" + another).build());
+        assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(TOKENS_ISSUED.get()).isEqualTo(issued + 1);
+        RecordedRequest atMessaging = take(MESSAGING_REQUESTS, "/api/chat/status");
+        assertThat(atMessaging.getHeader("Authorization")).isEqualTo("Bearer user-token-7");
+    }
+
+    @Test
     void theWebSocketUpgradeCarriesTheUserToken() throws Exception {
         String session = newSession("user-token-5");
         WebSocket socket =
@@ -361,7 +394,7 @@ class GatewayIT {
             return json(
                     Map.of(
                             "access_token",
-                            "gateway-service-token",
+                            "gateway-token-" + TOKENS_ISSUED.incrementAndGet(),
                             "token_type",
                             "Bearer",
                             "expires_in",
@@ -369,8 +402,13 @@ class GatewayIT {
         }
         if (path.equals("/internal/sessions/resolve")) {
             RESOLVE_CALLS.incrementAndGet();
-            if (!"Bearer gateway-service-token".equals(request.getHeader("Authorization"))) {
-                return new MockResponse().setResponseCode(401);
+            String authorization = String.valueOf(request.getHeader("Authorization"));
+            if (!authorization.startsWith("Bearer gateway-token-")
+                    || REFUSED_TOKENS.contains(authorization.substring("Bearer ".length()))) {
+                // As identity-service answers a token it cannot verify.
+                return new MockResponse()
+                        .setResponseCode(401)
+                        .setHeader("WWW-Authenticate", "Bearer error=\"invalid_token\"");
             }
             try {
                 Map<?, ?> body =
@@ -378,7 +416,7 @@ class GatewayIT {
                 String token = (String) body.get("token");
                 String userToken = SESSIONS.get(token);
                 if (userToken == null || !BROWSER.equals(body.get("userAgent"))) {
-                    return new MockResponse().setResponseCode(401);
+                    return new MockResponse().setResponseCode(404);
                 }
                 return json(
                         Map.of(

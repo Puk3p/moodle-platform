@@ -46,42 +46,56 @@ public class ClientsConfig {
         return manager;
     }
 
+    /**
+     * Adds this service's token to every call. A token the other side refuses (401:
+     * identity-service restarted with new keys, say) is dropped, so the next call, or the retry of
+     * this one (see {@link RetryableCallFailure}), fetches a fresh one.
+     */
+    @Bean
+    OAuth2ClientHttpRequestInterceptor internalTokenInterceptor(
+            OAuth2AuthorizedClientManager internalAuthorizedClientManager,
+            OAuth2AuthorizedClientService clients) {
+        var interceptor = new OAuth2ClientHttpRequestInterceptor(internalAuthorizedClientManager);
+        interceptor.setClientRegistrationIdResolver(request -> REGISTRATION);
+        interceptor.setPrincipalResolver(request -> SELF);
+        interceptor.setAuthorizationFailureHandler(
+                OAuth2ClientHttpRequestInterceptor.authorizationFailureHandler(clients));
+        return interceptor;
+    }
+
     @Bean
     RestClient identityRestClient(
             RestClient.Builder builder,
-            OAuth2AuthorizedClientManager internalAuthorizedClientManager,
+            OAuth2ClientHttpRequestInterceptor internalTokenInterceptor,
             @Value("${app.identity.url}") String url,
             @Value("${app.clients.timeout:2s}") Duration timeout) {
-        return client(builder, internalAuthorizedClientManager, url, timeout);
+        return client(builder, internalTokenInterceptor, url, timeout);
     }
 
     @Bean
     RestClient academicRestClient(
             RestClient.Builder builder,
-            OAuth2AuthorizedClientManager internalAuthorizedClientManager,
+            OAuth2ClientHttpRequestInterceptor internalTokenInterceptor,
             @Value("${app.academic.url}") String url,
             @Value("${app.clients.timeout:2s}") Duration timeout) {
-        return client(builder, internalAuthorizedClientManager, url, timeout);
+        return client(builder, internalTokenInterceptor, url, timeout);
     }
 
     /** assessment-service's internal API (quiz locks). */
     @Bean
     RestClient assessmentRestClient(
             RestClient.Builder builder,
-            OAuth2AuthorizedClientManager internalAuthorizedClientManager,
+            OAuth2ClientHttpRequestInterceptor internalTokenInterceptor,
             @Value("${app.assessment.url}") String url,
             @Value("${app.clients.timeout:2s}") Duration timeout) {
-        return client(builder, internalAuthorizedClientManager, url, timeout);
+        return client(builder, internalTokenInterceptor, url, timeout);
     }
 
     private static RestClient client(
             RestClient.Builder builder,
-            OAuth2AuthorizedClientManager manager,
+            OAuth2ClientHttpRequestInterceptor interceptor,
             String url,
             Duration timeout) {
-        var interceptor = new OAuth2ClientHttpRequestInterceptor(manager);
-        interceptor.setClientRegistrationIdResolver(request -> REGISTRATION);
-        interceptor.setPrincipalResolver(request -> SELF);
         return builder.clone()
                 .baseUrl(url)
                 .requestFactory(

@@ -158,13 +158,21 @@ class InternalApiIT extends IntegrationTestBase {
         assertThat(get("/internal/directory/users/" + student.id(), jwt.serialize()).statusCode())
                 .isEqualTo(403);
 
-        // Same browser checks as everywhere: another User-Agent is refused (and revokes it).
+        // Same browser checks as everywhere: another User-Agent is refused (and revokes it). Not a
+        // 401, which here only ever means the caller's token was refused.
         HttpResponse<String> stolen =
                 post(
                         "/internal/sessions/resolve",
                         Map.of("token", session, "userAgent", "evil/1.0"),
                         serviceToken());
-        assertThat(stolen.statusCode()).isEqualTo(401);
+        assertThat(stolen.statusCode()).isEqualTo(404);
+        assertThat(
+                        post(
+                                        "/internal/sessions/resolve",
+                                        Map.of("token", session, "userAgent", "moodle-it/1.0"),
+                                        serviceToken())
+                                .statusCode())
+                .isEqualTo(404);
         student.api().get("/api/auth/session").expect(401);
     }
 

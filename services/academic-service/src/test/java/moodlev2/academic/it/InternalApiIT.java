@@ -71,6 +71,19 @@ class InternalApiIT extends IntegrationTestBase {
     }
 
     @Test
+    void aRefusedServiceTokenIsReplacedWithoutTheUserNoticing() {
+        TestUser student = student();
+        student.api().get("/api/courses/my-dashboard").expect(200);
+        int issued = IDENTITY.serviceTokensIssued();
+
+        // identity-service restarted with new keys: the token this service holds is refused.
+        IDENTITY.refuseTokensIssuedSoFar();
+
+        student.api().get("/api/courses/my-dashboard").expect(200);
+        assertThat(IDENTITY.serviceTokensIssued()).isEqualTo(issued + 1);
+    }
+
+    @Test
     void withoutTheDirectoryPagesFailFastInsteadOfGuessing() {
         TestUser student = student();
         IDENTITY.down.set(true);

@@ -77,11 +77,15 @@ public class InternalAuthController {
      * The gateway's cookie-to-token exchange: checks the browser's session exactly like an HTTP
      * request to this application (expiry, idle time, same browser, active account) and returns a
      * short-lived user token for the downstream services.
+     *
+     * <p>A session it does not accept is a 404 (no live session for that cookie), never a 401: on
+     * this API a 401 always means the caller's own token was refused, so the gateway can tell "this
+     * browser is signed out" from "get yourself a new token and try again".
      */
     @PostMapping("/sessions/resolve")
     public ResponseEntity<ResolvedSession> resolve(@RequestBody ResolveRequest request) {
         if (request == null || request.token() == null || request.token().isBlank()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            return ResponseEntity.notFound().build();
         }
         return sessionService
                 .resolve(request.token(), request.userAgent(), request.remoteAddress())
@@ -91,7 +95,7 @@ public class InternalAuthController {
                                         .findUser(resolved.user().getId())
                                         .map(user -> toResponse(user, resolved.tokenHash())))
                 .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     private ResolvedSession toResponse(UserSummary user, String sessionHash) {

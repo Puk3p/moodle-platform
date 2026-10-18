@@ -9,6 +9,7 @@ import org.springframework.security.oauth2.client.AuthorizedClientServiceReactiv
 import org.springframework.security.oauth2.client.ReactiveOAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.ReactiveOAuth2AuthorizedClientProviderBuilder;
 import org.springframework.security.oauth2.client.ReactiveOAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.client.RemoveAuthorizedClientReactiveOAuth2AuthorizationFailureHandler;
 import org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.reactive.function.client.ServerOAuth2AuthorizedClientExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -40,12 +41,20 @@ class IdentityClientConfig {
     WebClient identityWebClient(
             WebClient.Builder builder,
             ReactiveOAuth2AuthorizedClientManager identityAuthorizedClientManager,
+            ReactiveOAuth2AuthorizedClientService clients,
             @Value("${app.identity.url}") String identityUrl,
             @Value("${app.identity.timeout:2s}") Duration timeout) {
         var oauth =
                 new ServerOAuth2AuthorizedClientExchangeFilterFunction(
                         identityAuthorizedClientManager);
         oauth.setDefaultClientRegistrationId("identity");
+        // A 401 means identity-service refused the gateway's token (it restarted with new keys,
+        // say): drop it, so the next call (SessionResolver retries once) gets a fresh one.
+        oauth.setAuthorizationFailureHandler(
+                new RemoveAuthorizedClientReactiveOAuth2AuthorizationFailureHandler(
+                        (registrationId, principal, attributes) ->
+                                clients.removeAuthorizedClient(
+                                        registrationId, principal.getName())));
         return builder.baseUrl(identityUrl)
                 .clientConnector(
                         new ReactorClientHttpConnector(
