@@ -1,6 +1,5 @@
 package moodlev2.gateway.filter;
 
-import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import moodlev2.gateway.session.ResolvedSession;
@@ -29,13 +28,16 @@ import reactor.core.publisher.Mono;
 public class SessionTokenGatewayFilterFactory extends AbstractGatewayFilterFactory<Object> {
 
     private final SessionResolver sessions;
+    private final ClientAddress clientAddress;
     private final String sessionCookie;
 
     public SessionTokenGatewayFilterFactory(
             SessionResolver sessions,
+            ClientAddress clientAddress,
             @Value("${app.session.cookie-name:__Host-mdl_session}") String sessionCookie) {
         super(Object.class);
         this.sessions = sessions;
+        this.clientAddress = clientAddress;
         this.sessionCookie = sessionCookie;
     }
 
@@ -50,7 +52,7 @@ public class SessionTokenGatewayFilterFactory extends AbstractGatewayFilterFacto
             return sessions.resolve(
                             cookie.getValue(),
                             request.getHeaders().getFirst(HttpHeaders.USER_AGENT),
-                            clientAddress(request))
+                            clientAddress.of(request))
                     .map(Optional::of)
                     .defaultIfEmpty(Optional.empty())
                     .flatMap(
@@ -73,13 +75,6 @@ public class SessionTokenGatewayFilterFactory extends AbstractGatewayFilterFacto
                                 })
                         .build();
         return exchange.mutate().request(request).build();
-    }
-
-    private static String clientAddress(ServerHttpRequest request) {
-        InetSocketAddress remote = request.getRemoteAddress();
-        return remote == null || remote.getAddress() == null
-                ? null
-                : remote.getAddress().getHostAddress();
     }
 
     static Mono<Void> unauthorized(ServerWebExchange exchange) {
