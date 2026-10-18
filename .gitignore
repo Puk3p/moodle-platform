@@ -49,3 +49,9 @@ connect_*.sh
 ### Uploads ###
 uploads/
 profile-pictures/
+
+# macOS Finder metadata
+.DS_Store
+
+# npm dependencies (scripts/, anywhere else)
+node_modules/

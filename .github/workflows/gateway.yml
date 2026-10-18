@@ -1,0 +1,25 @@
+name: gateway
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "edge/gateway/**"
+      - ".github/workflows/gateway.yml"
+      - ".github/workflows/service.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "edge/gateway/**"
+      - ".github/workflows/gateway.yml"
+      - ".github/workflows/service.yml"
+
+concurrency:
+  group: gateway-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gateway:
+    uses: ./.github/workflows/service.yml
+    with:
+      path: edge/gateway

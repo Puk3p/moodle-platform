@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Builds every deployable of the platform. Each module is its own Spring Boot application (its own
+  jar, database and container); this file only aggregates them, so `./mvnw verify` at the root
+  builds and tests all of them. Modules keep spring-boot-starter-parent as their parent.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>moodlev2</groupId>
+    <artifactId>moodle-platform</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>moodle-platform</name>
+
+    <modules>
+        <module>services/academic-service</module>
+        <module>services/identity-service</module>
+        <module>services/messaging-service</module>
+        <module>services/progress-service</module>
+        <module>services/assessment-service</module>
+        <module>edge/gateway</module>
+        <!-- Runs only with -Pe2e, against a running stack (deploy/compose.yml). -->
+        <module>e2e</module>
+    </modules>
+</project>

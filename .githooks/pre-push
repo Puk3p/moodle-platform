@@ -5,34 +5,35 @@ echo "╔═══════════════════════�
 echo "║         PRE-PUSH CHECKS              ║"
 echo "╚══════════════════════════════════════╝"
 
-# ── 1. Backend: Full verify (compile + SpotBugs) ─────────
-JAVA_FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | grep '\.java$' || true)
+# ── 1. Services: formatting, unit tests and SpotBugs per changed module ─
+# The Maven modules (each service is its own) that hold these changed Java files.
+changed_modules() {
+    echo "$1" | { grep '\.java$' || true; } | while read -r f; do
+        case "$f" in
+            services/*/* | edge/*/*) echo "$f" | cut -d/ -f1-2 ;;
+            e2e/*) echo "e2e" ;;
+        esac
+    done | sort -u
+}
 
-if [[ -n "$JAVA_FILES" ]]; then
+# Builds outside ./target when set (e.g. a checkout in an iCloud-synced folder).
+BUILD_ROOT_ARG=${MOODLE_BUILD_ROOT:+-Dmoodle.build.root=$MOODLE_BUILD_ROOT}
+MODULES=$(changed_modules "$(git diff --name-only HEAD~1 HEAD 2>/dev/null || true)")
+
+if [[ -n "$MODULES" ]]; then
     JAVA_VER=$(java -version 2>&1 | head -1 | grep -oE '"[0-9]+' | tr -d '"')
     if [[ "$JAVA_VER" -ge 21 ]] 2>/dev/null; then
-        echo "→ Running backend Spotless check..."
-        (cd backend && ./mvnw spotless:check -q) || {
-            echo "✖ Spotless failed. Run: cd backend && ./mvnw spotless:apply"
-            exit 1
-        }
-        echo "✓ Spotless passed."
-
-        echo "→ Running SpotBugs analysis..."
-        (cd backend && ./mvnw compile spotbugs:check -q -DskipTests) || {
-            echo "✖ SpotBugs found issues. Fix them before pushing."
-            exit 1
-        }
-        echo "✓ SpotBugs passed."
-
-        echo "→ Running backend tests..."
-        (cd backend && ./mvnw test -q) || {
-            echo "✖ Backend tests failed."
-            exit 1
-        }
-        echo "✓ Backend tests passed."
+        for m in $MODULES; do
+            # Integration tests need Docker (Testcontainers); CI runs them.
+            echo "→ $m: Spotless, unit tests, SpotBugs..."
+            ./mvnw -q -f "$m/pom.xml" verify -DskipITs $BUILD_ROOT_ARG || {
+                echo "✖ $m failed. Formatting: ./mvnw -f $m/pom.xml spotless:apply"
+                exit 1
+            }
+        done
+        echo "✓ Services passed."
     else
-        echo "⚠ Skipping backend checks (local JDK $JAVA_VER < 21). CI will run them."
+        echo "⚠ Skipping service checks (local JDK $JAVA_VER < 21). CI will run them."
     fi
 fi
 

@@ -1,0 +1,25 @@
+name: messaging-service
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "services/messaging-service/**"
+      - ".github/workflows/messaging-service.yml"
+      - ".github/workflows/service.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "services/messaging-service/**"
+      - ".github/workflows/messaging-service.yml"
+      - ".github/workflows/service.yml"
+
+concurrency:
+  group: messaging-service-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  messaging-service:
+    uses: ./.github/workflows/service.yml
+    with:
+      path: services/messaging-service

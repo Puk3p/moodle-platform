@@ -1,0 +1,7 @@
+SECURITY_AUDIT.md
+target/
+uploads/
+profile-pictures/
+.idea/
+*.iml
+.DS_Store

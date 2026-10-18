@@ -6,11 +6,16 @@ import {
   faSearch, faBell, faTableCellsLarge, faBookOpen, faCalendarDay,
   faGraduationCap, faFolderOpen, faCog, faSignOutAlt, faArrowRight,
   faFileAlt, faAward, faClipboardList, faClipboardQuestion, faCode,
-  faBullhorn, faCheckCircle, faComments
+  faBullhorn, faCheckCircle, faComments, IconDefinition,
 } from '@fortawesome/free-solid-svg-icons';
 
 import { CoursesService } from '../../core/services/courses.service';
 import { CourseOverview, CompletedCourseSummary } from '../../core/models/courses-page.response';
+import { Activity, Deadline } from '../../core/models/dashboard.model';
+
+// Icons picked by position, as on the dashboard.
+const DEADLINE_ICONS = [faClipboardList, faClipboardQuestion, faCode];
+const ACTIVITY_ICONS = [faBullhorn, faCheckCircle, faComments];
 
 @Component({
   selector: 'app-courses',
@@ -56,17 +61,8 @@ export class CoursesComponent implements OnInit {
     { label: 'Log out', icon: faSignOutAlt, link: '/logout' },
   ];
 
-  deadlines = [
-    { title: 'Lab 4 Submission', course: 'CS201: Data Structures', due: 'Due in 2 days', icon: faClipboardList },
-    { title: 'Mid-term Quiz', course: 'CS350: Operating Systems', due: 'Due in 5 days', icon: faClipboardQuestion },
-    { title: 'Project Proposal', course: 'INFO420: Project Management', due: 'Due in 7 days', icon: faCode },
-  ];
-
-  recentActivity = [
-    { text: 'New announcement in CS350', time: '2 hours ago', icon: faBullhorn },
-    { text: 'Assignment graded in CS110', time: '1 day ago', icon: faCheckCircle },
-    { text: 'New post in CS201 discussion forum', time: '3 days ago', icon: faComments },
-  ];
+  deadlines: (Deadline & { icon: IconDefinition })[] = [];
+  recentActivity: (Activity & { icon: IconDefinition })[] = [];
 
   ngOnInit() {
     this.coursesService.getCoursesPage().subscribe({
@@ -76,6 +72,14 @@ export class CoursesComponent implements OnInit {
         this.userAvatar = res.userAvatarUrl;
         this.activeCourses = res.activeCourses;
         this.completedCourses = res.completedCourses;
+        this.deadlines = (res.deadlines ?? []).map((d, i) => ({
+          ...d,
+          icon: DEADLINE_ICONS[i] ?? faClipboardList,
+        }));
+        this.recentActivity = (res.activities ?? []).map((a, i) => ({
+          ...a,
+          icon: ACTIVITY_ICONS[i] ?? faBullhorn,
+        }));
         this.loading = false;
       },
       error: (err) => {

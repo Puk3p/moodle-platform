@@ -40,18 +40,32 @@ for pattern in "${FORBIDDEN_PATTERNS[@]}"; do
     fi
 done
 
-# ── 3. Backend: Spotless check (only if Java files changed) ─
-JAVA_FILES=$(echo "$STAGED_FILES" | grep '\.java$' || true)
+# ── 3. Services: Spotless check (only the modules whose Java files changed) ─
+# The Maven modules (each service is its own) that hold these changed Java files.
+changed_modules() {
+    echo "$1" | { grep '\.java$' || true; } | while read -r f; do
+        case "$f" in
+            services/*/* | edge/*/*) echo "$f" | cut -d/ -f1-2 ;;
+            e2e/*) echo "e2e" ;;
+        esac
+    done | sort -u
+}
 
-if [[ -n "$JAVA_FILES" ]]; then
+# Builds outside ./target when set (e.g. a checkout in an iCloud-synced folder).
+BUILD_ROOT_ARG=${MOODLE_BUILD_ROOT:+-Dmoodle.build.root=$MOODLE_BUILD_ROOT}
+MODULES=$(changed_modules "$STAGED_FILES")
+
+if [[ -n "$MODULES" ]]; then
     echo "→ Java files changed — running Spotless check..."
-    (cd backend && ./mvnw spotless:check -q 2>&1) || {
-        echo ""
-        echo "✖ Spotless formatting check failed."
-        echo "  Run: cd backend && ./mvnw spotless:apply"
-        echo ""
-        exit 1
-    }
+    for m in $MODULES; do
+        ./mvnw -q -f "$m/pom.xml" spotless:check $BUILD_ROOT_ARG 2>&1 || {
+            echo ""
+            echo "✖ Spotless formatting check failed in $m."
+            echo "  Run: ./mvnw -f $m/pom.xml spotless:apply"
+            echo ""
+            exit 1
+        }
+    done
     echo "✓ Spotless check passed."
 fi
 

@@ -1,0 +1,25 @@
+name: identity-service
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "services/identity-service/**"
+      - ".github/workflows/identity-service.yml"
+      - ".github/workflows/service.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "services/identity-service/**"
+      - ".github/workflows/identity-service.yml"
+      - ".github/workflows/service.yml"
+
+concurrency:
+  group: identity-service-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  identity-service:
+    uses: ./.github/workflows/service.yml
+    with:
+      path: services/identity-service

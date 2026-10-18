@@ -1,0 +1,31 @@
+name: Service
+
+# Reusable: builds, tests and packages one service from its own folder, with its own Maven
+# wrapper and Dockerfile, exactly as it would build in a repository of its own.
+on:
+  workflow_call:
+    inputs:
+      path:
+        description: The service's folder, e.g. services/identity-service
+        required: true
+        type: string
+
+jobs:
+  build:
+    name: "Build & test"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.path }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: temurin
+          cache: maven
+          cache-dependency-path: ${{ inputs.path }}/pom.xml
+      # Spotless, unit tests, integration tests (Testcontainers: MySQL, Kafka), SpotBugs.
+      - run: ./mvnw -B -ntp verify
+      - name: Image builds
+        run: docker build -t "moodle/$(basename "${{ inputs.path }}"):ci" .

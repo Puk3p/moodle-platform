@@ -1,0 +1,36 @@
+package moodlev2.academic.infrastructure.persistence.entity;
+
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+import lombok.Data;
+
+@Entity
+@Table(name = "assignment_submissions")
+@Data
+public class AssignmentSubmissionEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name = "assignment_id", nullable = false)
+    private ModuleItemEntity assignment;
+
+    /** The submitting account (identity module). */
+    @Column(name = "student_id", nullable = false)
+    private Long studentId;
+
+    @Column(columnDefinition = "TEXT")
+    private String textResponse;
+
+    private String fileUrl;
+    private String fileName;
+
+    private LocalDateTime submittedAt;
+
+    private Integer grade;
+
+    @Column(columnDefinition = "TEXT")
+    private String feedback;
+}

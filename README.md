@@ -1,6 +1,8 @@
 # MoodleV2 — Learning Management System
 
-A full-stack **Learning Management System (LMS)** inspired by Moodle, built with a modern tech stack. The platform supports three user roles — **Student**, **Teacher**, and **Admin** — and delivers course management, quizzes, assignments, real-time chat, a calendar, grades, and more.
+A full-stack **Learning Management System (LMS)** inspired by Moodle. The platform supports three user roles — **Student**, **Teacher**, and **Admin** — and delivers course management, quizzes, assignments, real-time chat, a calendar, grades, and more.
+
+The backend is a set of **microservices**: five Spring Boot applications, each with its own database, behind a Spring Cloud Gateway, talking over REST and **Kafka**. It started as a single Spring Boot application and was split one bounded context at a time, with the app working end to end after every step (see [Architecture](#architecture)).
 
 ---
 
@@ -11,9 +13,8 @@ A full-stack **Learning Management System (LMS)** inspired by Moodle, built with
 - [Features](#features)
 - [Prerequisites](#prerequisites)
 - [Getting Started](#getting-started)
-  - [Backend](#backend-setup)
+  - [The platform (Docker Compose)](#the-platform-docker-compose)
   - [Frontend](#frontend-setup)
-  - [Mobile App](#mobile-app-setup)
 - [Environment Variables](#environment-variables)
 - [Database](#database)
 - [API Overview](#api-overview)
@@ -29,14 +30,17 @@ A full-stack **Learning Management System (LMS)** inspired by Moodle, built with
 
 | Layer | Technology |
 |-------|-----------|
-| **Backend** | Java 21, Spring Boot 3.5, Spring Security, Spring Data JPA, Spring WebSocket |
+| **Services** | Java 21, Spring Boot 3.5, Spring Security, Spring Data JPA, Spring WebSocket |
+| **Edge** | Spring Cloud Gateway (WebFlux) |
+| **Messaging** | Apache Kafka (KRaft), Spring Kafka, Spring Modulith event publication registry (transactional outbox) |
+| **Resilience** | Resilience4j (circuit breakers, retries), short client timeouts |
 | **Frontend** | Angular 20, Angular Material, TypeScript, SCSS, STOMP.js / SockJS |
-| **Mobile** | Apache Cordova (iOS build wrapping the Angular app) |
-| **Database** | MySQL / MariaDB |
+| **Database** | MySQL 8, one database per service |
 | **Migrations** | Flyway |
-| **Auth** | JWT (jjwt 0.12), OAuth2 (Google, Facebook), TOTP-based 2FA |
+| **Auth** | HttpOnly session cookie, RS256 internal tokens (OAuth2 client credentials, JWKS), OAuth2 login (Google, Facebook), TOTP-based 2FA |
 | **Email** | Spring Mail (SMTP / Gmail) |
-| **API Docs** | SpringDoc OpenAPI (Swagger UI) |
+| **Testing** | JUnit 5, Mockito, Testcontainers (MySQL, Kafka), MockWebServer, end-to-end suite against the running stack |
+| **Deployment** | Docker, Docker Compose |
 | **Browser Extension** | Chrome Extension (Manifest V3) packaged alongside the frontend |
 
 ---
@@ -45,25 +49,39 @@ A full-stack **Learning Management System (LMS)** inspired by Moodle, built with
 
 ```
 moodle-platform/
-├── backend/                  # Spring Boot REST API
-│   ├── src/main/java/moodlev2/
-│   │   ├── application/      # Application services (use cases)
-│   │   ├── domain/           # Domain models & port interfaces
-│   │   ├── infrastructure/   # JPA entities, repositories, adapters
-│   │   ├── web/              # REST controllers & DTOs
-│   │   └── common/           # Shared exceptions & utilities
-│   └── src/main/resources/
-│       ├── application.properties
-│       └── db/migration/     # Flyway SQL migrations
-├── frontend/                 # Angular SPA
-│   ├── src/app/
-│   │   ├── core/             # Guards, interceptors, services, models
-│   │   └── features/         # Feature modules (auth, courses, quiz, etc.)
-│   ├── manifest.json         # Chrome Extension manifest (MV3)
-│   └── package.json
-└── moodle-mobile/            # Cordova wrapper for iOS
-    ├── config.xml
-    └── www/                  # Built Angular assets
+├── pom.xml                       # Aggregator: ./mvnw verify builds and tests every service
+├── services/
+│   ├── identity-service/         # :8083 Accounts, classes, sign-in, sessions; issues internal tokens
+│   ├── academic-service/         # :8081 Courses, modules, resources, assignments, membership
+│   ├── assessment-service/       # :8084 Quizzes, attempts, proctoring, question bank
+│   ├── progress-service/         # :8085 Grades and course calendars
+│   └── messaging-service/        # :8082 Chat (REST + WebSocket)
+├── edge/gateway/                 # :8080 The only public entry point: routing, session → token, CSRF, CORS
+├── e2e/                          # End-to-end tests against the running stack (-Pe2e)
+├── deploy/
+│   ├── compose.yml               # The whole platform: MySQL, Kafka, the services, the gateway
+│   ├── .env.example              # Production settings
+│   ├── mysql/init/               # One database and account per service
+│   └── data-moves/               # One-time SQL to move an existing monolith's data
+├── frontend/                     # Angular SPA (+ Chrome Extension manifest)
+└── scripts/                      # Git hook setup, developer helpers (hash-password.js)
+```
+
+Every service folder is self-contained, as if it were a repository of its own: its `pom.xml`, Maven wrapper, `Dockerfile`, `README.md` (what it owns, its API, events and configuration) and a CI workflow that runs when the folder changes. Inside, every service has the same layout:
+
+```
+services/<name>/
+├── pom.xml, mvnw, Dockerfile, README.md
+└── src/
+    ├── main/java/moodlev2/<name>/
+    │   ├── web/              # controllers, DTOs, internal/ (service-to-service API), error handler
+    │   ├── application/      # use cases
+    │   ├── api/              # events it publishes, types of its internal API (if any)
+    │   ├── clients/          # what it needs from other services, and the HTTP clients for it
+    │   ├── infrastructure/   # persistence/, kafka/, security/
+    │   └── shared/           # small utilities
+    ├── main/resources/       # application.properties, db/migration/ (its own Flyway history)
+    └── test/java/...         # unit tests, it/ (Testcontainers), support/
 ```
 
 ---
@@ -74,7 +92,7 @@ moodle-platform/
 - Email / password registration and login
 - **OAuth2** social login (Google, Facebook)
 - **Two-Factor Authentication** (TOTP) setup and verification
-- JWT-based stateless authentication with session tracking
+- Server-side sessions in an HttpOnly, SameSite=Strict cookie, bound to the browser, with idle and absolute expiry
 - Password reset via email token
 - Role-based access control (`STUDENT`, `TEACHER`, `ADMIN`)
 - Auth guard on all protected routes
@@ -139,38 +157,38 @@ moodle-platform/
 - Manifest V3 browser extension bundled with the frontend
 - Enhances the Moodle experience with additional tools
 
-### Mobile App
-- **Apache Cordova** wrapper targeting iOS
-- Serves the built Angular app as a native mobile application
-
 ---
 
 ## Prerequisites
 
-- **Java 21** (JDK)
-- **Maven 3.9+** (or use the included `mvnw` wrapper)
-- **Node.js 20+** and **npm**
-- **MySQL 8** or **MariaDB 10.6+**
-- *(Optional)* Apache Cordova CLI for mobile builds
+- **Docker** with Docker Compose v2 (runs MySQL, Kafka and every service)
+- **Java 21** (JDK), to build and test outside Docker; the Maven wrapper `./mvnw` is included
+- **Node.js 20+** and **npm**, for the frontend
 
 ---
 
 ## Getting Started
 
-### Backend Setup
+### The platform (Docker Compose)
 
-1. **Set environment variables** (see [Environment Variables](#environment-variables)).
-
-2. **Run the database migrations** automatically on startup via Flyway, or manually apply `V1__Init_Moodle_Schema.sql` and `V2__Seed_Initial_Users.sql`.
-
-3. **Start the backend**:
+1. **Start everything** (MySQL, Kafka, the five services and the gateway):
    ```bash
-   cd backend
-   ./mvnw spring-boot:run
+   docker compose -f deploy/compose.yml up -d --build --wait
    ```
-   The API will start on `http://localhost:8080`.
+   The API answers on `http://localhost:8080` (the gateway). Each service migrates and seeds its own database on first start, so the starter accounts (`student@test.com`, `teacher@test.com`, `admin@test.com`) and courses are there.
 
-4. **Swagger UI** is available at `http://localhost:8080/swagger-ui.html`.
+2. **Run the end-to-end tests** against it (optional):
+   ```bash
+   ./mvnw -f e2e/pom.xml verify -Pe2e
+   ```
+
+3. **Build and test every service** without Docker Compose (integration tests start their own MySQL and Kafka with Testcontainers, so Docker must be running):
+   ```bash
+   ./mvnw verify
+   ```
+   or one service, from its folder: `cd services/identity-service && ./mvnw verify`.
+
+Moving an existing single-database installation over: start the stack, then run the scripts in `deploy/data-moves/` (each one explains itself) before letting traffic in.
 
 ### Frontend Setup
 
@@ -184,109 +202,96 @@ moodle-platform/
    ```bash
    npm start
    ```
-   The app will be served at `http://localhost:4200`.
-
-### Mobile App Setup
-
-1. **Install Cordova globally**:
-   ```bash
-   npm install -g cordova
-   ```
-
-2. **Build the Angular app** and copy the output to `moodle-mobile/www/`.
-
-3. **Run on iOS**:
-   ```bash
-   cd moodle-mobile
-   cordova platform add ios
-   cordova run ios
-   ```
+   The app will be served at `http://localhost:4200` and talks to the gateway on `http://localhost:8080`.
 
 ---
 
 ## Environment Variables
 
-The backend reads the following environment variables (configured in `application.properties`):
+`deploy/compose.yml` has working defaults for local development. For anything else copy `deploy/.env.example` to `deploy/.env` and fill it in:
 
 | Variable | Description |
 |----------|-------------|
-| `DB_URL` | JDBC connection URL (e.g. `jdbc:mysql://localhost:3306/moodlev2`) |
-| `DB_USERNAME` | Database username |
-| `DB_PASSWORD` | Database password |
-| `JWT_SECRET` | Secret key for signing JWT tokens |
-| `GOOGLE_CLIENT_ID` | Google OAuth2 client ID |
-| `GOOGLE_CLIENT_SECRET` | Google OAuth2 client secret |
-| `FACEBOOK_CLIENT_ID` | Facebook OAuth2 client ID |
-| `FACEBOOK_CLIENT_SECRET` | Facebook OAuth2 client secret |
-| `MAIL_USERNAME` | SMTP email address (Gmail) |
-| `MAIL_PASSWORD` | SMTP email app password |
+| `MYSQL_ROOT_PASSWORD`, `*_DB_PASSWORD` | The MySQL root password and one password per service account |
+| `JWT_SECRET` | identity-service's key for the short pre-2FA challenge token (≥ 32 bytes) |
+| `INTERNAL_CLIENT_*_SECRET` | Each service's secret for identity-service's token endpoint (client credentials) |
+| `INTERNAL_JWT_PRIVATE_KEY` / `INTERNAL_JWT_PUBLIC_KEY` | Optional RS256 key pair for internal tokens; left empty, identity-service generates one once and keeps it in its database |
+| `APP_SESSION_COOKIE_SECURE`, `SESSION_COOKIE_NAME` | `true` / `__Host-mdl_session` behind HTTPS |
+| `TRUSTED_PROXIES`, `IDENTITY_TRUSTED_PROXIES` | Who may report client addresses (the reverse proxy, the gateway) |
+| `PUBLIC_BASE_URL`, `APP_FRONTEND_URL`, `APP_CORS_ALLOWED_ORIGINS` | Public URLs (OAuth redirects, reset links, CORS) |
+| `GOOGLE_CLIENT_ID` / `_SECRET`, `FACEBOOK_CLIENT_ID` / `_SECRET` | OAuth2 sign-in |
+| `MAIL_USERNAME`, `MAIL_PASSWORD` | SMTP (password reset mail) |
 
 ---
 
 ## Database
 
-- **Engine**: MySQL / MariaDB
-- **ORM**: Spring Data JPA with Hibernate (validate mode)
-- **Migrations**: Flyway (`V1` creates the full schema, `V2` seeds initial users)
+One MySQL server, **one database and account per service**; an account can only reach its own database. Each service owns its Flyway history. Services keep other services' ids (users, courses) as plain columns, never foreign keys: what cascades used to do is done by reacting to events (an account deletion removes enrollments, submissions, attempts, grades and chat history in their own services).
 
-### Core Tables
+| Database | Owner | Tables |
+|----------|-------|--------|
+| `identity` | identity-service | `users`, `user_roles`, `classes`, `user_sessions`, `password_reset_tokens`, `profile_pictures` |
+| `academic` | academic-service | `courses`, `course_classes`, `enrollments`, `course_modules`, `module_items`, `announcements`, `assignment_submissions` |
+| `assessment` | assessment-service | `quizzes`, `quiz_questions`, `quiz_options`, `quiz_attempts`, `quiz_responses`, `proctor_events`, question bank tables |
+| `progress` | progress-service | `grades`, `calendar_events` |
+| `messaging` | messaging-service | `chat_messages` |
 
-| Table | Purpose |
-|-------|---------|
-| `users` / `user_roles` | User accounts and role assignments |
-| `classes` | Student class groups |
-| `courses` / `course_classes` | Courses and class assignments |
-| `enrollments` | Student-course enrollments |
-| `course_modules` / `module_items` | Course content structure |
-| `announcements` | Course announcements |
-| `calendar_events` | Calendar events |
-| `grades` | Student grades |
-| `quizzes` / `quiz_questions` / `quiz_options` | Quiz definitions |
-| `quiz_attempts` / `quiz_responses` | Quiz attempt tracking |
-| `categories` / `tags` / `questions` / `question_bank_options` | Question bank |
-| `assignment_submissions` | Assignment submissions & grading |
-| `chat_messages` | Chat message history |
-| `user_sessions` | Active session tracking |
-| `password_reset_tokens` | Password reset tokens |
+Services that publish events also have `EVENT_PUBLICATION`, the transactional outbox.
 
 ---
 
 ## API Overview
 
-All endpoints are under `/api`. Authentication is required unless noted.
+All endpoints are under `/api` on the gateway; the frontend never sees which service answers. Authentication is required unless noted.
 
-| Prefix | Description |
-|--------|-------------|
-| `/api/auth` | Login, register, forgot/reset password, 2FA, OAuth2 |
-| `/api/users` | Profile, change password, sessions, teachers list |
-| `/api/courses` | Dashboard, course CRUD, modules, resources, students |
-| `/api/assignments` | Assignment details, student submissions, teacher grading |
-| `/api/quizzes` | Create, start, submit, update, delete quizzes |
-| `/api/question-bank` | Categories, questions CRUD |
-| `/api/grades` | Student grades page |
-| `/api/calendar` | Calendar events |
-| `/api/chat` | Chat history (REST) + WebSocket messaging |
-| `/api/admin` | Admin operations (courses, users, classes, gradebook) |
+| Prefix | Service | Description |
+|--------|---------|-------------|
+| `/api/auth`, `/oauth2`, `/login/oauth2` | identity | Login, register, forgot/reset password, 2FA, OAuth2 |
+| `/api/users` (except `/me`) | identity | Change password, sessions, profile picture, teachers list |
+| `/api/admin/students`, `/api/admin/classes`, `/api/classes` | identity | Account and class administration |
+| `/api/users/me` | academic | Profile with enrolled or taught courses |
+| `/api/courses`, `/api/resources`, `/api/assignments`, `/api/teacher/dashboard` | academic | Dashboard, course CRUD, modules, resources, assignments, grading |
+| `/api/quizzes`, `/api/teacher/quizzes`, `/api/question-bank` | assessment | Quizzes, attempts, results, question bank |
+| `/api/grades`, `/api/admin/grades`, `/api/calendar` | progress | Grades, gradebook, calendar |
+| `/api/chat`, `/ws` | messaging | Chat history (REST) and live messages (WebSocket) |
 
 ---
 
 ## Architecture
 
-The backend follows a **layered / hexagonal architecture**:
-
 ```
-web/          → REST controllers & DTOs (driving adapters)
-application/  → Use-case services (application logic)
-domain/       → Domain models, enums, port interfaces
-infrastructure/ → JPA entities, repositories, adapters (driven adapters)
+ Browser (Angular SPA)
+   │  HttpOnly session cookie + X-XSRF-TOKEN header
+   ▼
+ gateway (Spring Cloud Gateway) ── CORS · CSRF check · session cookie → 60 s user token · routing
+   │                    │ REST + RS256 bearer token
+   ▼                    ▼
+ identity-service    academic-service   assessment-service   progress-service   messaging-service
+ (cookie, sessions,  (courses,          (quizzes,            (grades,           (chat,
+  tokens, JWKS)       coursework)        question bank)       calendar)          WebSocket)
+   │                    │                  │                    │                  │
+ identity DB         academic DB        assessment DB        progress DB        messaging DB
+   └──────────── Kafka: identity.user · identity.session · academic.course ·
+                        academic.coursework · assessment.attempt ────────────────┘
 ```
 
-Key patterns:
-- **Port & Adapter** interfaces for token service, password hashing, and user repository
-- **Service-per-use-case** design (e.g. `GetCourseDetailsService`, `QuizEngineService`)
-- **Flyway** for versioned database migrations
-- **JWT + Spring Security** filter chain for stateless auth
-- **WebSocket (STOMP/SockJS)** for real-time chat
+**Bounded contexts.** Each service owns one area of the domain and its data. They ask each other synchronously only when they need an answer to serve a request (`/internal/**` REST APIs, which the gateway never routes), and otherwise react to each other's events.
+
+**Authentication (phantom token).** The browser keeps an opaque HttpOnly session cookie, set and read only by identity-service. On every other route the gateway exchanges it at identity-service for a 60-second RS256 token carrying the user id, email, roles and class, caches it briefly, and forwards it as a bearer token; the cookie never leaves the gateway. Services validate tokens against identity-service's JWKS. Service-to-service calls use OAuth2 client-credentials tokens from the same issuer. Logging out or an admin change evicts the gateway's cache at once through `identity.session` / `identity.user` events.
+
+**Events.** Changes other services must hear about are written to a transactional outbox (Spring Modulith's event publication registry) in the same transaction as the change, then published to Kafka as JSON with a logical `event-type` header, keyed by the id they must stay ordered by. Consumers are idempotent; a record that keeps failing goes to `<topic>.DLT` after retries with backoff.
+
+| Topic | Events | Consumed by |
+|-------|--------|-------------|
+| `identity.user` | `UserEmailChanged`, `UserDeleted` | academic, assessment, progress, messaging, gateway |
+| `identity.session` | `SessionsRevoked` | messaging (closes sockets), gateway (cache) |
+| `academic.course` | `ModuleRemoved` | assessment (unfiles the module's quizzes) |
+| `academic.coursework` | `AssignmentPublished` | progress (calendar deadline) |
+| `assessment.attempt` | `QuizAttemptChanged` | messaging (locks chat during a proctored quiz) |
+
+**Resilience.** Every client has short timeouts, one retry for reads and a circuit breaker per downstream service. Pages degrade instead of failing where they can (a dashboard without its calendar when progress-service is down); without identity-service, which every request needs, services answer 503 quickly.
+
+**Inside each service** the original layered / hexagonal structure stays: `web/` → `application/` → ports → `infrastructure/` adapters, with service-per-use-case classes (e.g. `GetCourseDetailsService`, `QuizEngineService`).
 
 ---
 
@@ -294,20 +299,25 @@ Key patterns:
 
 GitHub Actions workflows are defined in `.github/workflows/`.
 
-### CI (`ci.yml`) — runs on every push & PR to `main` / `develop`
+### CI — runs on pushes & PRs to `main` / `develop`
 
-| Job | What it does |
+| Workflow | When | What it does |
+|----------|------|--------------|
+| **`<service>.yml`** (one per service and the gateway) | That folder changes | From the folder: Spotless, unit tests, integration tests (Testcontainers), SpotBugs, and the Docker image builds |
+| **`platform.yml`** | Any service, `deploy/` or `e2e/` changes | Starts the whole stack with Docker Compose and runs the end-to-end suite through the gateway |
+| **`ci.yml`** | Every push & PR | Frontend lint, typecheck and unit tests; branch name convention |
+
+The per-service workflows share one reusable workflow, `service.yml`.
+
+| `ci.yml` job | What it does |
 |-----|--------------|
-| **Backend · Spotless Check** | Enforces Google Java Format (AOSP) |
-| **Backend · SpotBugs** | Static bug analysis |
-| **Backend · Build & Test** | Compiles and runs unit tests |
 | **Frontend · Lint & Typecheck** | Production Angular build |
 | **Frontend · Unit Tests** | Karma/Jasmine headless tests |
 | **Branch Name Convention** | Rejects PRs from incorrectly named branches |
 
 ### CD (`cd.yml`) — runs on version tags (`v*`)
 
-- Builds backend JAR and frontend dist
+- Builds every service's JAR and the frontend dist
 - Creates a GitHub Release with build artifacts
 
 ---
@@ -316,8 +326,8 @@ GitHub Actions workflows are defined in `.github/workflows/`.
 
 | Tool | Layer | Command |
 |------|-------|---------|
-| **Spotless** | Backend | `./mvnw spotless:check` / `./mvnw spotless:apply` |
-| **SpotBugs** | Backend | `./mvnw compile spotbugs:check -DskipTests` |
+| **Spotless** | Services | `./mvnw -f services/<name>/pom.xml spotless:apply` (checked in `verify`) |
+| **SpotBugs** | Services | runs in `./mvnw verify` |
 | **Prettier** | Frontend | Configured in `package.json` |
 | **EditorConfig** | All | `.editorconfig` at project root |
 
@@ -330,9 +340,9 @@ bash scripts/setup-hooks.sh
 
 | Hook | Checks |
 |------|--------|
-| `pre-commit` | Branch naming, forbidden patterns, Spotless, Angular build |
+| `pre-commit` | Branch naming, forbidden patterns, Spotless (changed services), Angular build |
 | `commit-msg` | Conventional Commits format (`feat(scope): message`) |
-| `pre-push` | Spotless, SpotBugs, backend tests, frontend build & tests |
+| `pre-push` | Spotless, unit tests and SpotBugs per changed service, frontend build & tests |
 
 ---
 

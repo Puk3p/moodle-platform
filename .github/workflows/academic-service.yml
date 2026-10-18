@@ -1,0 +1,25 @@
+name: academic-service
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "services/academic-service/**"
+      - ".github/workflows/academic-service.yml"
+      - ".github/workflows/service.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "services/academic-service/**"
+      - ".github/workflows/academic-service.yml"
+      - ".github/workflows/service.yml"
+
+concurrency:
+  group: academic-service-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  academic-service:
+    uses: ./.github/workflows/service.yml
+    with:
+      path: services/academic-service
