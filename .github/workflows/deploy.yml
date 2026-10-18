@@ -4,18 +4,134 @@ on:
   push:
     branches:
       - main
+  # Run by hand to build and publish the images before the first cutover (deploy/PRODUCTION.md).
+  workflow_dispatch:
 
 concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: true
 
-# The backend is NOT deployed from here for now. It became separate services (services/*,
-# edge/gateway) run with Docker Compose, and the server still runs the previous single jar
-# (systemd moodle-backend.service, port 8091), which keeps serving the API unchanged until the
-# server is moved to the new platform. The frontend works with either backend.
+# The backend is deployed with Docker Compose (deploy/compose.yml) once the server runs it: set
+# the repository variable BACKEND_DEPLOY=compose after the one-time cutover in
+# deploy/PRODUCTION.md. Until then only the frontend is deployed, and the server keeps the
+# previous single jar (systemd moodle-backend.service, port 8091); the frontend works with either.
 jobs:
+  images:
+    name: "Build ${{ matrix.service }} image"
+    if: vars.BACKEND_DEPLOY == 'compose' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - { service: identity-service, path: services/identity-service }
+          - { service: academic-service, path: services/academic-service }
+          - { service: assessment-service, path: services/assessment-service }
+          - { service: progress-service, path: services/progress-service }
+          - { service: messaging-service, path: services/messaging-service }
+          - { service: gateway, path: edge/gateway }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Image name
+        id: image
+        # Registry paths must be lower case.
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/moodle/${{ matrix.service }}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # Each service builds from its own folder and Dockerfile; tests ran in its own workflow.
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.path }}
+          push: true
+          tags: |
+            ${{ steps.image.outputs.name }}:${{ github.sha }}
+            ${{ steps.image.outputs.name }}:latest
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+  deploy-backend:
+    name: "Deploy Backend to VPS"
+    needs: images
+    if: vars.BACKEND_DEPLOY == 'compose'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Image prefix
+        id: images
+        # Registry paths must be lower case.
+        run: echo "prefix=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/moodle" >> "$GITHUB_OUTPUT"
+
+      - name: Upload the Compose files
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "deploy/compose.yml,deploy/mysql/init/01-databases.sh"
+          target: "/opt/moodle-platform/"
+
+      - name: Secrets, pull and restart
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: eu-north-1
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE_PREFIX: ${{ steps.images.outputs.prefix }}
+          IMAGE_TAG: ${{ github.sha }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_DEFAULT_REGION,GHCR_USER,GHCR_TOKEN,IMAGE_PREFIX,IMAGE_TAG
+          script: |
+            set -euo pipefail
+            cd /opt/moodle-platform/deploy
+
+            # 1. Secrets: every parameter under /config/platform/ becomes NAME=value in .env,
+            #    then the images of this commit.
+            export AWS_SHARED_CREDENTIALS_FILE="/root/.aws/credentials"
+            export AWS_CONFIG_FILE="/root/.aws/config"
+            umask 077
+            /usr/local/bin/aws ssm get-parameters-by-path \
+              --region eu-north-1 \
+              --path "/config/platform/" \
+              --with-decryption \
+              --query "Parameters[*].[Name,Value]" \
+              --output text | awk -F'\t' '{n=split($1,a,"/"); print a[n]"="$2}' > .env
+            echo "IMAGE_PREFIX=${IMAGE_PREFIX}" >> .env
+            echo "IMAGE_TAG=${IMAGE_TAG}" >> .env
+
+            # 2. This commit's images, then the stack; containers whose image or settings did
+            #    not change are left running.
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            docker compose -f compose.yml pull --quiet
+            docker logout ghcr.io
+            docker compose -f compose.yml up -d --no-build --remove-orphans --wait --wait-timeout 600
+
+            # 3. The gateway answers where nginx sends the API (GATEWAY_HOST_PORT, 8091).
+            port=$(grep -E '^GATEWAY_HOST_PORT=' .env | cut -d= -f2)
+            curl -fsS --max-time 5 "http://127.0.0.1:${port:-8080}/actuator/health" | grep -q '"status":"UP"'
+            echo "platform healthy at ${IMAGE_TAG}"
+
   deploy-frontend:
     name: "Deploy Frontend to VPS"
+    # After the backend when it is deployed too (so the new SPA never meets an API that is still
+    # restarting), on its own while it is not.
+    needs: deploy-backend
+    if: ${{ !failure() && !cancelled() }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -27,12 +143,12 @@ jobs:
           node-version: 20
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-          
+
       - name: Build Angular App
         run: |
           npm ci
           npx ng build --configuration production
-          
+
       # Upload into a staging directory first. The webroot is NEVER emptied before the
       # new build has landed, so a failed or cancelled upload can no longer leave the
       # site serving nothing.

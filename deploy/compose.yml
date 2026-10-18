@@ -1,13 +1,18 @@
-# The platform on one host: every service is its own container, only the gateway is published.
+# The platform on one host: every service is its own container, only the gateway is published,
+# and only on the host's loopback (a reverse proxy such as nginx sits in front of it).
 #
 #   docker compose -f deploy/compose.yml up -d --build
 #   open http://localhost:8080        (the API; the SPA dev server proxies to it)
 #
 # Defaults below are for local development only. Override them in deploy/.env (see .env.example).
+# In production the images come from a registry instead of being built here (IMAGE_PREFIX,
+# IMAGE_TAG; see deploy/PRODUCTION.md).
 name: moodle
 
 x-java: &java
   restart: unless-stopped
+  # A cap per JVM (its heap is 70% of it), so the services together cannot outgrow the host.
+  mem_limit: ${JAVA_SERVICE_MEMORY:-1g}
   environment: &java-env
     KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     JAVA_OPTS: -XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError
@@ -84,7 +89,7 @@ services:
   identity-service:
     <<: *java
     build: ../services/identity-service
-    image: moodle/identity-service:dev
+    image: ${IMAGE_PREFIX:-moodle}/identity-service:${IMAGE_TAG:-dev}
     environment:
       <<: *java-env
       DB_URL: jdbc:mysql://mysql:3306/identity
@@ -132,7 +137,7 @@ services:
   academic-service:
     <<: *java
     build: ../services/academic-service
-    image: moodle/academic-service:dev
+    image: ${IMAGE_PREFIX:-moodle}/academic-service:${IMAGE_TAG:-dev}
     environment:
       <<: *java-env
       DB_URL: jdbc:mysql://mysql:3306/academic
@@ -157,7 +162,7 @@ services:
   messaging-service:
     <<: *java
     build: ../services/messaging-service
-    image: moodle/messaging-service:dev
+    image: ${IMAGE_PREFIX:-moodle}/messaging-service:${IMAGE_TAG:-dev}
     environment:
       <<: *java-env
       DB_URL: jdbc:mysql://mysql:3306/messaging
@@ -183,7 +188,7 @@ services:
   assessment-service:
     <<: *java
     build: ../services/assessment-service
-    image: moodle/assessment-service:dev
+    image: ${IMAGE_PREFIX:-moodle}/assessment-service:${IMAGE_TAG:-dev}
     environment:
       <<: *java-env
       DB_URL: jdbc:mysql://mysql:3306/assessment
@@ -208,7 +213,7 @@ services:
   progress-service:
     <<: *java
     build: ../services/progress-service
-    image: moodle/progress-service:dev
+    image: ${IMAGE_PREFIX:-moodle}/progress-service:${IMAGE_TAG:-dev}
     environment:
       <<: *java-env
       DB_URL: jdbc:mysql://mysql:3306/progress
@@ -230,7 +235,7 @@ services:
   gateway:
     <<: *java
     build: ../edge/gateway
-    image: moodle/gateway:dev
+    image: ${IMAGE_PREFIX:-moodle}/gateway:${IMAGE_TAG:-dev}
     environment:
       <<: *java-env
       IDENTITY_URL: http://identity-service:8083
@@ -246,7 +251,7 @@ services:
       TRUSTED_PROXIES: ${TRUSTED_PROXIES:-.*}
       APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://localhost:4200}
     ports:
-      - "${GATEWAY_HOST_PORT:-8080}:8080"
+      - "${GATEWAY_BIND_ADDRESS:-127.0.0.1}:${GATEWAY_HOST_PORT:-8080}:8080"
     depends_on:
       identity-service:
         condition: service_healthy
