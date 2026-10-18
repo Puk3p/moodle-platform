@@ -11,8 +11,8 @@ A one-time cutover, run by hand on the VPS. Afterwards every push to `main` depl
 | nginx | `/api`, `/ws`, `/oauth2`, `/login/oauth2` → `127.0.0.1:8091` | unchanged |
 
 Because the gateway takes over the old port on loopback, nginx needs no change. Rolling back is
-stopping the gateway and starting the old service again (step 7). Downtime: from step 5 to step 6,
-mostly the database copy.
+stopping the gateway and starting the old service again (step 7). Downtime: the middle of step 6,
+from stopping the old service to starting the gateway, mostly the database copy.
 
 ## 1. Check the server
 
@@ -55,12 +55,17 @@ aws ssm put-parameter --region eu-north-1 --type SecureString \
 Without the two `*_TRUSTED_PROXIES` the local-development default applies, which believes any
 client's `X-Forwarded-For` and so lets anyone sidestep the per-address sign-in rate limit.
 
+The IAM user whose keys the server and the workflow use must be allowed to read the new path, or
+both get `AccessDeniedException`. Add to its policy `ssm:GetParametersByPath` on
+`arn:aws:ssm:eu-north-1:<account>:parameter/config/platform/*`, and, only while you create the
+parameters from the server, `ssm:PutParameter` on the same resource.
+
 ## 4. Build the images
 
 GitHub → Actions → **VPS Auto-Deploy** → **Run workflow** on `main`. It builds and pushes the six
 images, tagged with the commit (note its SHA), and redeploys the frontend, which is harmless.
-The images are private: on the server, `docker login ghcr.io` with a GitHub token that has
-`read:packages`.
+Packages pushed from a public repository are public, so the server pulls them as is; if yours are
+private, `docker login ghcr.io` on the server with a GitHub token that has `read:packages`.
 
 ## 5. Prepare the stack (the old backend keeps serving)
 
@@ -80,39 +85,52 @@ cd /opt/moodle-platform/deploy
 umask 077
 aws ssm get-parameters-by-path --region eu-north-1 --path /config/platform/ --with-decryption \
   --query "Parameters[*].[Name,Value]" --output text \
-  | awk -F'\t' '{n=split($1,a,"/"); print a[n]"="$2}' > .env
+  | awk -F'\t' '$1 ~ /^\// {n=split($1,a,"/"); print a[n]"="$2}' > .env
 echo "IMAGE_PREFIX=ghcr.io/<owner, lower case>/moodle" >> .env
 echo "IMAGE_TAG=<the SHA from step 4>" >> .env
 
 docker compose pull
-docker compose up -d --no-build --wait mysql db-init kafka
+docker compose up -d --no-build --wait mysql kafka
 ```
 
-The new MySQL listens on `127.0.0.1:3307` only, next to the existing one on 3306.
+The `awk` filter skips the `None` lines the AWS CLI prints between result pages. The new MySQL
+creates the five databases on its first start and listens on `127.0.0.1:3307` only, next to the
+existing one on 3306. Leave `db-init` out here: it exits once done, which `--wait` reports as a
+failure unless a service that depends on it starts too (as in step 6).
 
 ## 6. Cutover
 
+Everything up to starting the gateway can be rehearsed with the old backend left running: skip
+`systemctl stop`, stop before the gateway, then `docker compose down -v` (this project's containers
+and volumes only) and the last command of step 5 to start again from empty.
+
+Start the services first, while the old backend still serves: each creates its database's tables
+(and samples, which the data moves replace), and none gets traffic before the gateway starts. The
+downtime then only covers the copy, 15 seconds the first time this ran.
+
 ```bash
 cd /opt/moodle-platform/deploy
+docker compose up -d --no-build --wait identity-service academic-service assessment-service progress-service messaging-service
 systemctl stop moodle-backend                       # downtime starts
 ```
 
 Copy the old database into the new MySQL, as `moodle` (the data-move scripts read from there). The
-dump is also your backup of the moment before the cutover:
+dump is also your backup of the moment before the cutover. A MariaDB dump (since the releases of
+May 2024, such as 10.11.8) starts with a line only MariaDB understands, which the MySQL client
+rejects; the `sed` removes it:
 
 ```bash
 mysqldump --single-transaction --no-tablespaces -u <old user> -p <old database> > /root/moodle-before-cutover.sql
+sed -i '1{/enable the sandbox mode/d}' /root/moodle-before-cutover.sql
 # MariaDB 11 only, if the import below complains about a collation:
 #   sed -i 's/utf8mb4_uca1400_ai_ci/utf8mb4_general_ci/g' /root/moodle-before-cutover.sql
 docker compose exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE moodle"'
 docker compose exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" moodle' < /root/moodle-before-cutover.sql
 ```
 
-Start the services without the gateway (each creates its database), then copy the data in this order.
-Each script prints counts to compare; the two sides must match:
+Then copy the data, in this order. Each script prints counts to compare; the two sides must match:
 
 ```bash
-docker compose up -d --no-build --wait identity-service academic-service assessment-service progress-service messaging-service
 for move in accounts-to-identity courses-to-academic quizzes-to-assessment grades-and-calendar-to-progress chat-to-messaging; do
   echo "== $move"
   docker compose exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD"' < data-moves/2026-10-move-$move.sql

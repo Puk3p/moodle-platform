@@ -59,6 +59,9 @@ class GatewayIT {
 
     static final AtomicInteger RESOLVE_CALLS = new AtomicInteger();
 
+    /** The client address each session resolution was asked for. */
+    static final BlockingQueue<String> RESOLVED_FROM = new LinkedBlockingQueue<>();
+
     /** The gateway's client-credentials tokens: each grant is numbered; refused ones get a 401. */
     static final AtomicInteger TOKENS_ISSUED = new AtomicInteger();
 
@@ -141,6 +144,7 @@ class GatewayIT {
         IDENTITY_REQUESTS.clear();
         MESSAGING_REQUESTS.clear();
         ACADEMIC_REQUESTS.clear();
+        RESOLVED_FROM.clear();
     }
 
     @Test
@@ -163,6 +167,20 @@ class GatewayIT {
         send(get("/api/auth/session").header("X-Forwarded-For", "203.0.113.9").build());
         RecordedRequest atIdentity = take(IDENTITY_REQUESTS, "/api/auth/session");
         assertThat(atIdentity.getHeader("X-Forwarded-For")).isEqualTo("203.0.113.9, 127.0.0.1");
+    }
+
+    @Test
+    void aSessionIsCheckedAgainstTheClientsAddressNotTheProxys() throws Exception {
+        // identity-service records this address on the session; behind a proxy the gateway's own
+        // peer is always that proxy.
+        String session = newSession("user-token-address");
+        send(
+                get("/api/courses")
+                        .header("Cookie", "mdl_session=" + session)
+                        .header("X-Forwarded-For", "203.0.113.9")
+                        .build());
+
+        assertThat(RESOLVED_FROM.poll(5, TimeUnit.SECONDS)).isEqualTo("203.0.113.9");
     }
 
     @Test
@@ -414,6 +432,7 @@ class GatewayIT {
                 Map<?, ?> body =
                         new ObjectMapper().readValue(request.getBody().readUtf8(), Map.class);
                 String token = (String) body.get("token");
+                RESOLVED_FROM.add(String.valueOf(body.get("remoteAddress")));
                 String userToken = SESSIONS.get(token);
                 if (userToken == null || !BROWSER.equals(body.get("userAgent"))) {
                     return new MockResponse().setResponseCode(404);
