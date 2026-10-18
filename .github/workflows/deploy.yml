@@ -100,8 +100,9 @@ jobs:
             set -euo pipefail
             cd /opt/moodle-platform/deploy
 
-            # 1. Secrets: every parameter under /config/platform/ becomes NAME=value in .env,
-            #    then the images of this commit.
+            # 1. Secrets: every parameter under /config/platform/ becomes NAME=value in .env
+            #    (the filter skips the "None" lines the CLI prints between result pages), then
+            #    the images of this commit.
             export AWS_SHARED_CREDENTIALS_FILE="/root/.aws/credentials"
             export AWS_CONFIG_FILE="/root/.aws/config"
             umask 077
@@ -110,7 +111,7 @@ jobs:
               --path "/config/platform/" \
               --with-decryption \
               --query "Parameters[*].[Name,Value]" \
-              --output text | awk -F'\t' '{n=split($1,a,"/"); print a[n]"="$2}' > .env
+              --output text | awk -F'\t' '$1 ~ /^\// {n=split($1,a,"/"); print a[n]"="$2}' > .env
             echo "IMAGE_PREFIX=${IMAGE_PREFIX}" >> .env
             echo "IMAGE_TAG=${IMAGE_TAG}" >> .env
 
