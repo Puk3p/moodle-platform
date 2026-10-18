@@ -45,6 +45,15 @@ class CourseworkFlowE2E extends E2EBase {
                                 .toString()
                                 .contains(title + " (Deadline)"));
 
+        // From there it shows on the courses page: in the upcoming deadlines and on the card.
+        JsonNode coursesPage = student.api().get("/api/courses").expect(200).json();
+        assertThat(coursesPage.get("deadlines").toString()).contains(title + " (Deadline)");
+        assertThat(
+                        findBy(coursesPage.get("activeCourses"), "code", course.code())
+                                .get("nextDeadline")
+                                .asText())
+                .isEqualTo(title + " (Deadline) · Due in 7 days");
+
         student.api().get("/api/courses/my-dashboard").expect(200);
         JsonNode me = student.api().get("/api/users/me").expect(200).json();
         assertThat(me.get("student").get("courses").toString()).contains(course.code());

@@ -22,6 +22,7 @@ public class GetCoursesPageService {
     private final DirectoryApi directory;
     private final TeacherNames teacherNames;
     private final CourseRepository courseRepository;
+    private final CourseFeed courseFeed;
 
     @Transactional(readOnly = true)
     public CoursesPageResponse getCoursesPageForUser(String email) {
@@ -40,6 +41,7 @@ public class GetCoursesPageService {
                         ? courseRepository.findAllCoursesForStudent(user.id(), user.classId())
                         : new ArrayList<>();
         Map<Long, String> instructors = teacherNames.of(courseEntities);
+        CourseFeed.Feed feed = courseFeed.feedFor(user, courseEntities);
 
         LocalDate now = LocalDate.now();
 
@@ -59,7 +61,8 @@ public class GetCoursesPageService {
                                             c.getName(),
                                             instructorName,
                                             progress,
-                                            "Check calendar",
+                                            feed.nextDeadlineByCourse()
+                                                    .getOrDefault(c.getId(), "None coming up"),
                                             c.getImageUrl());
                                 })
                         .toList();
@@ -67,7 +70,13 @@ public class GetCoursesPageService {
         List<CompletedCourseSummaryDto> completedCourses = new ArrayList<>();
 
         return new CoursesPageResponse(
-                userName, "Student", avatar, activeCourses, completedCourses);
+                userName,
+                "Student",
+                avatar,
+                activeCourses,
+                completedCourses,
+                feed.deadlines(),
+                feed.activities());
     }
 
     private int calculateProgress(CourseEntity course, LocalDate now) {

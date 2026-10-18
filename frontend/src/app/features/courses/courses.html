@@ -80,9 +80,10 @@
             <div class="info-box">
               <p class="w-title">{{ d.title }}</p>
               <p class="w-sub">{{ d.course }}</p>
-              <p class="w-accent">{{ d.due }}</p>
+              <p class="w-accent">{{ d.dueIn }}</p>
             </div>
           </div>
+          <p class="w-sub" *ngIf="!loading && deadlines.length === 0">No upcoming deadlines.</p>
         </div>
       </section>
 
@@ -95,9 +96,10 @@
             </div>
             <div class="info-box">
               <p class="w-text">{{ a.text }}</p>
-              <p class="w-sub">{{ a.time }}</p>
+              <p class="w-sub">{{ a.timeAgo }}</p>
             </div>
           </div>
+          <p class="w-sub" *ngIf="!loading && recentActivity.length === 0">No recent activity yet.</p>
         </div>
       </section>
     </div>
