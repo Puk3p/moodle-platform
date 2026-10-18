@@ -8,7 +8,7 @@
     <div class="col-left">
       <section>
         <h2>My Courses</h2>
-        <div class="courses-list">
+        <div class="courses-list" *ngIf="activeCourses.length > 0">
           <div
             class="course-card-horizontal"
             *ngFor="let course of activeCourses"
@@ -52,11 +52,17 @@
             </div>
           </div>
         </div>
+        <app-empty-state
+          *ngIf="!loading && activeCourses.length === 0"
+          [icon]="faFolderOpen"
+          heading="No Active Courses"
+          hint="You aren't enrolled in any courses at the moment."
+        ></app-empty-state>
       </section>
 
       <section class="completed-section">
         <h2>Completed Courses</h2>
-        <div class="completed-list">
+        <div class="completed-list" *ngIf="completedCourses.length > 0">
           <div class="completed-item" *ngFor="let c of completedCourses">
             <span class="c-title">{{ c.title }}</span>
             <span class="c-date">{{ c.date }}</span>
@@ -66,13 +72,19 @@
             </div>
           </div>
         </div>
+        <app-empty-state
+          *ngIf="!loading && completedCourses.length === 0"
+          [icon]="faTrophy"
+          heading="No Completed Courses"
+          hint="Keep working hard! Your achievements will appear here."
+        ></app-empty-state>
       </section>
     </div>
 
     <div class="col-right">
       <section class="widget-card">
         <h2>Upcoming Deadlines</h2>
-        <div class="widget-list">
+        <div class="widget-list" *ngIf="deadlines.length > 0">
           <div class="widget-item" *ngFor="let d of deadlines">
             <div class="icon-box orange">
               <fa-icon [icon]="d.icon"></fa-icon>
@@ -83,13 +95,18 @@
               <p class="w-accent">{{ d.dueIn }}</p>
             </div>
           </div>
-          <p class="w-sub" *ngIf="!loading && deadlines.length === 0">No upcoming deadlines.</p>
         </div>
+        <app-empty-state
+          *ngIf="!loading && deadlines.length === 0"
+          [icon]="faCalendarDay"
+          heading="All Caught Up!"
+          hint="No upcoming deadlines to worry about right now."
+        ></app-empty-state>
       </section>
 
       <section class="widget-card">
         <h2>Recent Activity</h2>
-        <div class="widget-list">
+        <div class="widget-list" *ngIf="recentActivity.length > 0">
           <div class="widget-item" *ngFor="let a of recentActivity">
             <div class="icon-box gray">
               <fa-icon [icon]="a.icon"></fa-icon>
@@ -99,8 +116,13 @@
               <p class="w-sub">{{ a.timeAgo }}</p>
             </div>
           </div>
-          <p class="w-sub" *ngIf="!loading && recentActivity.length === 0">No recent activity yet.</p>
         </div>
+        <app-empty-state
+          *ngIf="!loading && recentActivity.length === 0"
+          [icon]="faInbox"
+          heading="It's Quiet Here"
+          hint="No recent activity to show yet."
+        ></app-empty-state>
       </section>
     </div>
   </div>

@@ -338,46 +338,6 @@
 }
 
 
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 48px 24px;
-  background: var(--app-surface);
-  border-radius: 20px;
-  border: 1px dashed rgba(148, 163, 184, 0.3);
-  color: #6b7280;
-  margin-top: 16px;
-
-  h3, h4 {
-    margin-top: 16px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #374151;
-  }
-
-  p {
-    margin-top: 6px;
-    font-size: 0.9rem;
-    max-width: 280px;
-    line-height: 1.5;
-  }
-}
-
-.empty-icon {
-  color: #9ca3af;
-  opacity: 0.5;
-}
-
-.side-empty {
-  padding: 32px 16px;
-  border: none;
-  background: transparent;
-  margin-top: 0;
-}
-
 @media (max-width: 768px) {
   .greeting-title {
     font-size: 1.8rem;

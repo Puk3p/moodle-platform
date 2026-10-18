@@ -73,10 +73,29 @@ describe('Courses', () => {
     }
   });
 
-  it('says so when nothing is coming up and nothing happened', () => {
+  it('shows a message, with no card around it, in place of every empty section', () => {
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('app-empty-state')).withContext('still loading').toBeNull();
+
+    const text = respond(page({ activeCourses: [] }));
+
+    expect(el.querySelectorAll('app-empty-state').length).toBe(4);
+    for (const message of [
+      "You aren't enrolled in any courses at the moment.",
+      'Keep working hard! Your achievements will appear here.',
+      'No upcoming deadlines to worry about right now.',
+      'No recent activity to show yet.',
+    ]) {
+      expect(text).toContain(message);
+    }
+    expect(el.querySelector('.courses-list, .completed-list, .widget-list')).toBeNull();
+  });
+
+  it('keeps the message for the sections that are still empty when others have data', () => {
     const text = respond(page());
 
-    expect(text).toContain('No upcoming deadlines.');
-    expect(text).toContain('No recent activity yet.');
+    expect(text).toContain('CS201: Data Structures & Algorithms');
+    expect(text).toContain('No Completed Courses');
+    expect((fixture.nativeElement as HTMLElement).querySelector('.completed-list')).toBeNull();
   });
 });

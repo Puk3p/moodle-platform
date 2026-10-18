@@ -23,6 +23,7 @@ import {
   Activity as ActivityDto,
   DashboardHomeResponse,
 } from '../../../core/models/dashboard.model';
+import { EmptyStateComponent } from '../../../shared/empty-state/empty-state';
 
 type Deadline = DeadlineDto & { icon: any };
 type Activity = ActivityDto & { icon: any };
@@ -30,7 +31,7 @@ type Activity = ActivityDto & { icon: any };
 @Component({
   selector: 'app-dashboard-home',
   standalone: true,
-  imports: [CommonModule, FontAwesomeModule],
+  imports: [CommonModule, FontAwesomeModule, EmptyStateComponent],
   templateUrl: './dashboard-home.html',
   styleUrl: './dashboard-home.scss',
 })

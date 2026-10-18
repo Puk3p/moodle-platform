@@ -6,12 +6,13 @@ import {
   faSearch, faBell, faTableCellsLarge, faBookOpen, faCalendarDay,
   faGraduationCap, faFolderOpen, faCog, faSignOutAlt, faArrowRight,
   faFileAlt, faAward, faClipboardList, faClipboardQuestion, faCode,
-  faBullhorn, faCheckCircle, faComments, IconDefinition,
+  faBullhorn, faCheckCircle, faComments, faTrophy, faInbox, IconDefinition,
 } from '@fortawesome/free-solid-svg-icons';
 
 import { CoursesService } from '../../core/services/courses.service';
 import { CourseOverview, CompletedCourseSummary } from '../../core/models/courses-page.response';
 import { Activity, Deadline } from '../../core/models/dashboard.model';
+import { EmptyStateComponent } from '../../shared/empty-state/empty-state';
 
 // Icons picked by position, as on the dashboard.
 const DEADLINE_ICONS = [faClipboardList, faClipboardQuestion, faCode];
@@ -20,7 +21,7 @@ const ACTIVITY_ICONS = [faBullhorn, faCheckCircle, faComments];
 @Component({
   selector: 'app-courses',
   standalone: true,
-  imports: [CommonModule, FontAwesomeModule, RouterLink],
+  imports: [CommonModule, FontAwesomeModule, RouterLink, EmptyStateComponent],
   templateUrl: './courses.html',
   styleUrl: './courses.scss'
 })
@@ -45,6 +46,8 @@ export class CoursesComponent implements OnInit {
   faCalendarDay = faCalendarDay;
   faGraduationCap = faGraduationCap;
   faFolderOpen = faFolderOpen;
+  faTrophy = faTrophy;
+  faInbox = faInbox;
   faCog = faCog;
   faSignOutAlt = faSignOutAlt;
   

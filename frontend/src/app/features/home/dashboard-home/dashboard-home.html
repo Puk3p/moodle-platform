@@ -20,7 +20,7 @@
           <h2>My Courses</h2>
         </div>
 
-        <div class="courses-grid" *ngIf="activeCourses.length > 0; else emptyCourses">
+        <div class="courses-grid" *ngIf="activeCourses.length > 0">
           <article
             class="course-card"
             *ngFor="let course of activeCourses"
@@ -54,13 +54,12 @@
           </article>
         </div>
 
-        <ng-template #emptyCourses>
-          <div class="empty-state">
-            <fa-icon [icon]="faFolderOpen" size="3x" class="empty-icon"></fa-icon>
-            <h3>No Active Courses</h3>
-            <p>You aren't enrolled in any courses at the moment.</p>
-          </div>
-        </ng-template>
+        <app-empty-state
+          *ngIf="!loading && activeCourses.length === 0"
+          [icon]="faFolderOpen"
+          heading="No Active Courses"
+          hint="You aren't enrolled in any courses at the moment."
+        ></app-empty-state>
       </section>
 
       <section class="section-card">
@@ -68,7 +67,7 @@
           <h2>Completed Courses</h2>
         </div>
 
-        <div class="completed-list" *ngIf="completedCourses.length > 0; else emptyCompleted">
+        <div class="completed-list" *ngIf="completedCourses.length > 0">
           <div
             class="completed-item"
             *ngFor="let c of completedCourses"
@@ -97,13 +96,12 @@
           </div>
         </div>
 
-        <ng-template #emptyCompleted>
-          <div class="empty-state">
-            <fa-icon [icon]="faTrophy" size="3x" class="empty-icon"></fa-icon>
-            <h3>No Completed Courses</h3>
-            <p>Keep working hard! Your achievements will appear here.</p>
-          </div>
-        </ng-template>
+        <app-empty-state
+          *ngIf="!loading && completedCourses.length === 0"
+          [icon]="faTrophy"
+          heading="No Completed Courses"
+          hint="Keep working hard! Your achievements will appear here."
+        ></app-empty-state>
       </section>
     </div>
     <aside class="dashboard-side">
@@ -113,7 +111,7 @@
           <h2>Upcoming Deadlines</h2>
         </div>
 
-        <div class="side-card" *ngIf="deadlines.length > 0; else emptyDeadlines">
+        <div class="side-card" *ngIf="deadlines.length > 0">
           <div
             class="deadline-item"
             *ngFor="let d of deadlines"
@@ -129,13 +127,12 @@
           </div>
         </div>
 
-        <ng-template #emptyDeadlines>
-          <div class="empty-state side-empty">
-            <fa-icon [icon]="faCalendarDay" size="2x" class="empty-icon"></fa-icon>
-            <h4>All Caught Up!</h4>
-            <p>No upcoming deadlines to worry about right now.</p>
-          </div>
-        </ng-template>
+        <app-empty-state
+          *ngIf="!loading && deadlines.length === 0"
+          [icon]="faCalendarDay"
+          heading="All Caught Up!"
+          hint="No upcoming deadlines to worry about right now."
+        ></app-empty-state>
       </section>
 
       <section class="section-card">
@@ -143,7 +140,7 @@
           <h2>Recent Activity</h2>
         </div>
 
-        <div class="side-card" *ngIf="activities.length > 0; else emptyActivity">
+        <div class="side-card" *ngIf="activities.length > 0">
           <div
             class="activity-item"
             *ngFor="let a of activities"
@@ -162,13 +159,12 @@
           </div>
         </div>
 
-        <ng-template #emptyActivity>
-          <div class="empty-state side-empty">
-            <fa-icon [icon]="faInbox" size="2x" class="empty-icon"></fa-icon>
-            <h4>It's Quiet Here</h4>
-            <p>No recent activity to show yet.</p>
-          </div>
-        </ng-template>
+        <app-empty-state
+          *ngIf="!loading && activities.length === 0"
+          [icon]="faInbox"
+          heading="It's Quiet Here"
+          hint="No recent activity to show yet."
+        ></app-empty-state>
       </section>
 
     </aside>
