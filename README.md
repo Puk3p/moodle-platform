@@ -188,7 +188,7 @@ services/<name>/
    ```
    or one service, from its folder: `cd services/identity-service && ./mvnw verify`.
 
-Moving an existing single-database installation over: start the stack, then run the scripts in `deploy/data-moves/` (each one explains itself) before letting traffic in.
+Moving an existing single-database installation over: start the stack, then run the scripts in `deploy/data-moves/` (each one explains itself) before letting traffic in. For the production server, [deploy/PRODUCTION.md](deploy/PRODUCTION.md) walks through the whole cutover, with rollback.
 
 ### Frontend Setup
 
@@ -314,6 +314,11 @@ The per-service workflows share one reusable workflow, `service.yml`.
 | **Frontend · Lint & Typecheck** | Production Angular build |
 | **Frontend · Unit Tests** | Karma/Jasmine headless tests |
 | **Branch Name Convention** | Rejects PRs from incorrectly named branches |
+
+### Deploy (`deploy.yml`) — runs on every push to `main`
+
+- Deploys the frontend to the VPS.
+- Once the server runs the services (repository variable `BACKEND_DEPLOY=compose`, see [deploy/PRODUCTION.md](deploy/PRODUCTION.md)): builds each service's image, pushes it to GitHub's container registry, then pulls it on the server and restarts what changed, before the frontend.
 
 ### CD (`cd.yml`) — runs on version tags (`v*`)
 
